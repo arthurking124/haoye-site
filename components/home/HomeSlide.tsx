@@ -59,12 +59,12 @@ export default function HomeSlide({
                 active ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {/* 重塑后的散射体积光束：上窄下宽，模拟自然的丁达尔效应 */}
+              {/* 精准对齐的梯形体积光束：消除了顶部尖尖，对齐十字架缝隙 */}
               <div 
                 className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent blur-[35px]"
                 style={{
-                  // 顶部极其收拢对齐十字架，底部向两侧自然散射（54% - 46%）
-                  clipPath: 'polygon(49.8% 0%, 50.2% 0%, 54% 100%, 46% 100%)',
+                  // 顶部平整化处理：y轴下移0.2%，x轴保持0.8%的缝隙宽度
+                  clipPath: 'polygon(49.6% 0.2%, 50.4% 0.2%, 54% 100%, 46% 100%)',
                   // 注入核心呼吸动画，设置顶部为变换原点
                   animation: active ? 'church-beam-sculpt 10s ease-in-out infinite' : 'none',
                   transformOrigin: 'top center',
@@ -79,7 +79,7 @@ export default function HomeSlide({
                   }
                   50% { 
                     opacity: 1; 
-                    transform: scaleY(1.03); /* 呼吸时纵向轻微拉伸，模拟光影流动 */
+                    transform: scaleY(1.03); /* 呼吸时纵向轻微拉伸 */
                   }
                 }
               `}</style>
