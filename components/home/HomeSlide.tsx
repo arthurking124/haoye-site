@@ -61,10 +61,12 @@ export default function HomeSlide({
             >
               {/* 精准对齐的梯形体积光束：消除了顶部尖尖，对齐十字架缝隙 */}
               <div 
-                className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent blur-[35px]"
+                className="absolute inset-0 bg-gradient-to-b from-white/[0.12] via-white/[0.04] to-transparent"
                 style={{
                   // 顶部平整化处理：y轴下移0.2%，x轴保持0.8%的缝隙宽度
-                  clipPath: 'polygon(49.4% 0.2%, 50.6% 0.2%, 56% 100%, 44% 100%)',
+                  clipPath: 'polygon(49.3% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
+                  mixBlendMode: 'screen', // 增加这一行，让光束变通透
+                  filter: 'blur(28px) drop-shadow(0 0 15px rgba(255,255,255,0.2))', // 增加溢光效果
                   // 注入核心呼吸动画，设置顶部为变换原点
                   animation: active ? 'church-beam-sculpt 10s ease-in-out infinite' : 'none',
                   transformOrigin: 'top center',
