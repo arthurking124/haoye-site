@@ -100,69 +100,7 @@ a {
   font-weight: 300;
 }
 /* =========================
-   诗页专属增强
-   ========================= */
-
-.poem-cover {
-  display: block;
-  width: 100%;
-  max-height: 520px;
-  object-fit: cover;
-  filter: saturate(0.92) contrast(0.96) brightness(0.92);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-}
-
-/* 诗正文整体 */
-.poem-body {
-  position: relative;
-}
-
-/* PortableText 渲染出来的段落更像诗 */
-.poem-body p {
-  margin-top: 0;
-  margin-bottom: 1.35em;
-  color: #c9c7c2;
-}
-
-/* 最后一段不要拖太多空 */
-.poem-body p:last-child {
-  margin-bottom: 0;
-}
-
-/* 如果某些诗段很短，仍然保持呼吸 */
-.poem-body br {
-  content: "";
-}
-
-/* 诗页正文不要像文章那样太满 */
-.poem-body .home-line {
-  text-wrap: pretty;
-}
-
-/* 手机端诗页图片更克制 */
-@media (max-width: 767px) {
-  .poem-cover {
-    max-height: 300px;
-    border-radius: 8px;
-  }
-
-  .poem-body p {
-    margin-bottom: 1.2em;
-  }
-}
-
-/* 桌面端诗页正文更像纸书 */
-@media (min-width: 768px) {
-  .poem-body {
-    padding-top: 0.25rem;
-  }
-
-  .poem-body p {
-    margin-bottom: 1.55em;
-  }
-}
-/* =========================
-   影页专属增强
+   影页增强
    ========================= */
 
 .image-cover {
@@ -179,3 +117,52 @@ a {
     object-fit: cover;
   }
 }
+
+/* =========================
+   诗页增强
+   ========================= */
+
+.poem-cover {
+  display: block;
+  width: 100%;
+  max-height: 520px;
+  object-fit: cover;
+  filter: saturate(0.92) contrast(0.96) brightness(0.92);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.poem-body {
+  position: relative;
+}
+
+.poem-body p {
+  margin-top: 0;
+  margin-bottom: 1.42em;
+  color: #d3d0ca;
+}
+
+.poem-body p:last-child {
+  margin-bottom: 0;
+}
+
+.poem-body .home-line {
+  text-wrap: pretty;
+}
+
+@media (max-width: 767px) {
+  .poem-cover {
+    max-height: 300px;
+    border-radius: 8px;
+  }
+
+  .poem-body p {
+    margin-bottom: 1.2em;
+  }
+}
+
+@media (min-width: 768px) {
+  .poem-body p {
+    margin-bottom: 1.58em;
+  }
+}
+
