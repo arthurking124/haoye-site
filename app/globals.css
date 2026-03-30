@@ -161,3 +161,21 @@ a {
     margin-bottom: 1.55em;
   }
 }
+/* =========================
+   影页专属增强
+   ========================= */
+
+.image-cover {
+  display: block;
+  width: 100%;
+  filter: saturate(0.94) contrast(0.98) brightness(0.94);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 768px) {
+  .image-cover {
+    min-height: 420px;
+    max-height: 680px;
+    object-fit: cover;
+  }
+}
