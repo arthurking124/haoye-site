@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import {sanityClient} from '@/lib/sanity.client'
 import {imageSeriesBySlugQuery} from '@/lib/queries'
 import {urlFor} from '@/lib/sanity.image'

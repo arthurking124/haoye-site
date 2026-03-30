@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import { sanityClient } from '@/lib/sanity.client'
 import { allNotesQuery } from '@/lib/queries'
 

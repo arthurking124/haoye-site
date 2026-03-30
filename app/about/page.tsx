@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import { sanityClient } from '@/lib/sanity.client'
 import { aboutPageQuery } from '@/lib/queries'
 import { PortableText } from '@portabletext/react'

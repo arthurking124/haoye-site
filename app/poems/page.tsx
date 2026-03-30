@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import { sanityClient } from '@/lib/sanity.client'
 import { allPoemsQuery } from '@/lib/queries'
 import Link from 'next/link'
