@@ -55,20 +55,25 @@ export default function HomeSlide({
           {/* --- 皓野专属：光之教堂渲染层 (仅在第四张且 active 时显现) --- */}
           {index === 3 && (
             <div 
-              className={`pointer-events-none absolute inset-0 z-[1] transition-opacity duration-[2000ms] ease-in-out ${
-                active ? 'opacity-100' : 'opacity-0'
+              className={`pointer-events-none absolute inset-0 z-[1] transition-opacity ease-in-out ${
+                // 关键：4000ms（4秒）极其缓慢渗出，delay-700 让它滑过来先黑一会儿再亮
+                active ? 'opacity-100 duration-[4000ms] delay-700' : 'opacity-0 duration-[1000ms]'
               }`}
             >
-              {/* 精准对齐的梯形体积光束：消除了顶部尖尖，对齐十字架缝隙 */}
+              {/* 核心：这一层 bg-black/60 保证了“黑的彻底”，压住照片杂色 */}
+              <div className="absolute inset-0 bg-black/60 z-0" />
+              {/* 梯形体积光束 */}
               <div 
-                className="absolute inset-0 bg-gradient-to-b from-white/[0.12] via-white/[0.04] to-transparent"
+                className="absolute inset-0 bg-gradient-to-b from-white/[0.12] via-white/[0.03] to-transparent"
                 style={{
-                  // 顶部平整化处理：y轴下移0.2%，x轴保持0.8%的缝隙宽度
-                  clipPath: 'polygon(49.3% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
-                  mixBlendMode: 'screen', // 增加这一行，让光束变通透
-                  filter: 'blur(28px) drop-shadow(0 0 15px rgba(255,255,255,0.2))', // 增加溢光效果
-                  // 注入核心呼吸动画，设置顶部为变换原点
-                  animation: active ? 'church-beam-sculpt 10s ease-in-out infinite' : 'none',
+                clipPath: 'polygon(49.3% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
+                mixBlendMode: 'screen',
+                  filter: 'blur(32px) drop-shadow(0 0 20px rgba(255,255,255,0.15))',
+                  // 12秒一个呼吸周期，慢到极致才高级
+                  animation: active ? 'church-beam-sculpt 12s ease-in-out infinite' : 'none',
+                 
+                  
+                 
                   transformOrigin: 'top center',
                 }}
               />
@@ -76,11 +81,11 @@ export default function HomeSlide({
               <style jsx>{`
                 @keyframes church-beam-sculpt {
                   0%, 100% { 
-                    opacity: 0.5; 
+                    opacity: 0.4; 
                     transform: scaleY(1); 
                   }
                   50% { 
-                    opacity: 1; 
+                    opacity: 0.9; 
                     transform: scaleY(1.03); /* 呼吸时纵向轻微拉伸 */
                   }
                 }
