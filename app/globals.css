@@ -166,3 +166,30 @@ a {
   }
 }
 
+/* 首页图片过渡效果 */
+.image-container {
+  transition: transform 1s ease-in-out, opacity 1s ease-in-out;
+}
+
+.image-container.active {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.image-container.inactive {
+  transform: translateX(100px);
+  opacity: 0.5;
+}
+
+/* 首页文字的过渡效果 */
+.text-container {
+  transition: opacity 1s ease-in-out;
+}
+
+.text-container.active {
+  opacity: 1;
+}
+
+.text-container.inactive {
+  opacity: 0;
+}
