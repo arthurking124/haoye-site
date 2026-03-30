@@ -64,7 +64,7 @@ export default function HomeSlide({
                 className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent blur-[35px]"
                 style={{
                   // 顶部平整化处理：y轴下移0.2%，x轴保持0.8%的缝隙宽度
-                  clipPath: 'polygon(49.6% 0.2%, 50.4% 0.2%, 54% 100%, 46% 100%)',
+                  clipPath: 'polygon(49.4% 0.2%, 50.6% 0.2%, 56% 100%, 44% 100%)',
                   // 注入核心呼吸动画，设置顶部为变换原点
                   animation: active ? 'church-beam-sculpt 10s ease-in-out infinite' : 'none',
                   transformOrigin: 'top center',
