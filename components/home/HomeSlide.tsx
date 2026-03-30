@@ -52,49 +52,45 @@ export default function HomeSlide({
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
 
-          {/* --- 皓野专属：光之教堂渲染层 (仅在第四张且 active 时显现) --- */}
+          {/* --- 皓野专属：光之教堂渲染层 --- */}
           {index === 3 && (
             <div 
               className={`pointer-events-none absolute inset-0 z-[1] transition-opacity ease-in-out ${
-                // 关键：4000ms（4秒）极其缓慢渗出，delay-700 让它滑过来先黑一会儿再亮
+                // 4000ms 极其缓慢浮现，配合 delay 让开场更有叙事感
                 active ? 'opacity-100 duration-[4000ms] delay-700' : 'opacity-0 duration-[1000ms]'
               }`}
             >
-              {/* 核心：这一层 bg-black/60 保证了“黑的彻底”，压住照片杂色 */}
-              <div className="absolute inset-0 bg-black/60 z-0" />
               {/* 梯形体积光束 */}
               <div 
-                className="absolute inset-0 bg-gradient-to-b from-white/[0.12] via-white/[0.03] to-transparent"
+                className="absolute inset-0 bg-gradient-to-b from-white/[0.15] via-white/[0.05] to-transparent"
                 style={{
-                clipPath: 'polygon(49.3% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
-                mixBlendMode: 'screen',
-                  filter: 'blur(32px) drop-shadow(0 0 20px rgba(255,255,255,0.15))',
-                  // 12秒一个呼吸周期，慢到极致才高级
-                  animation: active ? 'church-beam-sculpt 12s ease-in-out infinite' : 'none',
-                 
-                  
-                 
+                  clipPath: 'polygon(49.3% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
+                  mixBlendMode: 'screen',
+                  filter: 'blur(35px) drop-shadow(0 0 20px rgba(255,255,255,0.2))',
+                  // 14秒超长周期，实现从无到有、再彻底归于无的呼吸
+                  animation: active ? 'church-beam-sculpt 14s ease-in-out infinite' : 'none',
                   transformOrigin: 'top center',
                 }}
               />
               
               <style jsx>{`
                 @keyframes church-beam-sculpt {
+                  /* 0% 和 100% 彻底熄灭，变到完全没有光 */
                   0%, 100% { 
-                    opacity: 0.4; 
-                    transform: scaleY(1); 
+                    opacity: 0; 
+                    transform: scaleY(0.98); 
                   }
+                  /* 50% 处达到最亮状态 */
                   50% { 
-                    opacity: 0.9; 
-                    transform: scaleY(1.03); /* 呼吸时纵向轻微拉伸 */
+                    opacity: 0.85; 
+                    transform: scaleY(1.05); 
                   }
                 }
               `}</style>
             </div>
           )}
-          {/* --- 渲染层结束 --- */}
 
-          {/* 原始遮罩层 */}
+          {/* 原始遮罩层保持不变 */}
           <div className="pointer-events-none absolute inset-0 bg-black/48" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
@@ -154,26 +150,74 @@ export default function HomeSlide({
           >
             {mobile ? (
               <div className="flex flex-col items-center gap-2">
-                <Link href="/poems" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">诗</Link>
-                <Link href="/images" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">影</Link>
-                <Link href="/notes" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">与</Link>
-                <Link href="/about" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">我</Link>
+                <Link
+                  href="/poems"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  诗
+                </Link>
+                <Link
+                  href="/images"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  影
+                </Link>
+                <Link
+                  href="/notes"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  与
+                </Link>
+                <Link
+                  href="/about"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  我
+                </Link>
               </div>
             ) : (
               <>
-                <Link href="/poems" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">诗</Link>{' '}
-                <Link href="/images" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">影</Link>{' '}
-                <Link href="/notes" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">与</Link>{' '}
-                <Link href="/about" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">我</Link>
+                <Link
+                  href="/poems"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  诗
+                </Link>{' '}
+                <Link
+                  href="/images"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  影
+                </Link>{' '}
+                <Link
+                  href="/notes"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  与
+                </Link>{' '}
+                <Link
+                  href="/about"
+                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                >
+                  我
+                </Link>
               </>
             )}
           </div>
 
-          <div className={`home-signature pointer-events-none text-[#C9C7C2] ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'}`}>
+          <div
+            className={`home-signature pointer-events-none text-[#C9C7C2] ${
+              mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
+            }`}
+          >
             {signature}
           </div>
 
-          <div className={`home-meta pointer-events-none text-[#7F7D79] ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'}`}>
+          <div
+            className={`home-meta pointer-events-none text-[#7F7D79] ${
+              mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
+            }`}
+          >
             {domainText}
           </div>
         </div>
