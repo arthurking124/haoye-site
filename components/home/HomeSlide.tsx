@@ -44,6 +44,7 @@ export default function HomeSlide({
     <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
       {imageUrl ? (
         <>
+          {/* 基础图片层 */}
           <div
             className={`pointer-events-none absolute inset-0 bg-cover bg-center transition-transform duration-[1400ms] ease-out ${
               active ? 'scale-[1.02]' : 'scale-[1.0]'
@@ -51,6 +52,44 @@ export default function HomeSlide({
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
 
+          {/* --- 皓野专属：光之教堂渲染层 (仅在第四张且 active 时显现) --- */}
+          {index === 3 && (
+            <div 
+              className={`pointer-events-none absolute inset-0 z-[1] transition-opacity duration-[2000ms] ease-in-out ${
+                active ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {/* 1. 垂直体积光束：模拟从十字架缝隙自然洒落 */}
+              <div 
+                className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent blur-[35px]"
+                style={{
+                  // 这里的 polygon 决定了光的洒落路径，你可以微调百分比来对齐你图中的十字架
+                  clipPath: 'polygon(49.5% 0%, 50.5% 0%, 52% 100%, 48% 100%)',
+                }}
+              />
+              
+              {/* 2. 地板上的呼吸光斑：增加神性氛围 */}
+              <div 
+                className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[180px] h-[60px] bg-white/[0.06] blur-[25px]"
+                style={{
+                  borderRadius: '50%',
+                  transform: 'translateX(-50%) rotateX(75deg)',
+                  // 使用原生 CSS 动画实现超缓慢的呼吸感
+                  animation: active ? 'church-light-pulse 8s ease-in-out infinite' : 'none'
+                }}
+              />
+              
+              <style jsx>{`
+                @keyframes church-light-pulse {
+                  0%, 100% { opacity: 0.4; transform: translateX(-50%) rotateX(75deg) scale(1); }
+                  50% { opacity: 1; transform: translateX(-50%) rotateX(75deg) scale(1.1); }
+                }
+              `}</style>
+            </div>
+          )}
+          {/* --- 渲染层结束 --- */}
+
+          {/* 原始遮罩层 */}
           <div className="pointer-events-none absolute inset-0 bg-black/48" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
@@ -110,74 +149,26 @@ export default function HomeSlide({
           >
             {mobile ? (
               <div className="flex flex-col items-center gap-2">
-                <Link
-                  href="/poems"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  诗
-                </Link>
-                <Link
-                  href="/images"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  影
-                </Link>
-                <Link
-                  href="/notes"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  与
-                </Link>
-                <Link
-                  href="/about"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  我
-                </Link>
+                <Link href="/poems" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">诗</Link>
+                <Link href="/images" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">影</Link>
+                <Link href="/notes" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">与</Link>
+                <Link href="/about" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">我</Link>
               </div>
             ) : (
               <>
-                <Link
-                  href="/poems"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  诗
-                </Link>{' '}
-                <Link
-                  href="/images"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  影
-                </Link>{' '}
-                <Link
-                  href="/notes"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  与
-                </Link>{' '}
-                <Link
-                  href="/about"
-                  className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
-                >
-                  我
-                </Link>
+                <Link href="/poems" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">诗</Link>{' '}
+                <Link href="/images" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">影</Link>{' '}
+                <Link href="/notes" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">与</Link>{' '}
+                <Link href="/about" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">我</Link>
               </>
             )}
           </div>
 
-          <div
-            className={`home-signature pointer-events-none text-[#C9C7C2] ${
-              mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
-            }`}
-          >
+          <div className={`home-signature pointer-events-none text-[#C9C7C2] ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'}`}>
             {signature}
           </div>
 
-          <div
-            className={`home-meta pointer-events-none text-[#7F7D79] ${
-              mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
-            }`}
-          >
+          <div className={`home-meta pointer-events-none text-[#7F7D79] ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'}`}>
             {domainText}
           </div>
         </div>
