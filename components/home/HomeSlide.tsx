@@ -59,30 +59,28 @@ export default function HomeSlide({
                 active ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {/* 1. 垂直体积光束：模拟从十字架缝隙自然洒落 */}
+              {/* 重塑后的散射体积光束：上窄下宽，模拟自然的丁达尔效应 */}
               <div 
                 className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent blur-[35px]"
                 style={{
-                  // 这里的 polygon 决定了光的洒落路径，你可以微调百分比来对齐你图中的十字架
-                  clipPath: 'polygon(49.5% 0%, 50.5% 0%, 52% 100%, 48% 100%)',
-                }}
-              />
-              
-              {/* 2. 地板上的呼吸光斑：增加神性氛围 */}
-              <div 
-                className="absolute bottom-[20%] left-1/2 -translate-x-1/2 w-[180px] h-[60px] bg-white/[0.06] blur-[25px]"
-                style={{
-                  borderRadius: '50%',
-                  transform: 'translateX(-50%) rotateX(75deg)',
-                  // 使用原生 CSS 动画实现超缓慢的呼吸感
-                  animation: active ? 'church-light-pulse 8s ease-in-out infinite' : 'none'
+                  // 顶部极其收拢对齐十字架，底部向两侧自然散射（54% - 46%）
+                  clipPath: 'polygon(49.8% 0%, 50.2% 0%, 54% 100%, 46% 100%)',
+                  // 注入核心呼吸动画，设置顶部为变换原点
+                  animation: active ? 'church-beam-sculpt 10s ease-in-out infinite' : 'none',
+                  transformOrigin: 'top center',
                 }}
               />
               
               <style jsx>{`
-                @keyframes church-light-pulse {
-                  0%, 100% { opacity: 0.4; transform: translateX(-50%) rotateX(75deg) scale(1); }
-                  50% { opacity: 1; transform: translateX(-50%) rotateX(75deg) scale(1.1); }
+                @keyframes church-beam-sculpt {
+                  0%, 100% { 
+                    opacity: 0.5; 
+                    transform: scaleY(1); 
+                  }
+                  50% { 
+                    opacity: 1; 
+                    transform: scaleY(1.03); /* 呼吸时纵向轻微拉伸，模拟光影流动 */
+                  }
                 }
               `}</style>
             </div>
