@@ -2,15 +2,24 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function Header() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // 避免首次直达首页时 Header 先闪出来
+  if (!mounted) return null
 
   // 首页隐藏 Header，让首页更像序章
-  if (pathname === '/') return null
+  if (pathname === '/' || pathname === '') return null
 
   return (
-    <header className="fixed left-0 top-0 z-50 w-full">
+    <header className="fixed left-0 top-0 z-50 w-full bg-gradient-to-b from-black/18 to-transparent">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 py-6 md:px-8 md:py-7">
         <Link
           href="/"
