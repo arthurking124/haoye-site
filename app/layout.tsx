@@ -3,6 +3,7 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import SoundToggle from '@/components/ui/SoundToggle'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react' // [新增] 引入影子捕捉器
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,6 +36,7 @@ export default function RootLayout({
         <main>{children}</main>
         <Footer />
         <SoundToggle />
+        <Analytics /> {/* [新增] 传感器在这里静默运行，不干扰视觉 */}
       </body>
     </html>
   )
