@@ -54,7 +54,7 @@ export default function HomeSlide({
           <div className="pointer-events-none absolute inset-0 bg-black/48" />
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
           <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
-          {isLast && <div className="pointer-events-none absolute inset-0 bg-black/12" />}
+          {isLast && <div className="pointer-events-none absolute inset-0 bg-black/22" />}
         </>
       ) : (
         <div className="pointer-events-none absolute inset-0 bg-[#0B0B0C]" />
@@ -104,8 +104,8 @@ export default function HomeSlide({
           <div
             className={`home-entry ${
               mobile
-                ? 'mb-5 text-[28px] tracking-[0.12em] leading-[1.7]'
-                : 'mb-6 text-[32px] tracking-[0.18em] md:text-[58px]'
+                ? 'mb-6 text-[26px] tracking-[0.1em] leading-[1.75]'
+                : 'mb-8 text-[30px] tracking-[0.12em] md:text-[52px]'
             }`}
           >
             {mobile ? (
@@ -167,15 +167,15 @@ export default function HomeSlide({
 
           <div
             className={`home-signature pointer-events-none text-[#C9C7C2] ${
-              mobile ? 'text-[14px]' : 'text-[15px] md:text-[16px]'
+              mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
             }`}
           >
             {signature}
           </div>
 
           <div
-            className={`home-meta pointer-events-none text-[#8E8C88] ${
-              mobile ? 'mt-2 text-[10px]' : 'mt-2 text-[11px] md:text-[12px]'
+            className={`home-meta pointer-events-none text-[#7F7D79] ${
+              mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
             }`}
           >
             {domainText}
