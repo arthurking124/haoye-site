@@ -3,8 +3,6 @@ import { sanityClient } from '@/lib/sanity.client'
 import { siteSettingsQuery } from '@/lib/queries'
 import { urlFor } from '@/lib/sanity.image'
 import HomeSequence from '@/components/home/HomeSequence'
-// 导入咱们的刀割愈合组件
-import Rupture from '@/components/home/Rupture' 
 
 export default async function HomePage() {
   const settings = await sanityClient.fetch(siteSettingsQuery)
@@ -25,16 +23,5 @@ export default async function HomePage() {
       : '',
   }
 
-  return (
-    <main className="relative min-h-screen w-full overflow-hidden bg-black">
-      {/* 1. 你的原始 3D 序列帧组件 
-      */}
-      <HomeSequence settings={enhancedSettings} />
-
-      {/* 2. 刀割愈合层
-          它浮在 HomeSequence 之上，但 pointer-events-none 确保它不拦截点击
-      */}
-      <Rupture />
-    </main>
-  )
+  return <HomeSequence settings={enhancedSettings} />
 }
