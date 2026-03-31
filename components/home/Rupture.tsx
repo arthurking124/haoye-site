@@ -3,7 +3,7 @@ import React, { useRef, useEffect } from 'react';
 
 const Rupture = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const lines = useRef<any[]>([]);
+  const ripples = useRef<any[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -17,52 +17,70 @@ const Rupture = () => {
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    const addLine = (e: MouseEvent) => {
-      // 只有鼠标移动速度够快（破坏力够强），才会产生裂痕
+    const addRupture = (e: MouseEvent) => {
+      // 1. 速度检查：只有用力划（破坏力强），才会切开。
       const speed = Math.sqrt(Math.pow(e.movementX, 2) + Math.pow(e.movementY, 2));
-      if (speed < 10) return; 
+      if (speed < 15) return; 
 
-      lines.current.push({
+      // 2. 核心：不画线，我们要画“伤口的形状”
+      // 线条是 Shuttle 形的（两头尖、中间宽），模拟刺入感
+      ripples.current.push({
         x: e.clientX,
         y: e.clientY,
-        vx: e.movementX * 0.5,
-        vy: e.movementY * 0.5,
-        life: 1.0,      // 生命值，决定愈合时间
-        width: Math.min(speed / 5, 4), // 裂痕宽度由速度决定
+        vx: e.movementX,
+        vy: e.movementY,
+        length: speed,
+        life: 1.0,     // 生命值，1.0 是全开，0.0 是愈合
+        baseWidth: Math.min(speed / 4, 6), // 伤口的口子有多宽
       });
     };
 
     const animate = () => {
-      if (!ctx) return;
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      lines.current.forEach((line, index) => {
-        line.life -= 0.015; // 愈合速度：调小则愈合慢，调大则愈合快
-        line.x += line.vx * 0.1;
-        line.y += line.vy * 0.1 + 0.3; // +0.3 带来的微弱下沉，就是你说的“重生的重量”
+      ripples.current.forEach((rip, index) => {
+        // 3. 愈合节奏：线条自己变细、变短，而不是变透明
+        rip.life -= 0.015; // 愈合速度：调小则愈合慢，调大则愈合快
 
-        if (line.life <= 0) {
-          lines.current.splice(index, 1);
+        if (rip.life <= 0) {
+          ripples.current.splice(index, 1);
           return;
         }
 
+        ctx.save();
+        
+        // --- 核心黑科技 ---
+        // 4. mixBlendMode='screen' 让光痕透出来，
+        // 但我们要用 destination-out 来模拟黑色的裂缝
+        ctx.globalCompositeOperation = 'destination-out'; 
+        
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(200, 200, 200, ${line.life * 0.4})`; // 极简灰，若隐若现
-        ctx.lineWidth = line.width * line.life; // 愈合时线条变细
-        ctx.lineCap = 'round';
-        ctx.moveTo(line.x - line.vx, line.y - line.vy);
-        ctx.lineTo(line.x, line.y);
-        ctx.stroke();
+        // 5. 绘制裂缝的形状：一个两头尖、中间宽的椭圆
+        // 随着生命（life）下降，宽度和长度同时收缩
+        ctx.ellipse(
+          rip.x - rip.vx * (1 - rip.life) * 0.1, 
+          rip.y - rip.vy * (1 - rip.life) * 0.1, 
+          rip.length * rip.life * 0.2, // 裂缝长度随时间收缩
+          rip.baseWidth * rip.life,     // 裂缝宽度随时间收缩
+          Math.atan2(rip.vy, rip.vx), 
+          0, 
+          Math.PI * 2
+        );
+        ctx.fillStyle = 'rgba(0, 0, 0, 1)'; // 这个颜色不重要，关键是把画面抠掉
+        ctx.fill();
+        
+        ctx.restore();
       });
 
       requestAnimationFrame(animate);
     };
 
-    window.addEventListener('mousemove', addLine);
+    window.addEventListener('mousemove', addRupture);
     animate();
 
     return () => {
-      window.removeEventListener('mousemove', addLine);
+      window.removeEventListener('mousemove', addRupture);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
@@ -70,8 +88,9 @@ const Rupture = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-10 pointer-events-none opacity-60"
-      style={{ mixBlendMode: 'screen' }} // 让光痕与混凝土背景产生自然的叠光效果
+      // 保持 z-index，让它浮在混凝土上面
+      className="fixed inset-0 z-10 pointer-events-none opacity-90"
+      style={{ mixBlendMode: 'normal' }} // 改回正常混合模式，让抠掉的地方显示黑色
     />
   );
 };
