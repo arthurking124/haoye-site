@@ -1,4 +1,5 @@
 import './globals.css'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import SoundToggle from '@/components/ui/SoundToggle'
@@ -37,6 +38,7 @@ export default function RootLayout({
         <Footer />
         <SoundToggle />
         <Analytics /> {/* [新增] 传感器在这里静默运行，不干扰视觉 */}
+        <SpeedInsights />
       </body>
     </html>
   )
