@@ -3,13 +3,14 @@ import React, { useRef, useEffect } from 'react';
 
 const Rupture = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const ripples = useRef<any[]>([]);
+  const paths = useRef<any[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    
+    if (!ctx) return;
+
     const handleResize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -17,70 +18,61 @@ const Rupture = () => {
     window.addEventListener('resize', handleResize);
     handleResize();
 
-    const addRupture = (e: MouseEvent) => {
-      // 1. 速度检查：只有用力划（破坏力强），才会切开。
+    const addPoint = (e: MouseEvent) => {
+      // 速度门槛：只有快速划动才算“刀割”
       const speed = Math.sqrt(Math.pow(e.movementX, 2) + Math.pow(e.movementY, 2));
-      if (speed < 15) return; 
+      if (speed < 5) return; 
 
-      // 2. 核心：不画线，我们要画“伤口的形状”
-      // 线条是 Shuttle 形的（两头尖、中间宽），模拟刺入感
-      ripples.current.push({
+      paths.current.push({
         x: e.clientX,
         y: e.clientY,
-        vx: e.movementX,
-        vy: e.movementY,
-        length: speed,
-        life: 1.0,     // 生命值，1.0 是全开，0.0 是愈合
-        baseWidth: Math.min(speed / 4, 6), // 伤口的口子有多宽
+        prevX: e.clientX - e.movementX,
+        prevY: e.clientY - e.movementY,
+        life: 1.0, 
+        width: Math.min(speed / 3, 5), // 划得越快，伤口越深
       });
     };
 
     const animate = () => {
-      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      ripples.current.forEach((rip, index) => {
-        // 3. 愈合节奏：线条自己变细、变短，而不是变透明
-        rip.life -= 0.015; // 愈合速度：调小则愈合慢，调大则愈合快
+      paths.current.forEach((p, index) => {
+        p.life -= 0.02; // 愈合速度：调小则愈合更慢（比如 0.01）
 
-        if (rip.life <= 0) {
-          ripples.current.splice(index, 1);
+        if (p.life <= 0) {
+          paths.current.splice(index, 1);
           return;
         }
 
-        ctx.save();
-        
-        // --- 核心黑科技 ---
-        // 4. mixBlendMode='screen' 让光痕透出来，
-        // 但我们要用 destination-out 来模拟黑色的裂缝
-        ctx.globalCompositeOperation = 'destination-out'; 
-        
         ctx.beginPath();
-        // 5. 绘制裂缝的形状：一个两头尖、中间宽的椭圆
-        // 随着生命（life）下降，宽度和长度同时收缩
-        ctx.ellipse(
-          rip.x - rip.vx * (1 - rip.life) * 0.1, 
-          rip.y - rip.vy * (1 - rip.life) * 0.1, 
-          rip.length * rip.life * 0.2, // 裂缝长度随时间收缩
-          rip.baseWidth * rip.life,     // 裂缝宽度随时间收缩
-          Math.atan2(rip.vy, rip.vx), 
-          0, 
-          Math.PI * 2
-        );
-        ctx.fillStyle = 'rgba(0, 0, 0, 1)'; // 这个颜色不重要，关键是把画面抠掉
-        ctx.fill();
+        // 核心：模拟伤口愈合时的收缩感
+        // 线条宽度随 life 减小，颜色随 life 变暗
+        ctx.lineWidth = p.width * p.life; 
+        ctx.strokeStyle = `rgba(255, 255, 255, ${p.life * 0.5})`; // 裂缝透出的光
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         
-        ctx.restore();
+        ctx.moveTo(p.prevX, p.prevY);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // 增加一点点的“裂纹”细节，让它看起来像切开的石头
+        if (p.life > 0.8) {
+           ctx.lineWidth = 0.5;
+           ctx.strokeStyle = `rgba(255, 255, 255, ${p.life * 0.2})`;
+           ctx.lineTo(p.x + (Math.random() - 0.5) * 10, p.y + (Math.random() - 0.5) * 10);
+           ctx.stroke();
+        }
       });
 
       requestAnimationFrame(animate);
     };
 
-    window.addEventListener('mousemove', addRupture);
+    window.addEventListener('mousemove', addPoint);
     animate();
 
     return () => {
-      window.removeEventListener('mousemove', addRupture);
+      window.removeEventListener('mousemove', addPoint);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
@@ -88,9 +80,8 @@ const Rupture = () => {
   return (
     <canvas
       ref={canvasRef}
-      // 保持 z-index，让它浮在混凝土上面
-      className="fixed inset-0 z-10 pointer-events-none opacity-90"
-      style={{ mixBlendMode: 'normal' }} // 改回正常混合模式，让抠掉的地方显示黑色
+      className="fixed inset-0 z-50 pointer-events-none"
+      style={{ mixBlendMode: 'plus-lighter', filter: 'blur(0.5px)' }} 
     />
   );
 };
