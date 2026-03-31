@@ -10,6 +10,9 @@ type HomeSequenceProps = {
 export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
+  // === INTERACTION ADDED: 状态管理背景偏移 ===
+  const [parallax, setParallax] = useState({ x: 0, y: 0 })
+  
   const isAnimatingRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -40,6 +43,24 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     ],
     [settings]
   )
+
+  // === INTERACTION ADDED: 鼠标移动监听函数 ===
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMobile) return // 移动端关闭位移，节省性能
+
+    const { clientX, clientY } = e
+    const { innerWidth, innerHeight } = window
+
+    // 计算中心偏移量 (-1 到 1)
+    const x = (clientX / innerWidth) * 2 - 1
+    const y = (clientY / innerHeight) * 2 - 1
+
+    // 设置偏移像素 (数值越小越克制，这里设为 18px)
+    setParallax({
+      x: x * -18,
+      y: y * -18
+    })
+  }
 
   const goTo = (nextIndex: number) => {
     if (isAnimatingRef.current) return
@@ -127,26 +148,40 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       className="relative h-screen w-screen overflow-hidden"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      // === INTERACTION ADDED: 挂载鼠标监听 ===
+      onMouseMove={handleMouseMove}
     >
+      {/* === INTERACTION ADDED: 呼吸位移外层容器 ===
+          这里的 transform 负责鼠标跟随的微动
+      */}
       <div
-        className="pointer-events-none flex h-screen transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{ transform: `translateX(-${current * 100}vw)` }}
+        className="absolute inset-0 z-0 transition-transform duration-[1000ms] ease-[cubic-bezier(0.15,0.85,0.35,1)]"
+        style={{ 
+          transform: `translate3d(${parallax.x}px, ${parallax.y}px, 0) scale(1.1)`,
+          willChange: 'transform'
+        }}
       >
-        {slides.map((slide, index) => (
-          <HomeSlide
-            key={index}
-            imageUrl={slide.bg}
-            text={slide.text}
-            signature={settings?.signature}
-            domainText={settings?.domainText}
-            align={slide.align}
-            isLast={!!slide.isLast}
-            index={index}
-            total={slides.length}
-            active={current === index}
-            mobile={isMobile}
-          />
-        ))}
+        {/* 这里是你原有的翻页容器，它现在嵌套在位移层里 */}
+        <div
+          className="pointer-events-none flex h-screen transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+          style={{ transform: `translateX(-${current * 100}vw)` }}
+        >
+          {slides.map((slide, index) => (
+            <HomeSlide
+              key={index}
+              imageUrl={slide.bg}
+              text={slide.text}
+              signature={settings?.signature}
+              domainText={settings?.domainText}
+              align={slide.align}
+              isLast={!!slide.isLast}
+              index={index}
+              total={slides.length}
+              active={current === index}
+              mobile={isMobile}
+            />
+          ))}
+        </div>
       </div>
 
       {!isMobile && (
