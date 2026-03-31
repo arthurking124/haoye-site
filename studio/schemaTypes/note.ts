@@ -21,6 +21,8 @@ export default defineType({
           {title: '画', value: '画'},
           {title: '影', value: '影'},
           {title: '器', value: '器'},
+          {title: '私', value: '私'},
+          {title: '悟', value: '悟'},
         ],
       },
     }),
