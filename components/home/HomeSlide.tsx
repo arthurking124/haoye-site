@@ -64,7 +64,7 @@ export default function HomeSlide({
               <div 
                 className="absolute inset-0 bg-gradient-to-b from-white/[0.15] via-white/[0.05] to-transparent"
                 style={{
-                  clipPath: 'polygon(50.% 0.1%, 51.4% 0.1%, 58.5% 100%, 42.5% 100%)',
+                  clipPath: 'polygon(50.0% 0.1%, 51.4% 0.1%, 58.5% 100%, 42.5% 100%)',
                   mixBlendMode: 'screen',
                   filter: 'blur(35px) drop-shadow(0 0 20px rgba(255,255,255,0.2))',
                   // 14秒超长周期，实现从无到有、再彻底归于无的呼吸
