@@ -66,7 +66,7 @@ export default function HomeSlide({
                 style={{
                   clipPath: 'polygon(49.7% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
                   mixBlendMode: 'screen',
-                  filter: 'blur(35px) drop-shadow(0 0 20px rgba(255,255,255,0.2))',
+                  filter: 'blur(45px) drop-shadow(0 0 35px rgba(255,255,255,0.3))',
                   // 14秒超长周期，实现从无到有、再彻底归于无的呼吸
                   animation: active ? 'church-beam-sculpt 14s ease-in-out infinite' : 'none',
                   transformOrigin: 'top center',
