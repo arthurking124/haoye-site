@@ -228,25 +228,33 @@ export default function HomeSlide({
             <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
               <Link
                 href="/poems"
-                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                className={`pointer-events-auto illuminated-text transition-all duration-[1800ms] ${
+                  active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                }`}
               >
                 诗
               </Link>{' '}
               <Link
                 href="/images"
-                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                className={`pointer-events-auto illuminated-text transition-all duration-[2200ms] ${
+                  active ? 'lit-word-active' : 'lit-word-idle'
+                }`}
               >
                 影
               </Link>{' '}
               <Link
                 href="/notes"
-                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                className={`pointer-events-auto illuminated-text transition-all duration-[2400ms] ${
+                  active ? 'lit-word-active' : 'lit-word-idle'
+                }`}
               >
                 与
               </Link>{' '}
               <Link
                 href="/about"
-                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+                className={`pointer-events-auto illuminated-text transition-all duration-[1800ms] ${
+                  active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                }`}
               >
                 我
               </Link>
@@ -254,7 +262,9 @@ export default function HomeSlide({
           </div>
 
           <div
-            className={`home-signature pointer-events-none text-[#C9C7C2] ${
+            className={`home-signature pointer-events-none transition-all duration-[2400ms] ${
+              active ? 'lit-signature-active' : 'lit-signature-idle'
+            } ${
               mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
             }`}
           >
@@ -262,7 +272,9 @@ export default function HomeSlide({
           </div>
 
           <div
-            className={`home-meta pointer-events-none text-[#7F7D79] ${
+            className={`home-meta pointer-events-none transition-all duration-[1800ms] ${
+              active ? 'meta-active' : 'meta-idle'
+            } ${
               mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
             }`}
           >
@@ -282,6 +294,93 @@ export default function HomeSlide({
             opacity: 0.88;
             transform: scaleY(1.04);
           }
+        }
+
+        .illuminated-text {
+          position: relative;
+          display: inline-block;
+        }
+
+        .illuminated-text::after {
+          content: '';
+          position: absolute;
+          left: -0.08em;
+          right: -0.08em;
+          bottom: 0.04em;
+          height: 0.34em;
+          pointer-events: none;
+          border-radius: 999px;
+          opacity: 0;
+          transform: scaleX(0.9);
+          transition:
+            opacity 1800ms ease,
+            transform 1800ms ease;
+          background: radial-gradient(
+            circle at 50% 50%,
+            rgba(255, 255, 255, 0.22),
+            rgba(255, 255, 255, 0.08) 45%,
+            transparent 78%
+          );
+          filter: blur(8px);
+        }
+
+        .lit-word-idle {
+          color: rgba(233, 231, 225, 0.72);
+          text-shadow:
+            0 0 0 rgba(255, 255, 255, 0),
+            0 0 0 rgba(255, 255, 255, 0);
+        }
+
+        .lit-word-active {
+          color: rgba(249, 248, 244, 0.96);
+          text-shadow:
+            0 0 8px rgba(255, 255, 255, 0.14),
+            0 0 24px rgba(255, 255, 255, 0.08),
+            0 0 54px rgba(255, 255, 255, 0.06);
+        }
+
+        .lit-word-active::after {
+          opacity: 0.9;
+          transform: scaleX(1);
+        }
+
+        .dimmed-word-idle {
+          color: rgba(207, 204, 197, 0.56);
+          text-shadow: none;
+        }
+
+        .dimmed-word-active {
+          color: rgba(220, 216, 207, 0.68);
+          text-shadow:
+            0 0 8px rgba(255, 255, 255, 0.03),
+            0 0 18px rgba(255, 255, 255, 0.02);
+        }
+
+        .dimmed-word-active::after {
+          opacity: 0.14;
+          transform: scaleX(0.96);
+        }
+
+        .lit-signature-idle {
+          color: rgba(201, 199, 194, 0.72);
+          text-shadow: none;
+        }
+
+        .lit-signature-active {
+          color: rgba(238, 236, 229, 0.92);
+          text-shadow:
+            0 0 10px rgba(255, 255, 255, 0.12),
+            0 0 26px rgba(255, 255, 255, 0.07),
+            0 0 58px rgba(255, 255, 255, 0.05);
+        }
+
+        .meta-idle {
+          color: rgba(127, 125, 121, 0.72);
+        }
+
+        .meta-active {
+          color: rgba(154, 151, 145, 0.82);
+          text-shadow: 0 0 18px rgba(255, 255, 255, 0.03);
         }
       `}</style>
     </section>
