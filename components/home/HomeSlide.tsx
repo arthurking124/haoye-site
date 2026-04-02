@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 
 type HomeSlideProps = {
   imageUrl?: string
@@ -16,6 +18,8 @@ type HomeSlideProps = {
   parallax?: { rotateX: number; rotateY: number; tx: number; ty: number }
 }
 
+type PortalTarget = 'poems' | 'images' | 'notes' | 'about' | null
+
 export default function HomeSlide({
   imageUrl,
   text,
@@ -29,6 +33,20 @@ export default function HomeSlide({
   mobile = false,
   parallax = { rotateX: 0, rotateY: 0, tx: 0, ty: 0 },
 }: HomeSlideProps) {
+  const router = useRouter()
+  const leaveTimerRef = useRef<number | null>(null)
+
+  const [portalTarget, setPortalTarget] = useState<PortalTarget>(null)
+  const [isEntering, setIsEntering] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (leaveTimerRef.current) {
+        window.clearTimeout(leaveTimerRef.current)
+      }
+    }
+  }, [])
+
   const basePosition =
     align === 'left'
       ? mobile
@@ -67,6 +85,48 @@ export default function HomeSlide({
     transitionDelay: active ? `${delay}ms` : '0ms',
     transitionDuration: `${duration}ms`,
   })
+
+  const beginPortalEnter = (
+    href: string,
+    target: Exclude<PortalTarget, null>
+  ) => (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isLast) return
+    if (isEntering) {
+      e.preventDefault()
+      return
+    }
+
+    if (
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.altKey ||
+      e.button !== 0
+    ) {
+      return
+    }
+
+    e.preventDefault()
+
+    setPortalTarget(target)
+    setIsEntering(true)
+
+    window.dispatchEvent(
+      new CustomEvent('haoye:portal-enter', {
+        detail: { href, target },
+      })
+    )
+
+    leaveTimerRef.current = window.setTimeout(() => {
+      router.push(href)
+    }, 420)
+  }
+
+  const isTarget = (target: Exclude<PortalTarget, null>) =>
+    isEntering && portalTarget === target
+
+  const isOther = (target: Exclude<PortalTarget, null>) =>
+    isEntering && portalTarget !== null && portalTarget !== target
 
   return (
     <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
@@ -125,7 +185,9 @@ export default function HomeSlide({
                         mixBlendMode: 'screen',
                         filter:
                           'blur(42px) drop-shadow(0 0 28px rgba(255,255,255,0.22))',
-                        animation: active ? 'church-beam-breathe 14s ease-in-out infinite' : 'none',
+                        animation: active
+                          ? 'church-beam-breathe 14s ease-in-out infinite'
+                          : 'none',
                         transformOrigin: 'top center',
                       }}
                     />
@@ -185,6 +247,31 @@ export default function HomeSlide({
         <div className="pointer-events-none absolute inset-0 bg-[#0B0B0C]" />
       )}
 
+      {isLast && (
+        <div
+          className={`pointer-events-none absolute inset-0 z-[8] transition-all duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isEntering ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.05),transparent_34%),radial-gradient(circle_at_34%_84%,rgba(255,255,255,0.03),transparent_18%),radial-gradient(circle_at_66%_84%,rgba(255,255,255,0.03),transparent_18%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.42)_100%)]" />
+
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                'linear-gradient(to bottom, rgba(255,255,255,0.14), rgba(255,255,255,0.06) 26%, rgba(255,255,255,0.02) 54%, transparent 100%)',
+              clipPath: 'polygon(49.74% 0%, 50.74% 0%, 58.4% 100%, 41.6% 100%)',
+              mixBlendMode: 'screen',
+              filter: 'blur(34px)',
+              transform: isEntering ? 'scaleY(1.04)' : 'scaleY(0.99)',
+              transition:
+                'transform 520ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease',
+              opacity: isEntering ? 0.92 : 0,
+            }}
+          />
+        </div>
+      )}
+
       <div
         className={`pointer-events-none absolute z-10 home-index ${
           mobile
@@ -203,7 +290,9 @@ export default function HomeSlide({
         >
           <p
             className={`home-line max-w-[760px] ${
-              mobile ? 'text-[22px] leading-[1.42]' : 'text-[24px] leading-[1.48] md:text-[42px]'
+              mobile
+                ? 'text-[22px] leading-[1.42]'
+                : 'text-[24px] leading-[1.48] md:text-[42px]'
             }`}
           >
             {text}
@@ -221,7 +310,9 @@ export default function HomeSlide({
         <div
           className={`absolute z-10 ${basePosition} ${
             active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-          } transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)]`}
+          } transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isEntering ? 'scale-[1.008]' : 'scale-100'
+          }`}
         >
           <div
             className={`home-entry ${
@@ -233,8 +324,11 @@ export default function HomeSlide({
             <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
               <Link
                 href="/poems"
+                onClick={beginPortalEnter('/poems', 'poems')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                } ${isTarget('poems') ? 'portal-target-active' : ''} ${
+                  isOther('poems') ? 'portal-target-dim' : ''
                 }`}
                 style={revealStyle(1350, 1600)}
               >
@@ -242,8 +336,11 @@ export default function HomeSlide({
               </Link>{' '}
               <Link
                 href="/images"
+                onClick={beginPortalEnter('/images', 'images')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'lit-word-active' : 'lit-word-idle'
+                } ${isTarget('images') ? 'portal-target-active' : ''} ${
+                  isOther('images') ? 'portal-target-dim' : ''
                 }`}
                 style={revealStyle(1520, 1800)}
               >
@@ -251,8 +348,11 @@ export default function HomeSlide({
               </Link>{' '}
               <Link
                 href="/notes"
+                onClick={beginPortalEnter('/notes', 'notes')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'lit-word-active' : 'lit-word-idle'
+                } ${isTarget('notes') ? 'portal-target-active' : ''} ${
+                  isOther('notes') ? 'portal-target-dim' : ''
                 }`}
                 style={revealStyle(1680, 1900)}
               >
@@ -260,8 +360,11 @@ export default function HomeSlide({
               </Link>{' '}
               <Link
                 href="/about"
+                onClick={beginPortalEnter('/about', 'about')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                } ${isTarget('about') ? 'portal-target-active' : ''} ${
+                  isOther('about') ? 'portal-target-dim' : ''
                 }`}
                 style={revealStyle(1460, 1600)}
               >
@@ -273,7 +376,9 @@ export default function HomeSlide({
           <div
             className={`home-signature pointer-events-none transition-all ease-out ${
               active ? 'lit-signature-active' : 'lit-signature-idle'
-            } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'}`}
+            } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'} ${
+              isEntering ? 'portal-signature-soften' : ''
+            }`}
             style={revealStyle(1860, 2200)}
           >
             {signature}
@@ -282,7 +387,9 @@ export default function HomeSlide({
           <div
             className={`home-meta pointer-events-none transition-all ease-out ${
               active ? 'meta-active' : 'meta-idle'
-            } ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'}`}
+            } ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'} ${
+              isEntering ? 'portal-meta-soften' : ''
+            }`}
             style={revealStyle(2080, 1800)}
           >
             {domainText}
@@ -331,9 +438,7 @@ export default function HomeSlide({
           border-radius: 999px;
           opacity: 0;
           transform: scaleX(0.9);
-          transition:
-            opacity 1800ms ease,
-            transform 1800ms ease;
+          transition: opacity 1800ms ease, transform 1800ms ease;
           background: radial-gradient(
             circle at 50% 50%,
             rgba(255, 255, 255, 0.22),
@@ -345,8 +450,7 @@ export default function HomeSlide({
 
         .lit-word-idle {
           color: rgba(233, 231, 225, 0.72);
-          text-shadow:
-            0 0 0 rgba(255, 255, 255, 0),
+          text-shadow: 0 0 0 rgba(255, 255, 255, 0),
             0 0 0 rgba(255, 255, 255, 0);
           opacity: 0;
           transform: translateY(10px);
@@ -355,8 +459,7 @@ export default function HomeSlide({
 
         .lit-word-active {
           color: rgba(249, 248, 244, 0.96);
-          text-shadow:
-            0 0 8px rgba(255, 255, 255, 0.14),
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.14),
             0 0 24px rgba(255, 255, 255, 0.08),
             0 0 54px rgba(255, 255, 255, 0.06);
         }
@@ -376,8 +479,7 @@ export default function HomeSlide({
 
         .dimmed-word-active {
           color: rgba(220, 216, 207, 0.68);
-          text-shadow:
-            0 0 8px rgba(255, 255, 255, 0.03),
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.03),
             0 0 18px rgba(255, 255, 255, 0.02);
         }
 
@@ -396,8 +498,7 @@ export default function HomeSlide({
 
         .lit-signature-active {
           color: rgba(238, 236, 229, 0.92);
-          text-shadow:
-            0 0 10px rgba(255, 255, 255, 0.12),
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.12),
             0 0 26px rgba(255, 255, 255, 0.07),
             0 0 58px rgba(255, 255, 255, 0.05);
           opacity: 1;
@@ -418,6 +519,34 @@ export default function HomeSlide({
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
+        }
+
+        .portal-target-active {
+          transform: translateY(-1px) scale(1.024) !important;
+          filter: blur(0) !important;
+        }
+
+        .portal-target-active::after {
+          opacity: 1 !important;
+          transform: scaleX(1.06) !important;
+        }
+
+        .portal-target-dim {
+          opacity: 0.32 !important;
+          filter: blur(2px) !important;
+          transform: translateY(2px) scale(0.992) !important;
+        }
+
+        .portal-signature-soften {
+          opacity: 0.58 !important;
+          filter: blur(2px) !important;
+          transform: translateY(2px) !important;
+        }
+
+        .portal-meta-soften {
+          opacity: 0.38 !important;
+          filter: blur(3px) !important;
+          transform: translateY(3px) !important;
         }
       `}</style>
     </section>
