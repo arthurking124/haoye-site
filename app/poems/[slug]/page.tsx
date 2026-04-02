@@ -1,10 +1,12 @@
 export const revalidate = 60
 
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { PortableText } from '@portabletext/react'
+
 import { sanityClient } from '@/lib/sanity.client'
 import { poemBySlugQuery } from '@/lib/queries'
-import { PortableText } from '@portabletext/react'
 import { urlFor } from '@/lib/sanity.image'
-import Link from 'next/link'
 
 export default async function PoemDetailPage({
   params,
@@ -13,6 +15,10 @@ export default async function PoemDetailPage({
 }) {
   const { slug } = await params
   const poem = await sanityClient.fetch(poemBySlugQuery, { slug })
+
+  if (!poem) {
+    notFound()
+  }
 
   return (
     <div className="mx-auto max-w-[980px] px-6 py-28 md:px-8 md:py-36">
