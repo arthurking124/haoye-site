@@ -13,7 +13,6 @@ type HomeSlideProps = {
   total?: number
   active?: boolean
   mobile?: boolean
-  // === 🚀 新增：接收 3D 偏移信号 ===
   parallax?: { rotateX: number; rotateY: number; tx: number; ty: number }
 }
 
@@ -28,8 +27,7 @@ export default function HomeSlide({
   total = 4,
   active = false,
   mobile = false,
-  // 默认静止状态
-  parallax = { rotateX: 0, rotateY: 0, tx: 0, ty: 0 }
+  parallax = { rotateX: 0, rotateY: 0, tx: 0, ty: 0 },
 }: HomeSlideProps) {
   const basePosition =
     align === 'left'
@@ -44,89 +42,144 @@ export default function HomeSlide({
       ? 'left-1/2 top-[56%] -translate-x-1/2 text-center'
       : 'left-1/2 top-[60%] -translate-x-1/2 text-center'
 
+  const bgRotateX = isLast ? parallax.rotateX * 0.38 : parallax.rotateX * 0.34
+  const bgRotateY = isLast ? parallax.rotateY * 0.38 : parallax.rotateY * 0.34
+  const bgTx = isLast ? parallax.tx * 0.3 : parallax.tx * 0.22
+  const bgTy = isLast ? parallax.ty * 0.3 : parallax.ty * 0.22
+
+  const atmosphereTx = isLast ? parallax.tx * 0.12 : 0
+  const atmosphereTy = isLast ? parallax.ty * 0.12 : 0
+
+  const backgroundTransform = `
+    perspective(1200px)
+    rotateX(${bgRotateX}deg)
+    rotateY(${bgRotateY}deg)
+    translate3d(${bgTx}px, ${bgTy}px, 0)
+    scale(${isLast ? 1.02 : 1.018})
+  `
+
+  const atmosphereTransform = `
+    translate3d(${atmosphereTx}px, ${atmosphereTy}px, 0)
+    scale(1.01)
+  `
+
   return (
     <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
       {imageUrl ? (
         <>
-          {/* === 🚀 构图保卫战：精准隔离层 === */}
-          <div 
-            className="absolute inset-0 z-0 pointer-events-none"
+          <div
+            className="pointer-events-none absolute inset-0 z-0"
             style={{ perspective: '1200px' }}
           >
-            {/* === 🚀 核心逻辑修改点 ===
-                1. 将 scale(1.1) 修改为极致克制的 scale(1.02)
-                为了保住十字光的顶部留白和幽远的距离感，我们只放大 2%
-                
-                2. 减小 rotate 幅度
-                由于 scale 倍数极小，我们需要配合把 rotation 的幅度也减小，防止边缘漏黑。
-                
-                3. 增加 background-size: 100% 确保图片在容器内不被拉伸
-            */}
             <div
+              className="absolute"
               style={{
-                // 1. 将旋转角度从之前代码的 2度/1.5度 压低到极致克制的 0.8度。
-                // 这里的 1.02 是黄金比例，它几乎察觉不到放大，且保住了十字光的顶部间距。
-                transform: `
-                  perspective(1200px) 
-                  rotateX(${parallax.rotateX * 0.4}deg) 
-                  rotateY(${parallax.rotateY * 0.4}deg) 
-                  translate3d(${parallax.tx * 0.3}px, ${parallax.ty * 0.3}px, 0) 
-                  scale(1.02)
-                `,
+                transform: backgroundTransform,
                 transition: 'transform 1400ms cubic-bezier(0.2, 0.5, 0.3, 1)',
                 willChange: 'transform',
-                // 确保图片容器比 section 稍微大一点，给旋转腾出微小空间
                 width: 'calc(100% + 12px)',
                 height: 'calc(100% + 12px)',
                 top: '-6px',
-                left: '-6px'
+                left: '-6px',
               }}
-              className="absolute"
             >
-              {/* 基础图片层 - 100% 原始 className，但我帮你精简了 redundant 逻辑 */}
               <div
-                className={`absolute inset-0 bg-cover bg-center transition-transform duration-[1400ms] ease-out ${
-                  active ? 'opacity-100' : 'opacity-100'
-                }`}
+                className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${imageUrl})` }}
               />
 
-              {/* --- 皓野专属：光之教堂渲染层 --- 100% 原始代码 --- */}
-              {index === 3 && (
-                <div 
-                  className={`pointer-events-none absolute inset-0 z-[1] transition-opacity ease-in-out ${
-                    // delay 700 保留
-                    active ? 'opacity-100 duration-[4000ms] delay-700' : 'opacity-0 duration-[1000ms]'
-                  }`}
-                >
-                  <div 
-                    className="absolute inset-0 bg-gradient-to-b from-white/[0.15] via-white/[0.05] to-transparent"
+              {isLast && (
+                <>
+                  <div
+                    className={`absolute inset-0 transition-opacity duration-[2200ms] ease-out ${
+                      active ? 'opacity-100' : 'opacity-0'
+                    }`}
                     style={{
-                      clipPath: 'polygon(49.7% 0.1%, 50.7% 0.1%, 58% 100%, 42% 100%)',
+                      transform: atmosphereTransform,
+                      transitionProperty: 'transform, opacity',
+                      background:
+                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.06), transparent 30%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.045), transparent 42%)',
                       mixBlendMode: 'screen',
-                      filter: 'blur(45px) drop-shadow(0 0 35px rgba(255,255,255,0.3))',
-                      animation: active ? 'church-beam-sculpt 14s ease-in-out infinite' : 'none',
-                      transformOrigin: 'top center',
+                      filter: 'blur(24px)',
                     }}
                   />
-                </div>
+
+                  <div
+                    className={`absolute inset-0 z-[1] transition-opacity ease-in-out ${
+                      active
+                        ? 'opacity-100 duration-[4200ms] delay-500'
+                        : 'opacity-0 duration-[900ms]'
+                    }`}
+                  >
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          'linear-gradient(to bottom, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 28%, rgba(255,255,255,0.02) 52%, transparent 100%)',
+                        clipPath: 'polygon(49.72% 0.1%, 50.72% 0.1%, 58% 100%, 42% 100%)',
+                        mixBlendMode: 'screen',
+                        filter:
+                          'blur(42px) drop-shadow(0 0 28px rgba(255,255,255,0.22))',
+                        animation: active ? 'church-beam-breathe 14s ease-in-out infinite' : 'none',
+                        transformOrigin: 'top center',
+                      }}
+                    />
+
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          'linear-gradient(to bottom, rgba(255,255,255,0.22), rgba(255,255,255,0.07) 24%, transparent 72%)',
+                        clipPath: 'polygon(49.9% 0%, 50.45% 0%, 54.5% 100%, 45.5% 100%)',
+                        mixBlendMode: 'screen',
+                        filter: 'blur(18px)',
+                        opacity: active ? 0.72 : 0,
+                        transition: 'opacity 2400ms ease 700ms',
+                      }}
+                    />
+
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        background:
+                          'linear-gradient(to bottom, rgba(255,255,255,0.06), transparent 60%)',
+                        clipPath: 'polygon(49.95% 0%, 50.15% 0%, 51.4% 100%, 48.6% 100%)',
+                        mixBlendMode: 'screen',
+                        filter: 'blur(8px)',
+                        opacity: active ? 0.5 : 0,
+                        transition: 'opacity 2200ms ease 900ms',
+                      }}
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>
 
-          {/* 原始遮罩层 - 100% 原始代码 */}
-          <div className="pointer-events-none absolute inset-0 bg-black/48 z-[2]" />
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)] z-[2]" />
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))] z-[2]" />
-          {isLast && <div className="pointer-events-none absolute inset-0 bg-black/22 z-[2]" />}
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-black/48" />
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
+          <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
+
+          {isLast && (
+            <>
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-black/22" />
+              <div
+                className={`pointer-events-none absolute inset-0 z-[3] transition-opacity duration-[1800ms] ease-out ${
+                  active ? 'opacity-100' : 'opacity-0'
+                }`}
+                style={{
+                  background:
+                    'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.035), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.025), transparent 22%)',
+                  mixBlendMode: 'screen',
+                }}
+              />
+            </>
+          )}
         </>
       ) : (
         <div className="pointer-events-none absolute inset-0 bg-[#0B0B0C]" />
       )}
 
-      {/* 排版逻辑 - 100% 原始，绝不动一个像素 */}
-      
-      {/* 页码 */}
       <div
         className={`pointer-events-none absolute z-10 home-index ${
           mobile
@@ -145,9 +198,7 @@ export default function HomeSlide({
         >
           <p
             className={`home-line max-w-[760px] ${
-              mobile
-                ? 'text-[22px] leading-[1.42]'
-                : 'text-[24px] leading-[1.48] md:text-[42px]'
+              mobile ? 'text-[22px] leading-[1.42]' : 'text-[24px] leading-[1.48] md:text-[42px]'
             }`}
           >
             {text}
@@ -175,27 +226,62 @@ export default function HomeSlide({
             }`}
           >
             <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
-              <Link href="/poems" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">诗</Link>{' '}
-              <Link href="/images" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">影</Link>{' '}
-              <Link href="/notes" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">与</Link>{' '}
-              <Link href="/about" className="pointer-events-auto transition-colors duration-300 hover:text-white/90">我</Link>
+              <Link
+                href="/poems"
+                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+              >
+                诗
+              </Link>{' '}
+              <Link
+                href="/images"
+                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+              >
+                影
+              </Link>{' '}
+              <Link
+                href="/notes"
+                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+              >
+                与
+              </Link>{' '}
+              <Link
+                href="/about"
+                className="pointer-events-auto transition-colors duration-300 hover:text-white/90"
+              >
+                我
+              </Link>
             </div>
           </div>
 
-          <div className={`home-signature pointer-events-none text-[#C9C7C2] ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'}`}>
+          <div
+            className={`home-signature pointer-events-none text-[#C9C7C2] ${
+              mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
+            }`}
+          >
             {signature}
           </div>
-          <div className={`home-meta pointer-events-none text-[#7F7D79] ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'}`}>
+
+          <div
+            className={`home-meta pointer-events-none text-[#7F7D79] ${
+              mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
+            }`}
+          >
             {domainText}
           </div>
         </div>
       )}
 
-      {/* 原始 Keyframes 样式 */}
       <style jsx>{`
-        @keyframes church-beam-sculpt {
-          0%, 100% { opacity: 0; transform: scaleY(0.98); }
-          50% { opacity: 0.85; transform: scaleY(1.05); }
+        @keyframes church-beam-breathe {
+          0%,
+          100% {
+            opacity: 0.12;
+            transform: scaleY(0.992);
+          }
+          50% {
+            opacity: 0.88;
+            transform: scaleY(1.04);
+          }
         }
       `}</style>
     </section>
