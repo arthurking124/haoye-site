@@ -7,6 +7,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
+import PageShell from '@/components/layout/PageShell'
 import SoundToggle from '@/components/ui/SoundToggle'
 
 const inter = Inter({
@@ -78,7 +79,9 @@ export default function RootLayout({
         className={`${inter.variable} ${notoSerifSC.variable} bg-[#0D0D0D] text-[#F2F1EE] antialiased`}
       >
         <Header />
-        <main>{children}</main>
+        <main>
+          <PageShell>{children}</PageShell>
+        </main>
         <Footer />
         <SoundToggle />
         <Analytics />
