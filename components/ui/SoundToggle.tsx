@@ -180,13 +180,40 @@ export default function SoundToggle() {
     await playAmbient(currentTargetVolumeRef.current)
   }
 
+  if (!isHydrated) return null
+
   return (
     <button
       onClick={toggleAudio}
-      className="fixed bottom-10 right-6 z-[999] text-[11px] tracking-[0.22em] text-[#8E8C88] transition-colors duration-300 hover:text-[#C9C7C2] md:bottom-8 md:right-8"
       type="button"
+      aria-pressed={soundEnabled}
+      aria-label={soundEnabled ? 'Turn sound off' : 'Turn sound on'}
+      className="
+        fixed bottom-6 right-6 z-[999]
+        inline-flex items-center gap-3
+        rounded-full border border-white/8
+        bg-[rgba(13,13,13,0.44)] px-3 py-2
+        text-[10px] tracking-[0.22em] text-[#8E8C88]
+        backdrop-blur-md
+        transition-all duration-300
+        hover:border-white/12 hover:text-[#C9C7C2]
+        md:bottom-8 md:right-8 md:px-3.5 md:py-2.5 md:text-[11px]
+      "
     >
-      {soundEnabled ? 'Sound Off' : 'Sound On'}
+      <span className="relative flex h-2 w-2 items-center justify-center">
+        <span
+          className={`absolute h-2 w-2 rounded-full transition-all duration-500 ${
+            soundEnabled ? 'bg-[#D7D3CC]/80' : 'bg-white/18'
+          }`}
+        />
+        {soundEnabled ? (
+          <span className="absolute h-4 w-4 rounded-full border border-white/10 opacity-70" />
+        ) : null}
+      </span>
+
+      <span className="site-nav">
+        {soundEnabled ? 'Sound Off' : 'Sound On'}
+      </span>
     </button>
   )
 }
