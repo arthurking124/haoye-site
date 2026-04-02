@@ -63,6 +63,11 @@ export default function HomeSlide({
     scale(1.01)
   `
 
+  const revealStyle = (delay: number, duration = 1800) => ({
+    transitionDelay: active ? `${delay}ms` : '0ms',
+    transitionDuration: `${duration}ms`,
+  })
+
   return (
     <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
       {imageUrl ? (
@@ -214,9 +219,9 @@ export default function HomeSlide({
         </div>
       ) : (
         <div
-          className={`absolute z-10 ${basePosition} transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`absolute z-10 ${basePosition} ${
             active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-          }`}
+          } transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)]`}
         >
           <div
             className={`home-entry ${
@@ -228,33 +233,37 @@ export default function HomeSlide({
             <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
               <Link
                 href="/poems"
-                className={`pointer-events-auto illuminated-text transition-all duration-[1800ms] ${
+                className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'dimmed-word-active' : 'dimmed-word-idle'
                 }`}
+                style={revealStyle(1350, 1600)}
               >
                 诗
               </Link>{' '}
               <Link
                 href="/images"
-                className={`pointer-events-auto illuminated-text transition-all duration-[2200ms] ${
+                className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'lit-word-active' : 'lit-word-idle'
                 }`}
+                style={revealStyle(1520, 1800)}
               >
                 影
               </Link>{' '}
               <Link
                 href="/notes"
-                className={`pointer-events-auto illuminated-text transition-all duration-[2400ms] ${
+                className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'lit-word-active' : 'lit-word-idle'
                 }`}
+                style={revealStyle(1680, 1900)}
               >
                 与
               </Link>{' '}
               <Link
                 href="/about"
-                className={`pointer-events-auto illuminated-text transition-all duration-[1800ms] ${
+                className={`pointer-events-auto illuminated-text transition-all ease-out ${
                   active ? 'dimmed-word-active' : 'dimmed-word-idle'
                 }`}
+                style={revealStyle(1460, 1600)}
               >
                 我
               </Link>
@@ -262,21 +271,19 @@ export default function HomeSlide({
           </div>
 
           <div
-            className={`home-signature pointer-events-none transition-all duration-[2400ms] ${
+            className={`home-signature pointer-events-none transition-all ease-out ${
               active ? 'lit-signature-active' : 'lit-signature-idle'
-            } ${
-              mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'
-            }`}
+            } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'}`}
+            style={revealStyle(1860, 2200)}
           >
             {signature}
           </div>
 
           <div
-            className={`home-meta pointer-events-none transition-all duration-[1800ms] ${
+            className={`home-meta pointer-events-none transition-all ease-out ${
               active ? 'meta-active' : 'meta-idle'
-            } ${
-              mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'
-            }`}
+            } ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'}`}
+            style={revealStyle(2080, 1800)}
           >
             {domainText}
           </div>
@@ -299,6 +306,18 @@ export default function HomeSlide({
         .illuminated-text {
           position: relative;
           display: inline-block;
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(8px);
+        }
+
+        .lit-word-active,
+        .dimmed-word-active,
+        .lit-signature-active,
+        .meta-active {
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
         }
 
         .illuminated-text::after {
@@ -329,6 +348,9 @@ export default function HomeSlide({
           text-shadow:
             0 0 0 rgba(255, 255, 255, 0),
             0 0 0 rgba(255, 255, 255, 0);
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(8px);
         }
 
         .lit-word-active {
@@ -347,6 +369,9 @@ export default function HomeSlide({
         .dimmed-word-idle {
           color: rgba(207, 204, 197, 0.56);
           text-shadow: none;
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(8px);
         }
 
         .dimmed-word-active {
@@ -364,6 +389,9 @@ export default function HomeSlide({
         .lit-signature-idle {
           color: rgba(201, 199, 194, 0.72);
           text-shadow: none;
+          opacity: 0;
+          transform: translateY(10px);
+          filter: blur(10px);
         }
 
         .lit-signature-active {
@@ -372,15 +400,24 @@ export default function HomeSlide({
             0 0 10px rgba(255, 255, 255, 0.12),
             0 0 26px rgba(255, 255, 255, 0.07),
             0 0 58px rgba(255, 255, 255, 0.05);
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
         }
 
         .meta-idle {
           color: rgba(127, 125, 121, 0.72);
+          opacity: 0;
+          transform: translateY(8px);
+          filter: blur(8px);
         }
 
         .meta-active {
           color: rgba(154, 151, 145, 0.82);
           text-shadow: 0 0 18px rgba(255, 255, 255, 0.03);
+          opacity: 1;
+          transform: translateY(0);
+          filter: blur(0);
         }
       `}</style>
     </section>
