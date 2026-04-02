@@ -45,7 +45,66 @@ export default async function AboutPage() {
 
             <div className="max-w-[640px]">
               {about.body ? (
-                <div className="about-body prose prose-invert max-w-none">
+                <div
+                  className="
+                    max-w-none
+                    [&_p]:mb-[1.35em]
+                    [&_p]:text-[15px]
+                    [&_p]:leading-[2.05]
+                    [&_p]:text-[#D7D3CC]
+                    [&_p:last-child]:mb-0
+
+                    [&_h2]:mt-[2.1em]
+                    [&_h2]:mb-[0.8em]
+                    [&_h2]:text-[26px]
+                    [&_h2]:font-light
+                    [&_h2]:leading-[1.45]
+                    [&_h2]:tracking-[0.04em]
+                    [&_h2]:text-[#F2F1EE]
+
+                    [&_h3]:mt-[2.1em]
+                    [&_h3]:mb-[0.8em]
+                    [&_h3]:text-[20px]
+                    [&_h3]:font-light
+                    [&_h3]:leading-[1.5]
+                    [&_h3]:tracking-[0.04em]
+                    [&_h3]:text-[#F2F1EE]
+
+                    [&_h4]:mt-[2.1em]
+                    [&_h4]:mb-[0.8em]
+                    [&_h4]:font-light
+                    [&_h4]:leading-[1.5]
+                    [&_h4]:tracking-[0.04em]
+                    [&_h4]:text-[#F2F1EE]
+
+                    [&_ul]:mb-[1.4em]
+                    [&_ul]:pl-[1.1em]
+                    [&_ul]:text-[#D7D3CC]
+
+                    [&_ol]:mb-[1.4em]
+                    [&_ol]:pl-[1.1em]
+                    [&_ol]:text-[#D7D3CC]
+
+                    [&_li]:my-[0.45em]
+                    [&_li]:leading-[1.95]
+
+                    [&_a]:border-b
+                    [&_a]:border-[rgba(215,211,204,0.18)]
+                    [&_a]:text-[#D7D3CC]
+                    [&_a]:no-underline
+                    [&_a]:transition-colors
+                    [&_a]:duration-200
+                    hover:[&_a]:text-[#F2F1EE]
+
+                    [&_strong]:font-normal
+                    [&_strong]:text-[#F2F1EE]
+
+                    md:[&_p]:text-[16px]
+                    md:[&_p]:leading-[2.12]
+                    md:[&_h2]:text-[30px]
+                    md:[&_h3]:text-[22px]
+                  "
+                >
                   <PortableText value={about.body} />
                 </div>
               ) : (
@@ -57,84 +116,6 @@ export default async function AboutPage() {
           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        .about-body p {
-          margin: 0 0 1.35em 0;
-          color: #d7d3cc;
-          font-size: 15px;
-          line-height: 2.05;
-        }
-
-        .about-body p:last-child {
-          margin-bottom: 0;
-        }
-
-        .about-body h2,
-        .about-body h3,
-        .about-body h4 {
-          margin: 2.1em 0 0.8em 0;
-          font-weight: 300;
-          letter-spacing: 0.04em;
-          color: #f2f1ee;
-        }
-
-        .about-body h2 {
-          font-size: 26px;
-          line-height: 1.45;
-        }
-
-        .about-body h3 {
-          font-size: 20px;
-          line-height: 1.5;
-        }
-
-        .about-body ul,
-        .about-body ol {
-          margin: 0 0 1.4em 0;
-          padding-left: 1.1em;
-          color: #d7d3cc;
-        }
-
-        .about-body li {
-          margin: 0.45em 0;
-          line-height: 1.95;
-        }
-
-        .about-body a {
-          color: #d7d3cc;
-          text-decoration: none;
-          border-bottom: 1px solid rgba(215, 211, 204, 0.18);
-          transition:
-            color 220ms ease,
-            border-color 220ms ease;
-        }
-
-        .about-body a:hover {
-          color: #f2f1ee;
-          border-color: rgba(242, 241, 238, 0.45);
-        }
-
-        .about-body strong {
-          color: #f2f1ee;
-          font-weight: 400;
-        }
-
-        @media (min-width: 768px) {
-          .about-body p {
-            font-size: 16px;
-            line-height: 2.12;
-          }
-
-          .about-body h2 {
-            font-size: 30px;
-          }
-
-          .about-body h3 {
-            font-size: 22px;
-          }
-        }
-      `}</style>
     </div>
   )
 }
