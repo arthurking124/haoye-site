@@ -203,6 +203,20 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }
   }, [current, goTo, introVisible, isMobile])
 
+  useEffect(() => {
+    if (introVisible) return
+
+    window.dispatchEvent(new CustomEvent('haoye:intro-ready'))
+  }, [introVisible])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('haoye:screen-change', {
+        detail: { index: current },
+      })
+    )
+  }, [current])
+
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX
   }
