@@ -3,86 +3,124 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import HomeSlide from './HomeSlide'
 
-type HomeSequenceProps = {
-  settings: any
+type Settings = {
+  homeScreen1Text?: string
+  homeScreen1ImageUrl?: string
+  homeScreen2Text?: string
+  homeScreen2ImageUrl?: string
+  homeScreen3Text?: string
+  homeScreen3ImageUrl?: string
+  homeScreen4Text?: string
+  homeScreen4ImageUrl?: string
+  signature?: string
+  domainText?: string
 }
 
-export default function HomeSequence({ settings }: HomeSequenceProps) {
-  const [current, setCurrent] = useState(0)
-  const [isMobile, setIsMobile] = useState(false)
-  
-  // === 🚀 高级交互：定义 3D 视轴偏移状态 ===
-  const [parallax, setParallax] = useState({ rotateX: 0, rotateY: 0, tx: 0, ty: 0 })
-  
-  const isAnimatingRef = useRef(false)
-  const touchStartX = useRef<number | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
+type Slide = {
+  theme: 'distant' | 'approach' | 'weight' | 'portal'
+  align: 'left' | 'right' | 'center'
+  eyebrow: string
+  caption?: string
+  text?: string
+  imageUrl?: string
+  isLast?: boolean
+}
 
-  const slides = useMemo(
+export default function HomeSequence({ settings }: { settings: Settings }) {
+  const [current, setCurrent] = useState(0)
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false)
+
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const animationLockRef = useRef(false)
+  const touchStartX = useRef<number | null>(null)
+
+  const target = useRef({ x: 0, y: 0, rx: 0, ry: 0 })
+  const live = useRef({ x: 0, y: 0, rx: 0, ry: 0 })
+
+  const slides = useMemo<Slide[]>(
     () => [
       {
-        text: settings?.homeScreen1Text,
-        bg: settings?.homeScreen1ImageUrl,
-        align: 'left' as const,
+        theme: 'distant',
+        align: 'left',
+        eyebrow: 'Act I · Exposure',
+        text: settings?.homeScreen1Text || '沉默也需要空间。',
+        caption: '不是欢迎，不是说明。只是让一个空间，先从黑里慢慢亮起来。',
+        imageUrl: settings?.homeScreen1ImageUrl,
       },
       {
-        text: settings?.homeScreen2Text,
-        bg: settings?.homeScreen2ImageUrl,
-        align: 'left' as const,
+        theme: 'approach',
+        align: 'left',
+        eyebrow: 'Act II · Approach',
+        text: settings?.homeScreen2Text || '靠近以后，光才开始带出时间。',
+        caption: '第二幕不再只是看见，而是向内部再走近一步。',
+        imageUrl: settings?.homeScreen2ImageUrl,
       },
       {
-        text: settings?.homeScreen3Text,
-        bg: settings?.homeScreen3ImageUrl,
-        align: 'right' as const,
+        theme: 'weight',
+        align: 'right',
+        eyebrow: 'Act III · Weight',
+        text: settings?.homeScreen3Text || '光停下来的地方，时间才开始说话。',
+        caption: '这里不是气氛，而是整个网站真正的精神重心。',
+        imageUrl: settings?.homeScreen3ImageUrl,
       },
       {
-        text: settings?.homeScreen4Text,
-        bg: settings?.homeScreen4ImageUrl,
-        align: 'center' as const,
+        theme: 'portal',
+        align: 'center',
+        eyebrow: 'Act IV · Portal',
+        text: settings?.homeScreen4Text || '从这里进入，不同的沉默会通往不同的房间。',
+        caption: '最后一幕不是结尾，而是门被打开的时刻。',
+        imageUrl: settings?.homeScreen4ImageUrl,
         isLast: true,
       },
     ],
     [settings]
   )
 
-  // === 🚀 高级交互：计算 3D 物理透视逻辑 ===
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (isMobile) return
-
-    const { clientX, clientY } = e
-    const { innerWidth, innerHeight } = window
-
-    // 计算鼠标相对于中心的坐标 (-1 到 1)
-    const x = (clientX / innerWidth) * 2 - 1
-    const y = (clientY / innerHeight) * 2 - 1
-
-    setParallax({
-      rotateY: x * 2,    // 绕 Y 轴旋转（左右倾斜）
-      rotateX: y * -2,   // 绕 X 轴旋转（上下倾斜）
-      tx: x * -10,       // 极微小的平移偏移
-      ty: y * -10
-    })
-  }
-
   const goTo = (nextIndex: number) => {
-    if (isAnimatingRef.current) return
+    if (animationLockRef.current) return
     if (nextIndex < 0 || nextIndex > slides.length - 1) return
 
-    isAnimatingRef.current = true
+    animationLockRef.current = true
     setCurrent(nextIndex)
 
     window.setTimeout(() => {
-      isAnimatingRef.current = false
-    }, 900)
+      animationLockRef.current = false
+    }, 1100)
   }
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+    const media = window.matchMedia('(pointer: coarse)')
+    const onChange = () => setIsCoarsePointer(media.matches)
+
+    onChange()
+    media.addEventListener?.('change', onChange)
+
+    return () => media.removeEventListener?.('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    let raf = 0
+
+    const render = () => {
+      live.current.x += (target.current.x - live.current.x) * 0.08
+      live.current.y += (target.current.y - live.current.y) * 0.08
+      live.current.rx += (target.current.rx - live.current.rx) * 0.08
+      live.current.ry += (target.current.ry - live.current.ry) * 0.08
+
+      node.style.setProperty('--parallax-x', `${live.current.x}px`)
+      node.style.setProperty('--parallax-y', `${live.current.y}px`)
+      node.style.setProperty('--parallax-rx', `${live.current.rx}deg`)
+      node.style.setProperty('--parallax-ry', `${live.current.ry}deg`)
+
+      raf = window.requestAnimationFrame(render)
     }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+
+    raf = window.requestAnimationFrame(render)
+
+    return () => window.cancelAnimationFrame(raf)
   }, [])
 
   useEffect(() => {
@@ -90,16 +128,13 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     document.body.style.overflow = 'hidden'
 
     const onWheel = (e: WheelEvent) => {
-      if (isMobile) return
+      if (isCoarsePointer) return
       e.preventDefault()
-      if (isAnimatingRef.current) return
-      if (Math.abs(e.deltaY) < 20) return
+      if (animationLockRef.current) return
+      if (Math.abs(e.deltaY) < 24) return
 
-      if (e.deltaY > 0) {
-        goTo(current + 1)
-      } else {
-        goTo(current - 1)
-      }
+      if (e.deltaY > 0) goTo(current + 1)
+      else goTo(current - 1)
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -115,7 +150,25 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [current, isMobile])
+  }, [current, isCoarsePointer])
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isCoarsePointer) return
+
+    const x = e.clientX / window.innerWidth - 0.5
+    const y = e.clientY / window.innerHeight - 0.5
+
+    target.current = {
+      x: x * -22,
+      y: y * -22,
+      rx: x * 3.2,
+      ry: y * -3.2,
+    }
+  }
+
+  const handleMouseLeave = () => {
+    target.current = { x: 0, y: 0, rx: 0, ry: 0 }
+  }
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX
@@ -123,53 +176,48 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     if (touchStartX.current === null) return
-    const endX = e.changedTouches[0].clientX
-    const diff = touchStartX.current - endX
-    if (Math.abs(diff) > 40) {
+
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 42) {
       if (diff > 0) goTo(current + 1)
       else goTo(current - 1)
     }
+
     touchStartX.current = null
   }
 
   return (
     <div
       ref={containerRef}
-      className="relative h-screen w-screen overflow-hidden bg-black"
+      className="haoye-home"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      // === 挂载鼠标监听 ===
-      onMouseMove={handleMouseMove}
     >
       <div
-        className="pointer-events-none flex h-screen transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{ transform: `translateX(-${current * 100}vw)` }}
+        className="haoye-home__track"
+        style={{ transform: `translate3d(-${current * 100}vw, 0, 0)` }}
       >
         {slides.map((slide, index) => (
           <HomeSlide
-            key={index}
-            imageUrl={slide.bg}
-            text={slide.text}
-            signature={settings?.signature}
-            domainText={settings?.domainText}
-            align={slide.align}
-            isLast={!!slide.isLast}
+            key={`${slide.theme}-${index}`}
             index={index}
             total={slides.length}
             active={current === index}
-            mobile={isMobile}
-            // === 🚀 关键：将 3D 偏移量传递给每一个 Slide ===
-            parallax={parallax}
+            signature={settings?.signature || '皓野'}
+            domainText={settings?.domainText || 'haoye.cyou'}
+            {...slide}
           />
         ))}
       </div>
 
-      {!isMobile && (
+      {!isCoarsePointer && (
         <>
           <button
             type="button"
             onClick={() => goTo(current - 1)}
-            className="pointer-events-auto fixed left-6 top-1/2 z-[60] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
+            className="haoye-home__side-btn is-left"
             aria-label="Previous slide"
           >
             ‹
@@ -178,34 +226,24 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
           <button
             type="button"
             onClick={() => goTo(current + 1)}
-            className="pointer-events-auto fixed right-6 top-1/2 z-[60] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
+            className="haoye-home__side-btn is-right"
             aria-label="Next slide"
           >
             ›
           </button>
+
+          <div className="haoye-home__hint font-ui">Scroll / Arrow Keys</div>
         </>
       )}
 
-      <div
-        className={`pointer-events-auto fixed left-1/2 z-[60] -translate-x-1/2 flex gap-2 ${
-          isMobile ? 'bottom-12' : 'bottom-8'
-        }`}
-      >
-        {slides.map((_: any, index: number) => (
+      <div className="haoye-home__dots">
+        {slides.map((_, index) => (
           <button
             key={index}
             onClick={() => goTo(index)}
-            className={`h-[3px] rounded-full transition-all duration-500 ${
-              current === index
-                ? isMobile
-                  ? 'w-8 bg-white/55'
-                  : 'w-10 bg-white/65'
-                : isMobile
-                ? 'w-5 bg-white/12'
-                : 'w-6 bg-white/15'
-            }`}
-            aria-label={`Go to screen ${index + 1}`}
             type="button"
+            aria-label={`Go to slide ${index + 1}`}
+            className={`haoye-home__dot ${current === index ? 'is-active' : ''}`}
           />
         ))}
       </div>

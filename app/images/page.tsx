@@ -1,65 +1,62 @@
 export const revalidate = 60
 
+import Link from 'next/link'
 import { sanityClient } from '@/lib/sanity.client'
 import { allImageSeriesQuery } from '@/lib/queries'
 import { urlFor } from '@/lib/sanity.image'
-import Link from 'next/link'
+
+type ImageSeries = {
+  _id: string
+  title: string
+  slug: { current: string }
+  subtitle?: string
+  images?: any[]
+}
 
 export default async function ImagesPage() {
-  const items = await sanityClient.fetch(allImageSeriesQuery)
+  const items = await sanityClient.fetch<ImageSeries[]>(allImageSeriesQuery)
 
   return (
-    <div className="mx-auto max-w-[1480px] px-6 py-28 md:px-8 md:py-36">
-      <div className="mx-auto max-w-[1160px]">
-        <div className="max-w-[560px]">
-          <h1 className="home-line text-[42px] leading-[1.15] text-[#F2F1EE] md:text-[60px]">
-            影
-          </h1>
-          <p className="mt-4 text-[15px] leading-[1.95] text-[#C9C7C2] md:text-[16px]">
-            光、空间，以及被截留下来的图像。
-          </p>
-        </div>
+    <div className="page-shell">
+      <div className="page-hero">
+        <div className="page-kicker font-ui">Main Stage · Images</div>
+        <h1 className="page-title home-line">影</h1>
+        <p className="page-subtitle">
+          这里不只是图像归档，而是一组组被安排过的进入。每一个系列，都应该像一间不同的房间：
+          光的方向不同，沉默的密度不同，时间停住的方式也不同。
+        </p>
+      </div>
 
-        <div className="mt-20 md:mt-24">
-          <div className="space-y-20 md:space-y-28">
-            {items.map((item: any) => (
-              <Link
-                key={item._id}
-                href={`/images/${item.slug.current}`}
-                className="group block"
-              >
-                <article className="grid grid-cols-1 gap-7 md:grid-cols-[1.18fr_0.82fr] md:items-end md:gap-12">
-                  <div className="overflow-hidden rounded-[10px] bg-[#111214]">
-                    {item.images?.[0] && (
-                      <img
-                        src={urlFor(item.images[0]).width(1800).quality(90).url()}
-                        alt={item.title}
-                        className="image-cover w-full object-cover transition-transform duration-[1600ms] ease-out group-hover:scale-[1.018]"
-                      />
-                    )}
+      <div className="series-grid">
+        {items.map((item, index) => {
+          const cover = item.images?.[0]
+            ? urlFor(item.images[0]).width(2200).quality(92).url()
+            : ''
+
+          return (
+            <Link key={item._id} href={`/images/${item.slug.current}`} className="group block">
+              <article className="series-card">
+                <div className="series-card__media">
+                  {cover ? <img src={cover} alt={item.title} /> : null}
+                </div>
+
+                <div className="series-card__content">
+                  <div className="series-card__index font-ui">
+                    {String(index + 1).padStart(2, '0')} / Series
                   </div>
 
-                  <div className="max-w-[390px] md:pb-3">
-                    <h2 className="home-line text-[26px] leading-[1.35] text-[#F2F1EE] transition-colors duration-300 group-hover:text-white md:text-[34px]">
-                      {item.title}
-                    </h2>
+                  <h2 className="series-card__title home-line">{item.title}</h2>
 
-                    <p className="mt-3 text-[14px] leading-[1.95] text-[#8E8C88] transition-colors duration-300 group-hover:text-[#C9C7C2] md:text-[15px]">
-                      {item.subtitle || '一些被停住的光，以及仍在继续的沉默。'}
-                    </p>
+                  <p className="series-card__subtitle">
+                    {item.subtitle || '一些被停住的光，以及仍在继续的沉默。'}
+                  </p>
 
-                    <div className="mt-8 flex items-center gap-4">
-                      <span className="h-px w-7 bg-[#8E8C88]/70 transition-all duration-300 group-hover:w-10 group-hover:bg-[#C9C7C2]" />
-                      <span className="home-meta text-[10px] text-[#8E8C88] transition-colors duration-300 group-hover:text-[#C9C7C2] md:text-[11px]">
-                        ENTER SERIES
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
-          </div>
-        </div>
+                  <div className="series-card__enter font-ui">Enter Series</div>
+                </div>
+              </article>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

@@ -1,10 +1,11 @@
 import './globals.css'
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import type { Metadata } from 'next'
+import { Inter, Noto_Serif_SC } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
+import { Analytics } from '@vercel/analytics/react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import SoundToggle from '@/components/ui/SoundToggle'
-import { Inter, Noto_Serif_SC } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/react' // [新增] 引入影子捕捉器
 
 const inter = Inter({
   subsets: ['latin'],
@@ -18,8 +19,11 @@ const notoSerifSC = Noto_Serif_SC({
   weight: ['300', '400', '500'],
 })
 
-export const metadata = {
-  title: '皓野 | haoye.cyou',
+export const metadata: Metadata = {
+  title: {
+    default: '皓野 | haoye.cyou',
+    template: '%s | 皓野',
+  },
   description: '诗、图像，以及没有说完的沉默。',
 }
 
@@ -30,14 +34,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body
-        className={`${inter.variable} ${notoSerifSC.variable} bg-[#0B0B0C] text-[#F2F1EE] antialiased`}
-      >
+      <body className={`${inter.variable} ${notoSerifSC.variable} haoye-body`}>
         <Header />
         <main>{children}</main>
         <Footer />
         <SoundToggle />
-        <Analytics /> {/* [新增] 传感器在这里静默运行，不干扰视觉 */}
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
