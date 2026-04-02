@@ -1,64 +1,106 @@
 export const revalidate = 60
 
+import Link from 'next/link'
+
 import { sanityClient } from '@/lib/sanity.client'
 import { allImageSeriesQuery } from '@/lib/queries'
 import { urlFor } from '@/lib/sanity.image'
-import Link from 'next/link'
+
+type ImageSeriesItem = {
+  _id?: string
+  title?: string
+  subtitle?: string
+  slug?: { current?: string }
+  images?: any[]
+}
 
 export default async function ImagesPage() {
-  const items = await sanityClient.fetch(allImageSeriesQuery)
+  const items = await sanityClient.fetch<ImageSeriesItem[]>(allImageSeriesQuery)
 
   return (
-    <div className="mx-auto max-w-[1480px] px-6 py-28 md:px-8 md:py-36">
-      <div className="mx-auto max-w-[1160px]">
-        <div className="max-w-[560px]">
-          <h1 className="home-line text-[42px] leading-[1.15] text-[#F2F1EE] md:text-[60px]">
+    <div className="min-h-[100svh] bg-[#0D0D0D] text-[#F2F1EE]">
+      <div className="mx-auto max-w-[1320px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
+        <header className="max-w-[760px]">
+          <p className="text-[11px] tracking-[0.22em] text-[#7F7D79]">IMAGE ARCHIVE</p>
+
+          <h1 className="mt-6 text-[34px] font-light leading-[1.35] md:text-[54px] md:leading-[1.28]">
             影
           </h1>
-          <p className="mt-4 text-[15px] leading-[1.95] text-[#C9C7C2] md:text-[16px]">
+
+          <p className="mt-6 max-w-[560px] text-[14px] leading-[1.95] text-[#8E8C88] md:text-[15px]">
             光、空间，以及被截留下来的图像。
           </p>
-        </div>
+        </header>
 
-        <div className="mt-20 md:mt-24">
-          <div className="space-y-20 md:space-y-28">
-            {items.map((item: any) => (
-              <Link
-                key={item._id}
-                href={`/images/${item.slug.current}`}
-                className="group block"
+        <div className="mt-20 md:mt-28">
+          {(items ?? []).map((item, index) => {
+            const cover = item.images?.[0]
+            const href = item.slug?.current ? `/images/${item.slug.current}` : '/images'
+
+            return (
+              <article
+                key={item._id ?? `${item.title}-${index}`}
+                className="group border-t border-white/8 py-10 md:py-14"
               >
-                <article className="grid grid-cols-1 gap-7 md:grid-cols-[1.18fr_0.82fr] md:items-end md:gap-12">
-                  <div className="overflow-hidden rounded-[10px] bg-[#111214]">
-                    {item.images?.[0] && (
-                      <img
-                        src={urlFor(item.images[0]).width(1800).quality(90).url()}
-                        alt={item.title}
-                        className="image-cover w-full object-cover transition-transform duration-[1600ms] ease-out group-hover:scale-[1.018]"
-                      />
-                    )}
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-[120px_minmax(0,1fr)] md:gap-10">
+                  <div className="flex items-start justify-between md:block">
+                    <p className="text-[11px] tracking-[0.18em] text-[#6F6D69]">
+                      {String(index + 1).padStart(2, '0')}
+                    </p>
                   </div>
 
-                  <div className="max-w-[390px] md:pb-3">
-                    <h2 className="home-line text-[26px] leading-[1.35] text-[#F2F1EE] transition-colors duration-300 group-hover:text-white md:text-[34px]">
-                      {item.title}
-                    </h2>
+                  <div className="grid grid-cols-1 gap-7 md:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.76fr)] md:gap-12">
+                    <Link
+                      href={href}
+                      className="relative block overflow-hidden rounded-[18px] bg-white/[0.03]"
+                    >
+                      {cover ? (
+                        <>
+                          <img
+                            src={urlFor(cover).width(1800).quality(90).url()}
+                            alt={item.title ?? `image-series-${index + 1}`}
+                            className="h-[300px] w-full object-cover transition duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.02] group-hover:brightness-[1.04] md:h-[500px]"
+                          />
+                          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.36),rgba(0,0,0,0.06),rgba(0,0,0,0.12))]" />
+                          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.12),transparent_32%)] mix-blend-screen" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex h-[300px] w-full items-center justify-center bg-white/[0.03] text-[12px] tracking-[0.18em] text-[#7F7D79] md:h-[500px]">
+                          NO IMAGE
+                        </div>
+                      )}
+                    </Link>
 
-                    <p className="mt-3 text-[14px] leading-[1.95] text-[#8E8C88] transition-colors duration-300 group-hover:text-[#C9C7C2] md:text-[15px]">
-                      {item.subtitle || '一些被停住的光，以及仍在继续的沉默。'}
-                    </p>
+                    <div className="flex flex-col justify-between">
+                      <div>
+                        <h2 className="text-[26px] font-light leading-[1.35] text-[#F2F1EE] md:text-[38px] md:leading-[1.28]">
+                          {item.title ?? '未命名'}
+                        </h2>
 
-                    <div className="mt-8 flex items-center gap-4">
-                      <span className="h-px w-7 bg-[#8E8C88]/70 transition-all duration-300 group-hover:w-10 group-hover:bg-[#C9C7C2]" />
-                      <span className="home-meta text-[10px] text-[#8E8C88] transition-colors duration-300 group-hover:text-[#C9C7C2] md:text-[11px]">
-                        ENTER SERIES
-                      </span>
+                        <p className="mt-5 max-w-[420px] text-[14px] leading-[1.95] text-[#8E8C88] md:text-[15px]">
+                          {item.subtitle || '一些被停住的光，以及仍在继续的沉默。'}
+                        </p>
+                      </div>
+
+                      <div className="mt-8 md:mt-12">
+                        <Link
+                          href={href}
+                          className="inline-flex items-center gap-3 text-[11px] tracking-[0.24em] text-[#C9C7C2] transition-all duration-300 hover:text-[#F2F1EE]"
+                        >
+                          <span>ENTER SERIES</span>
+                          <span className="translate-y-[-1px] transition-transform duration-300 group-hover:translate-x-[2px]">
+                            →
+                          </span>
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </article>
-              </Link>
-            ))}
-          </div>
+                </div>
+              </article>
+            )
+          })}
         </div>
       </div>
     </div>
