@@ -41,13 +41,11 @@ export async function generateMetadata({
   }
 
   const title = item.title || '未命名影像'
-  const description =
-    item.subtitle || '光、空间，以及被截留下来的图像。'
+  const description = item.subtitle || '光、空间，以及被截留下来的图像。'
   const canonical = `/images/${slug}`
-  const image =
-    item.images?.[0]
-      ? urlFor(item.images[0]).width(1200).height(630).quality(90).url()
-      : undefined
+  const image = item.images?.[0]
+    ? urlFor(item.images[0]).width(1200).height(630).quality(90).url()
+    : undefined
 
   return {
     title,
@@ -83,39 +81,84 @@ export default async function ImageSeriesDetailPage({
     notFound()
   }
 
+  const images = item.images ?? []
+
   return (
-    <div className="mx-auto max-w-[1200px] px-6 py-32">
-      <Link
-        href="/images"
-        className="text-sm text-[#8E8C88] transition-colors duration-300 hover:text-[#C9C7C2]"
-      >
-        回到影
-      </Link>
+    <div className="min-h-[100svh] bg-[#0D0D0D] text-[#F2F1EE]">
+      <div className="mx-auto max-w-[1420px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
+        <header className="border-t border-white/8 pt-8 md:pt-10">
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+            <div>
+              <Link
+                href="/images"
+                className="site-nav text-[11px] tracking-[0.18em] text-[#8E8C88] transition-colors duration-300 hover:text-[#C9C7C2]"
+              >
+                回到影
+              </Link>
 
-      <h1 className="mt-8 text-4xl font-light">{item.title}</h1>
+              <p className="mt-5 text-[11px] tracking-[0.18em] text-[#6F6D69]">IMAGE SERIES</p>
+            </div>
 
-      {item.subtitle ? (
-        <p className="mt-4 text-[#C9C7C2]">{item.subtitle}</p>
-      ) : null}
+            <div className="max-w-[860px]">
+              <h1 className="text-[34px] font-light leading-[1.3] text-[#F2F1EE] md:text-[58px] md:leading-[1.2]">
+                {item.title || '未命名影像'}
+              </h1>
 
-      {item.images?.length ? (
-        <div className="mt-16 space-y-12">
-          {item.images.map((img: any, index: number) => (
-            <img
-              key={index}
-              src={urlFor(img).width(1600).quality(90).url()}
-              alt={`${item.title}-${index + 1}`}
-              className="w-full rounded-xl object-cover"
-            />
-          ))}
-        </div>
-      ) : null}
+              {item.subtitle ? (
+                <p className="mt-6 max-w-[620px] text-[14px] leading-[1.95] text-[#8E8C88] md:text-[15px]">
+                  {item.subtitle}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </header>
 
-      {item.text ? (
-        <div className="prose prose-invert mt-16 max-w-[680px]">
-          <PortableText value={item.text} />
-        </div>
-      ) : null}
+        {images.length > 0 ? (
+          <section className="mt-16 md:mt-24">
+            <div className="space-y-12 md:space-y-16">
+              {images.map((img: any, index: number) => (
+                <figure
+                  key={index}
+                  className="border-t border-white/6 pt-6 md:pt-8"
+                >
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+                    <div className="flex items-start justify-between md:block">
+                      <p className="text-[11px] tracking-[0.18em] text-[#6F6D69]">
+                        {String(index + 1).padStart(2, '0')}
+                      </p>
+                    </div>
+
+                    <div className="overflow-hidden rounded-[20px] bg-white/[0.03]">
+                      <img
+                        src={urlFor(img).width(1800).quality(90).url()}
+                        alt={`${item.title || 'image-series'}-${index + 1}`}
+                        className="motion-image w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </figure>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {item.text ? (
+          <section className="mt-20 border-t border-white/8 pt-10 md:mt-24 md:pt-14">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+              <div>
+                <p className="text-[11px] tracking-[0.18em] text-[#6F6D69]">TEXT</p>
+                <p className="mt-4 text-[11px] tracking-[0.22em] text-[#8E8C88]">
+                  ARCHIVE NOTE
+                </p>
+              </div>
+
+              <div className="reading-body max-w-[680px]">
+                <PortableText value={item.text} />
+              </div>
+            </div>
+          </section>
+        ) : null}
+      </div>
     </div>
   )
 }
