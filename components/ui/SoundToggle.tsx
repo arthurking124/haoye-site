@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'haoye-sound'
 const BASE_VOLUME = 0.24
@@ -181,6 +181,9 @@ export default function SoundToggle() {
   }
 
   if (!isHydrated) return null
+
+  // 关键：首页不显示按钮
+  if (pathname === '/') return null
 
   return (
     <button
