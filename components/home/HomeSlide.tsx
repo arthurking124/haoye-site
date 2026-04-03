@@ -121,6 +121,18 @@ export default function HomeSlide({
   const isOther = (target: Exclude<PortalTarget, null>) =>
     isEntering && portalTarget !== null && portalTarget !== target
 
+  const wordLayerTransform = isLast
+    ? `translate3d(${parallax.tx * 0.18}px, ${parallax.ty * 0.12}px, 0)`
+    : 'translate3d(0,0,0)'
+
+  const signatureLayerTransform = isLast
+    ? `translate3d(${parallax.tx * 0.11}px, ${parallax.ty * 0.08}px, 0)`
+    : 'translate3d(0,0,0)'
+
+  const metaLayerTransform = isLast
+    ? `translate3d(${parallax.tx * 0.06}px, ${parallax.ty * 0.05}px, 0)`
+    : 'translate3d(0,0,0)'
+
   return (
     <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
       {imageUrl ? (
@@ -156,7 +168,7 @@ export default function HomeSlide({
                       transform: atmosphereTransform,
                       transitionProperty: 'transform, opacity',
                       background:
-                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.045), transparent 30%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.03), transparent 42%)',
+                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.032), transparent 28%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.022), transparent 40%)',
                       mixBlendMode: 'screen',
                       filter: 'blur(24px)',
                     }}
@@ -173,11 +185,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.11), rgba(255,255,255,0.04) 28%, rgba(255,255,255,0.013) 52%, transparent 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.095), rgba(255,255,255,0.034) 28%, rgba(255,255,255,0.01) 52%, transparent 100%)',
                         clipPath: 'polygon(49.72% 0.1%, 50.72% 0.1%, 58% 100%, 42% 100%)',
                         mixBlendMode: 'screen',
                         filter:
-                          'blur(40px) drop-shadow(0 0 20px rgba(255,255,255,0.14))',
+                          'blur(38px) drop-shadow(0 0 16px rgba(255,255,255,0.1))',
                         animation: active
                           ? 'church-beam-breathe 19s cubic-bezier(0.42, 0, 0.2, 1) infinite'
                           : 'none',
@@ -189,11 +201,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.13), rgba(255,255,255,0.04) 24%, transparent 72%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.11), rgba(255,255,255,0.032) 24%, transparent 72%)',
                         clipPath: 'polygon(49.9% 0%, 50.45% 0%, 54.5% 100%, 45.5% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(15px)',
-                        opacity: active ? 0.46 : 0,
+                        filter: 'blur(14px)',
+                        opacity: active ? 0.38 : 0,
                         transition: 'opacity 2600ms ease 700ms',
                       }}
                     />
@@ -202,11 +214,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.032), transparent 60%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.024), transparent 60%)',
                         clipPath: 'polygon(49.95% 0%, 50.15% 0%, 51.4% 100%, 48.6% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(7px)',
-                        opacity: active ? 0.22 : 0,
+                        filter: 'blur(6px)',
+                        opacity: active ? 0.16 : 0,
                         transition: 'opacity 2400ms ease 900ms',
                       }}
                     />
@@ -216,24 +228,32 @@ export default function HomeSlide({
             </div>
           </div>
 
-          <div className="pointer-events-none absolute inset-0 z-[2] bg-black/48" />
-          <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
-          <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
+          {!isLast ? (
+            <>
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-black/48" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_20%_20%,rgba(120,128,137,0.14),transparent_32%),radial-gradient(circle_at_80%_70%,rgba(255,255,255,0.04),transparent_24%)]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.24),rgba(0,0,0,0.06),rgba(0,0,0,0.36))]" />
+            </>
+          ) : (
+            <>
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.18),rgba(0,0,0,0.12)_24%,rgba(0,0,0,0.2)_54%,rgba(0,0,0,0.34)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.018),transparent_28%),radial-gradient(circle_at_50%_56%,rgba(255,255,255,0.012),transparent_34%)] mix-blend-screen" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_52%,transparent_0%,rgba(0,0,0,0.06)_36%,rgba(0,0,0,0.18)_64%,rgba(0,0,0,0.34)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_right,rgba(0,0,0,0.18),transparent_14%,transparent_86%,rgba(0,0,0,0.18))]" />
+            </>
+          )}
 
           {isLast && (
-            <>
-              <div className="pointer-events-none absolute inset-0 z-[2] bg-black/22" />
-              <div
-                className={`pointer-events-none absolute inset-0 z-[3] transition-opacity duration-[1800ms] ease-out ${
-                  active ? 'opacity-100' : 'opacity-0'
-                }`}
-                style={{
-                  background:
-                    'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.022), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.016), transparent 22%)',
-                  mixBlendMode: 'screen',
-                }}
-              />
-            </>
+            <div
+              className={`pointer-events-none absolute inset-0 z-[3] transition-opacity duration-[1800ms] ease-out ${
+                active ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{
+                background:
+                  'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.016), transparent 24%), linear-gradient(to bottom, rgba(255,255,255,0.012), transparent 22%)',
+                mixBlendMode: 'screen',
+              }}
+            />
           )}
         </>
       ) : (
@@ -246,20 +266,20 @@ export default function HomeSlide({
             isEntering ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.025),transparent_32%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.06)_44%,rgba(0,0,0,0.18)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.018),transparent_30%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.05)_44%,rgba(0,0,0,0.16)_100%)]" />
 
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.03) 26%, rgba(255,255,255,0.01) 54%, transparent 100%)',
+                'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.022) 26%, rgba(255,255,255,0.008) 54%, transparent 100%)',
               clipPath: 'polygon(49.78% 0%, 50.72% 0%, 58.1% 100%, 41.9% 100%)',
               mixBlendMode: 'screen',
-              filter: 'blur(24px)',
-              transform: isEntering ? 'scaleY(1.018)' : 'scaleY(0.995)',
+              filter: 'blur(22px)',
+              transform: isEntering ? 'scaleY(1.016)' : 'scaleY(0.996)',
               transition:
                 'transform 360ms cubic-bezier(0.22,1,0.36,1), opacity 360ms ease',
-              opacity: isEntering ? 0.55 : 0,
+              opacity: isEntering ? 0.42 : 0,
             }}
           />
         </div>
@@ -308,84 +328,99 @@ export default function HomeSlide({
           }`}
         >
           <div
-            className={`home-entry ${
-              mobile
-                ? 'mb-6 text-[26px] tracking-[0.1em] leading-[1.75]'
-                : 'mb-8 text-[30px] tracking-[0.12em] md:text-[52px]'
-            }`}
+            className="transition-transform duration-[1400ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+            style={{ transform: wordLayerTransform }}
           >
-            <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
-              <Link
-                href="/poems"
-                onClick={beginPortalEnter('/poems', 'poems')}
-                className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'dimmed-word-active' : 'dimmed-word-idle'
-                } ${isTarget('poems') ? 'portal-target-active' : ''} ${
-                  isOther('poems') ? 'portal-target-dim' : ''
-                }`}
-                style={revealStyle(1350, 1600)}
-              >
-                诗
-              </Link>{' '}
-              <Link
-                href="/images"
-                onClick={beginPortalEnter('/images', 'images')}
-                className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'selected-word-active' : 'selected-word-idle'
-                } ${isTarget('images') ? 'portal-target-active' : ''} ${
-                  isOther('images') ? 'portal-target-dim' : ''
-                }`}
-                style={revealStyle(1520, 1800)}
-              >
-                影
-              </Link>{' '}
-              <Link
-                href="/notes"
-                onClick={beginPortalEnter('/notes', 'notes')}
-                className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'selected-word-active' : 'selected-word-idle'
-                } ${isTarget('notes') ? 'portal-target-active' : ''} ${
-                  isOther('notes') ? 'portal-target-dim' : ''
-                }`}
-                style={revealStyle(1680, 1900)}
-              >
-                与
-              </Link>{' '}
-              <Link
-                href="/about"
-                onClick={beginPortalEnter('/about', 'about')}
-                className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'dimmed-word-active' : 'dimmed-word-idle'
-                } ${isTarget('about') ? 'portal-target-active' : ''} ${
-                  isOther('about') ? 'portal-target-dim' : ''
-                }`}
-                style={revealStyle(1460, 1600)}
-              >
-                我
-              </Link>
+            <div
+              className={`home-entry ${
+                mobile
+                  ? 'mb-6 text-[26px] tracking-[0.1em] leading-[1.75]'
+                  : 'mb-8 text-[30px] tracking-[0.12em] md:text-[52px]'
+              }`}
+            >
+              <div className={`${mobile ? 'flex flex-col items-center gap-2' : ''}`}>
+                <Link
+                  href="/poems"
+                  onClick={beginPortalEnter('/poems', 'poems')}
+                  className={`pointer-events-auto illuminated-text transition-all ease-out ${
+                    active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                  } ${isTarget('poems') ? 'portal-target-active' : ''} ${
+                    isOther('poems') ? 'portal-target-dim' : ''
+                  }`}
+                  style={revealStyle(1350, 1600)}
+                >
+                  诗
+                </Link>{' '}
+                <Link
+                  href="/images"
+                  onClick={beginPortalEnter('/images', 'images')}
+                  className={`pointer-events-auto illuminated-text transition-all ease-out ${
+                    active ? 'selected-word-active' : 'selected-word-idle'
+                  } ${isTarget('images') ? 'portal-target-active' : ''} ${
+                    isOther('images') ? 'portal-target-dim' : ''
+                  }`}
+                  style={revealStyle(1520, 1800)}
+                >
+                  影
+                </Link>{' '}
+                <Link
+                  href="/notes"
+                  onClick={beginPortalEnter('/notes', 'notes')}
+                  className={`pointer-events-auto illuminated-text transition-all ease-out ${
+                    active ? 'selected-word-active' : 'selected-word-idle'
+                  } ${isTarget('notes') ? 'portal-target-active' : ''} ${
+                    isOther('notes') ? 'portal-target-dim' : ''
+                  }`}
+                  style={revealStyle(1680, 1900)}
+                >
+                  与
+                </Link>{' '}
+                <Link
+                  href="/about"
+                  onClick={beginPortalEnter('/about', 'about')}
+                  className={`pointer-events-auto illuminated-text transition-all ease-out ${
+                    active ? 'dimmed-word-active' : 'dimmed-word-idle'
+                  } ${isTarget('about') ? 'portal-target-active' : ''} ${
+                    isOther('about') ? 'portal-target-dim' : ''
+                  }`}
+                  style={revealStyle(1460, 1600)}
+                >
+                  我
+                </Link>
+              </div>
             </div>
           </div>
 
           <div
-            className={`home-signature pointer-events-none transition-all ease-out ${
-              active ? 'selected-signature-active' : 'selected-signature-idle'
-            } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'} ${
-              isEntering ? 'portal-signature-soften' : ''
-            }`}
-            style={revealStyle(1860, 2200)}
+            className="transition-transform duration-[1500ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+            style={{ transform: signatureLayerTransform }}
           >
-            {signature}
+            <div
+              className={`home-signature pointer-events-none transition-all ease-out ${
+                active ? 'selected-signature-active' : 'selected-signature-idle'
+              } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'} ${
+                isEntering ? 'portal-signature-soften' : ''
+              }`}
+              style={revealStyle(1860, 2200)}
+            >
+              {signature}
+            </div>
           </div>
 
           <div
-            className={`home-meta pointer-events-none transition-all ease-out ${
-              active ? 'meta-active' : 'meta-idle'
-            } ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'} ${
-              isEntering ? 'portal-meta-soften' : ''
-            }`}
-            style={revealStyle(2080, 1800)}
+            className="transition-transform duration-[1600ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+            style={{ transform: metaLayerTransform }}
           >
-            {domainText}
+            <div
+              className={`home-meta pointer-events-none transition-all ease-out ${
+                active ? 'meta-active' : 'meta-idle'
+              } ${mobile ? 'mt-3 text-[10px]' : 'mt-3 text-[10px] md:text-[11px]'} ${
+                isEntering ? 'portal-meta-soften' : ''
+              }`}
+              style={revealStyle(2080, 1800)}
+            >
+              {domainText}
+            </div>
           </div>
         </div>
       )}
@@ -423,46 +458,46 @@ export default function HomeSlide({
         .illuminated-text::before {
           content: '';
           position: absolute;
-          left: -0.14em;
-          right: -0.14em;
-          top: -0.18em;
-          bottom: -0.14em;
+          left: -0.12em;
+          right: -0.12em;
+          top: -0.14em;
+          bottom: -0.12em;
           pointer-events: none;
           opacity: 0;
           transition: opacity 1800ms ease, transform 1800ms ease;
-          transform: scale(0.98);
+          transform: scale(0.985);
           background: radial-gradient(
             ellipse at 50% 52%,
-            rgba(255, 255, 255, 0.10),
-            rgba(255, 255, 255, 0.045) 34%,
+            rgba(255, 255, 255, 0.072),
+            rgba(255, 255, 255, 0.03) 34%,
             transparent 72%
           );
-          filter: blur(12px);
+          filter: blur(10px);
         }
 
         .illuminated-text::after {
           content: '';
           position: absolute;
-          left: -0.08em;
-          right: -0.08em;
-          bottom: 0.04em;
-          height: 0.28em;
+          left: -0.07em;
+          right: -0.07em;
+          bottom: 0.05em;
+          height: 0.2em;
           pointer-events: none;
           border-radius: 999px;
           opacity: 0;
-          transform: scaleX(0.94);
+          transform: scaleX(0.95);
           transition: opacity 1800ms ease, transform 1800ms ease;
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 255, 255, 0.16),
-            rgba(255, 255, 255, 0.055) 46%,
+            rgba(255, 255, 255, 0.11),
+            rgba(255, 255, 255, 0.038) 46%,
             transparent 78%
           );
-          filter: blur(7px);
+          filter: blur(6px);
         }
 
         .selected-word-idle {
-          color: rgba(226, 224, 218, 0.72);
+          color: rgba(223, 220, 214, 0.68);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -470,19 +505,18 @@ export default function HomeSlide({
         }
 
         .selected-word-active {
-          color: rgba(241, 239, 233, 0.92);
-          text-shadow:
-            0 0 5px rgba(255, 255, 255, 0.08),
-            0 0 18px rgba(255, 255, 255, 0.045);
+          color: rgba(236, 233, 226, 0.88);
+          text-shadow: 0 0 4px rgba(255, 255, 255, 0.055),
+            0 0 12px rgba(255, 255, 255, 0.028);
         }
 
         .selected-word-active::before {
-          opacity: 0.72;
+          opacity: 0.6;
           transform: scale(1);
         }
 
         .selected-word-active::after {
-          opacity: 0.62;
+          opacity: 0.46;
           transform: scaleX(1);
         }
 
@@ -495,22 +529,22 @@ export default function HomeSlide({
         }
 
         .dimmed-word-active {
-          color: rgba(216, 212, 204, 0.64);
-          text-shadow: 0 0 6px rgba(255, 255, 255, 0.018);
+          color: rgba(214, 210, 202, 0.62);
+          text-shadow: 0 0 5px rgba(255, 255, 255, 0.014);
         }
 
         .dimmed-word-active::before {
-          opacity: 0.12;
+          opacity: 0.08;
           transform: scale(0.992);
         }
 
         .dimmed-word-active::after {
-          opacity: 0.1;
-          transform: scaleX(0.97);
+          opacity: 0.06;
+          transform: scaleX(0.975);
         }
 
         .selected-signature-idle {
-          color: rgba(201, 199, 194, 0.72);
+          color: rgba(201, 199, 194, 0.7);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -518,10 +552,9 @@ export default function HomeSlide({
         }
 
         .selected-signature-active {
-          color: rgba(236, 233, 226, 0.88);
-          text-shadow:
-            0 0 7px rgba(255, 255, 255, 0.07),
-            0 0 20px rgba(255, 255, 255, 0.035);
+          color: rgba(231, 228, 221, 0.84);
+          text-shadow: 0 0 5px rgba(255, 255, 255, 0.048),
+            0 0 14px rgba(255, 255, 255, 0.022);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -535,8 +568,8 @@ export default function HomeSlide({
         }
 
         .meta-active {
-          color: rgba(150, 147, 141, 0.8);
-          text-shadow: 0 0 14px rgba(255, 255, 255, 0.02);
+          color: rgba(146, 143, 137, 0.76);
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.016);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -548,29 +581,29 @@ export default function HomeSlide({
         }
 
         .portal-target-active::after {
-          opacity: 0.66 !important;
-          transform: scaleX(1.02) !important;
+          opacity: 0.52 !important;
+          transform: scaleX(1.015) !important;
         }
 
         .portal-target-active::before {
-          opacity: 0.76 !important;
-          transform: scale(1.01) !important;
+          opacity: 0.68 !important;
+          transform: scale(1.006) !important;
         }
 
         .portal-target-dim {
-          opacity: 0.62 !important;
-          filter: blur(0.6px) !important;
+          opacity: 0.64 !important;
+          filter: blur(0.5px) !important;
           transform: translateY(1px) scale(0.998) !important;
         }
 
         .portal-signature-soften {
-          opacity: 0.76 !important;
+          opacity: 0.78 !important;
           filter: blur(0.8px) !important;
           transform: translateY(1px) !important;
         }
 
         .portal-meta-soften {
-          opacity: 0.58 !important;
+          opacity: 0.6 !important;
           filter: blur(1px) !important;
           transform: translateY(1px) !important;
         }
