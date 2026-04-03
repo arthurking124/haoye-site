@@ -156,7 +156,7 @@ export default function HomeSlide({
                       transform: atmosphereTransform,
                       transitionProperty: 'transform, opacity',
                       background:
-                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.06), transparent 30%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.045), transparent 42%)',
+                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.045), transparent 30%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.03), transparent 42%)',
                       mixBlendMode: 'screen',
                       filter: 'blur(24px)',
                     }}
@@ -173,13 +173,13 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.16), rgba(255,255,255,0.06) 28%, rgba(255,255,255,0.02) 52%, transparent 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.11), rgba(255,255,255,0.04) 28%, rgba(255,255,255,0.013) 52%, transparent 100%)',
                         clipPath: 'polygon(49.72% 0.1%, 50.72% 0.1%, 58% 100%, 42% 100%)',
                         mixBlendMode: 'screen',
                         filter:
-                          'blur(42px) drop-shadow(0 0 28px rgba(255,255,255,0.22))',
+                          'blur(40px) drop-shadow(0 0 20px rgba(255,255,255,0.14))',
                         animation: active
-                          ? 'church-beam-breathe 14s ease-in-out infinite'
+                          ? 'church-beam-breathe 19s cubic-bezier(0.42, 0, 0.2, 1) infinite'
                           : 'none',
                         transformOrigin: 'top center',
                       }}
@@ -189,12 +189,12 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.22), rgba(255,255,255,0.07) 24%, transparent 72%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.13), rgba(255,255,255,0.04) 24%, transparent 72%)',
                         clipPath: 'polygon(49.9% 0%, 50.45% 0%, 54.5% 100%, 45.5% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(18px)',
-                        opacity: active ? 0.72 : 0,
-                        transition: 'opacity 2400ms ease 700ms',
+                        filter: 'blur(15px)',
+                        opacity: active ? 0.46 : 0,
+                        transition: 'opacity 2600ms ease 700ms',
                       }}
                     />
 
@@ -202,12 +202,12 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.06), transparent 60%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.032), transparent 60%)',
                         clipPath: 'polygon(49.95% 0%, 50.15% 0%, 51.4% 100%, 48.6% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(8px)',
-                        opacity: active ? 0.5 : 0,
-                        transition: 'opacity 2200ms ease 900ms',
+                        filter: 'blur(7px)',
+                        opacity: active ? 0.22 : 0,
+                        transition: 'opacity 2400ms ease 900ms',
                       }}
                     />
                   </div>
@@ -229,7 +229,7 @@ export default function HomeSlide({
                 }`}
                 style={{
                   background:
-                    'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.035), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.025), transparent 22%)',
+                    'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.022), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.016), transparent 22%)',
                   mixBlendMode: 'screen',
                 }}
               />
@@ -331,7 +331,7 @@ export default function HomeSlide({
                 href="/images"
                 onClick={beginPortalEnter('/images', 'images')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'lit-word-active' : 'lit-word-idle'
+                  active ? 'selected-word-active' : 'selected-word-idle'
                 } ${isTarget('images') ? 'portal-target-active' : ''} ${
                   isOther('images') ? 'portal-target-dim' : ''
                 }`}
@@ -343,7 +343,7 @@ export default function HomeSlide({
                 href="/notes"
                 onClick={beginPortalEnter('/notes', 'notes')}
                 className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                  active ? 'lit-word-active' : 'lit-word-idle'
+                  active ? 'selected-word-active' : 'selected-word-idle'
                 } ${isTarget('notes') ? 'portal-target-active' : ''} ${
                   isOther('notes') ? 'portal-target-dim' : ''
                 }`}
@@ -368,7 +368,7 @@ export default function HomeSlide({
 
           <div
             className={`home-signature pointer-events-none transition-all ease-out ${
-              active ? 'lit-signature-active' : 'lit-signature-idle'
+              active ? 'selected-signature-active' : 'selected-signature-idle'
             } ${mobile ? 'text-[13px]' : 'text-[14px] md:text-[15px]'} ${
               isEntering ? 'portal-signature-soften' : ''
             }`}
@@ -394,12 +394,12 @@ export default function HomeSlide({
         @keyframes church-beam-breathe {
           0%,
           100% {
-            opacity: 0.12;
-            transform: scaleY(0.992);
+            opacity: 0.42;
+            transform: scaleY(0.998);
           }
           50% {
-            opacity: 0.88;
-            transform: scaleY(1.04);
+            opacity: 0.52;
+            transform: scaleY(1.012);
           }
         }
 
@@ -411,13 +411,33 @@ export default function HomeSlide({
           filter: blur(8px);
         }
 
-        .lit-word-active,
+        .selected-word-active,
         .dimmed-word-active,
-        .lit-signature-active,
+        .selected-signature-active,
         .meta-active {
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
+        }
+
+        .illuminated-text::before {
+          content: '';
+          position: absolute;
+          left: -0.14em;
+          right: -0.14em;
+          top: -0.18em;
+          bottom: -0.14em;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 1800ms ease, transform 1800ms ease;
+          transform: scale(0.98);
+          background: radial-gradient(
+            ellipse at 50% 52%,
+            rgba(255, 255, 255, 0.10),
+            rgba(255, 255, 255, 0.045) 34%,
+            transparent 72%
+          );
+          filter: blur(12px);
         }
 
         .illuminated-text::after {
@@ -426,39 +446,43 @@ export default function HomeSlide({
           left: -0.08em;
           right: -0.08em;
           bottom: 0.04em;
-          height: 0.34em;
+          height: 0.28em;
           pointer-events: none;
           border-radius: 999px;
           opacity: 0;
-          transform: scaleX(0.9);
+          transform: scaleX(0.94);
           transition: opacity 1800ms ease, transform 1800ms ease;
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 255, 255, 0.22),
-            rgba(255, 255, 255, 0.08) 45%,
+            rgba(255, 255, 255, 0.16),
+            rgba(255, 255, 255, 0.055) 46%,
             transparent 78%
           );
-          filter: blur(8px);
+          filter: blur(7px);
         }
 
-        .lit-word-idle {
-          color: rgba(233, 231, 225, 0.72);
-          text-shadow: 0 0 0 rgba(255, 255, 255, 0),
-            0 0 0 rgba(255, 255, 255, 0);
+        .selected-word-idle {
+          color: rgba(226, 224, 218, 0.72);
+          text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
           filter: blur(8px);
         }
 
-        .lit-word-active {
-          color: rgba(249, 248, 244, 0.96);
-          text-shadow: 0 0 8px rgba(255, 255, 255, 0.14),
-            0 0 24px rgba(255, 255, 255, 0.08),
-            0 0 54px rgba(255, 255, 255, 0.06);
+        .selected-word-active {
+          color: rgba(241, 239, 233, 0.92);
+          text-shadow:
+            0 0 5px rgba(255, 255, 255, 0.08),
+            0 0 18px rgba(255, 255, 255, 0.045);
         }
 
-        .lit-word-active::after {
-          opacity: 0.9;
+        .selected-word-active::before {
+          opacity: 0.72;
+          transform: scale(1);
+        }
+
+        .selected-word-active::after {
+          opacity: 0.62;
           transform: scaleX(1);
         }
 
@@ -471,17 +495,21 @@ export default function HomeSlide({
         }
 
         .dimmed-word-active {
-          color: rgba(220, 216, 207, 0.68);
-          text-shadow: 0 0 8px rgba(255, 255, 255, 0.03),
-            0 0 18px rgba(255, 255, 255, 0.02);
+          color: rgba(216, 212, 204, 0.64);
+          text-shadow: 0 0 6px rgba(255, 255, 255, 0.018);
+        }
+
+        .dimmed-word-active::before {
+          opacity: 0.12;
+          transform: scale(0.992);
         }
 
         .dimmed-word-active::after {
-          opacity: 0.14;
-          transform: scaleX(0.96);
+          opacity: 0.1;
+          transform: scaleX(0.97);
         }
 
-        .lit-signature-idle {
+        .selected-signature-idle {
           color: rgba(201, 199, 194, 0.72);
           text-shadow: none;
           opacity: 0;
@@ -489,11 +517,11 @@ export default function HomeSlide({
           filter: blur(10px);
         }
 
-        .lit-signature-active {
-          color: rgba(238, 236, 229, 0.92);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.12),
-            0 0 26px rgba(255, 255, 255, 0.07),
-            0 0 58px rgba(255, 255, 255, 0.05);
+        .selected-signature-active {
+          color: rgba(236, 233, 226, 0.88);
+          text-shadow:
+            0 0 7px rgba(255, 255, 255, 0.07),
+            0 0 20px rgba(255, 255, 255, 0.035);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -507,8 +535,8 @@ export default function HomeSlide({
         }
 
         .meta-active {
-          color: rgba(154, 151, 145, 0.82);
-          text-shadow: 0 0 18px rgba(255, 255, 255, 0.03);
+          color: rgba(150, 147, 141, 0.8);
+          text-shadow: 0 0 14px rgba(255, 255, 255, 0.02);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -520,8 +548,13 @@ export default function HomeSlide({
         }
 
         .portal-target-active::after {
-          opacity: 0.72 !important;
+          opacity: 0.66 !important;
           transform: scaleX(1.02) !important;
+        }
+
+        .portal-target-active::before {
+          opacity: 0.76 !important;
+          transform: scale(1.01) !important;
         }
 
         .portal-target-dim {
