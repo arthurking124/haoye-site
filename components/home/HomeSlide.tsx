@@ -440,19 +440,17 @@ export default function HomeSlide({
         @keyframes picked-word-breathe {
           0%,
           100% {
-            color: rgba(188, 184, 178, 0.22);
+            color: rgba(188, 184, 178, 0.18);
             text-shadow:
               0 0 0 rgba(255, 244, 224, 0),
               0 0 0 rgba(255, 228, 188, 0);
-            filter: blur(0);
           }
           50% {
-            color: rgba(248, 236, 214, 0.98);
+            color: rgba(248, 236, 214, 1);
             text-shadow:
-              0 0 7px rgba(255, 244, 224, 0.14),
-              0 0 20px rgba(255, 228, 188, 0.07),
-              0 0 42px rgba(255, 220, 175, 0.03);
-            filter: blur(0);
+              0 0 8px rgba(255, 244, 224, 0.14),
+              0 0 24px rgba(255, 228, 188, 0.08),
+              0 0 48px rgba(255, 220, 175, 0.035);
           }
         }
 
@@ -463,8 +461,8 @@ export default function HomeSlide({
             transform: scaleX(0.985);
           }
           50% {
-            opacity: 0.24;
-            transform: scaleX(1.01);
+            opacity: 0.14;
+            transform: scaleX(1.008);
           }
         }
 
@@ -504,45 +502,45 @@ export default function HomeSlide({
         .illuminated-text::before {
           content: '';
           position: absolute;
-          left: -0.04em;
-          right: -0.04em;
-          top: -0.04em;
-          bottom: -0.04em;
+          left: -0.02em;
+          right: -0.02em;
+          top: -0.02em;
+          bottom: -0.02em;
           pointer-events: none;
           opacity: 0;
           transform: scaleX(0.985);
           background: radial-gradient(
             ellipse at 50% 54%,
-            rgba(255, 240, 214, 0.16),
-            rgba(255, 226, 188, 0.05) 44%,
+            rgba(255, 240, 214, 0.12),
+            rgba(255, 226, 188, 0.04) 44%,
             transparent 76%
           );
-          filter: blur(3px);
+          filter: blur(2px);
         }
 
         .illuminated-text::after {
           content: '';
           position: absolute;
-          left: -0.03em;
-          right: -0.03em;
+          left: -0.02em;
+          right: -0.02em;
           bottom: 0.06em;
-          height: 0.1em;
+          height: 0.08em;
           pointer-events: none;
           border-radius: 999px;
           opacity: 0;
           transform: scaleX(0.985);
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 244, 222, 0.1),
-            rgba(255, 228, 188, 0.03) 50%,
+            rgba(255, 244, 222, 0.08),
+            rgba(255, 228, 188, 0.02) 50%,
             transparent 80%
           );
-          filter: blur(3px);
+          filter: blur(2px);
         }
 
         .picked-word-idle,
         .dimmed-word-idle {
-          color: rgba(188, 184, 178, 0.24);
+          color: rgba(188, 184, 178, 0.18);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -559,7 +557,7 @@ export default function HomeSlide({
         }
 
         .dimmed-word-active {
-          color: rgba(188, 184, 178, 0.24);
+          color: rgba(188, 184, 178, 0.18);
           text-shadow: none;
         }
 
@@ -601,13 +599,13 @@ export default function HomeSlide({
         }
 
         .portal-target-active::after {
-          opacity: 0.16 !important;
-          transform: scaleX(1.006) !important;
+          opacity: 0.08 !important;
+          transform: scaleX(1.004) !important;
         }
 
         .portal-target-active::before {
-          opacity: 0.2 !important;
-          transform: scaleX(1.004) !important;
+          opacity: 0.1 !important;
+          transform: scaleX(1.003) !important;
         }
 
         .portal-target-dim {
