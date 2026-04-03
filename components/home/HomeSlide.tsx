@@ -34,14 +34,14 @@ export default function HomeSlide({
   parallax = { rotateX: 0, rotateY: 0, tx: 0, ty: 0 },
 }: HomeSlideProps) {
   const router = useRouter()
-  const leaveTimerRef = useRef<number | null>(null)
+  const leaveTimerRef = useRef<ReturnType<typeof window.setTimeout> | null>(null)
 
   const [portalTarget, setPortalTarget] = useState<PortalTarget>(null)
   const [isEntering, setIsEntering] = useState(false)
 
   useEffect(() => {
     return () => {
-      if (leaveTimerRef.current) {
+      if (leaveTimerRef.current !== null) {
         window.clearTimeout(leaveTimerRef.current)
       }
     }
@@ -86,41 +86,34 @@ export default function HomeSlide({
     transitionDuration: `${duration}ms`,
   })
 
-  const beginPortalEnter = (
-    href: string,
-    target: Exclude<PortalTarget, null>
-  ) => (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!isLast) return
-    if (isEntering) {
+  const beginPortalEnter =
+    (href: string, target: Exclude<PortalTarget, null>) =>
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      if (!isLast) return
+      if (isEntering) {
+        e.preventDefault()
+        return
+      }
+
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+        return
+      }
+
       e.preventDefault()
-      return
+
+      setPortalTarget(target)
+      setIsEntering(true)
+
+      window.dispatchEvent(
+        new CustomEvent('haoye:portal-enter', {
+          detail: { href, target },
+        })
+      )
+
+      leaveTimerRef.current = window.setTimeout(() => {
+        router.push(href)
+      }, 300)
     }
-
-    if (
-      e.metaKey ||
-      e.ctrlKey ||
-      e.shiftKey ||
-      e.altKey ||
-      e.button !== 0
-    ) {
-      return
-    }
-
-    e.preventDefault()
-
-    setPortalTarget(target)
-    setIsEntering(true)
-
-    window.dispatchEvent(
-      new CustomEvent('haoye:portal-enter', {
-        detail: { href, target },
-      })
-    )
-
-    leaveTimerRef.current = window.setTimeout(() => {
-      router.push(href)
-    }, 420)
-  }
 
   const isTarget = (target: Exclude<PortalTarget, null>) =>
     isEntering && portalTarget === target
@@ -249,24 +242,24 @@ export default function HomeSlide({
 
       {isLast && (
         <div
-          className={`pointer-events-none absolute inset-0 z-[8] transition-all duration-[520ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          className={`pointer-events-none absolute inset-0 z-[8] transition-all duration-[360ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
             isEntering ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.05),transparent_34%),radial-gradient(circle_at_34%_84%,rgba(255,255,255,0.03),transparent_18%),radial-gradient(circle_at_66%_84%,rgba(255,255,255,0.03),transparent_18%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.12)_42%,rgba(0,0,0,0.42)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.025),transparent_32%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.06)_44%,rgba(0,0,0,0.18)_100%)]" />
 
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(255,255,255,0.14), rgba(255,255,255,0.06) 26%, rgba(255,255,255,0.02) 54%, transparent 100%)',
-              clipPath: 'polygon(49.74% 0%, 50.74% 0%, 58.4% 100%, 41.6% 100%)',
+                'linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.03) 26%, rgba(255,255,255,0.01) 54%, transparent 100%)',
+              clipPath: 'polygon(49.78% 0%, 50.72% 0%, 58.1% 100%, 41.9% 100%)',
               mixBlendMode: 'screen',
-              filter: 'blur(34px)',
-              transform: isEntering ? 'scaleY(1.04)' : 'scaleY(0.99)',
+              filter: 'blur(24px)',
+              transform: isEntering ? 'scaleY(1.018)' : 'scaleY(0.995)',
               transition:
-                'transform 520ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease',
-              opacity: isEntering ? 0.92 : 0,
+                'transform 360ms cubic-bezier(0.22,1,0.36,1), opacity 360ms ease',
+              opacity: isEntering ? 0.55 : 0,
             }}
           />
         </div>
@@ -311,7 +304,7 @@ export default function HomeSlide({
           className={`absolute z-10 ${basePosition} ${
             active ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
           } transition-all duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isEntering ? 'scale-[1.008]' : 'scale-100'
+            isEntering ? 'scale-[1.002]' : 'scale-100'
           }`}
         >
           <div
@@ -522,31 +515,31 @@ export default function HomeSlide({
         }
 
         .portal-target-active {
-          transform: translateY(-1px) scale(1.024) !important;
+          transform: translateY(-0.5px) scale(1.01) !important;
           filter: blur(0) !important;
         }
 
         .portal-target-active::after {
-          opacity: 1 !important;
-          transform: scaleX(1.06) !important;
+          opacity: 0.72 !important;
+          transform: scaleX(1.02) !important;
         }
 
         .portal-target-dim {
-          opacity: 0.32 !important;
-          filter: blur(2px) !important;
-          transform: translateY(2px) scale(0.992) !important;
+          opacity: 0.62 !important;
+          filter: blur(0.6px) !important;
+          transform: translateY(1px) scale(0.998) !important;
         }
 
         .portal-signature-soften {
-          opacity: 0.58 !important;
-          filter: blur(2px) !important;
-          transform: translateY(2px) !important;
+          opacity: 0.76 !important;
+          filter: blur(0.8px) !important;
+          transform: translateY(1px) !important;
         }
 
         .portal-meta-soften {
-          opacity: 0.38 !important;
-          filter: blur(3px) !important;
-          transform: translateY(3px) !important;
+          opacity: 0.58 !important;
+          filter: blur(1px) !important;
+          transform: translateY(1px) !important;
         }
       `}</style>
     </section>
