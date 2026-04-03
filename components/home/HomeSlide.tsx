@@ -237,11 +237,8 @@ export default function HomeSlide({
           ) : (
             <>
               <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.16),rgba(0,0,0,0.11)_24%,rgba(0,0,0,0.18)_54%,rgba(0,0,0,0.30)_100%)]" />
-
               <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.03)_34%,rgba(0,0,0,0.12)_64%,rgba(0,0,0,0.22)_100%)]" />
-
               <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_66%,rgba(0,0,0,0.14),transparent_22%),radial-gradient(circle_at_34%_62%,rgba(0,0,0,0.12),transparent_20%),radial-gradient(circle_at_66%_62%,rgba(0,0,0,0.12),transparent_20%)]" />
-
               <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_right,rgba(0,0,0,0.12),transparent_14%,transparent_86%,rgba(0,0,0,0.12))]" />
             </>
           )}
@@ -444,28 +441,28 @@ export default function HomeSlide({
         @keyframes lit-picked-breathe {
           0%,
           100% {
-            color: rgba(205, 201, 194, 0.54);
+            color: rgba(198, 194, 188, 0.44);
             text-shadow:
-              0 0 2px rgba(255, 245, 228, 0.01),
-              0 0 6px rgba(255, 234, 200, 0.004);
+              0 0 1px rgba(255, 245, 228, 0.004),
+              0 0 3px rgba(255, 234, 200, 0.002);
           }
           50% {
-            color: rgba(241, 233, 219, 0.92);
+            color: rgba(244, 234, 216, 0.96);
             text-shadow:
-              0 0 6px rgba(255, 244, 224, 0.09),
-              0 0 18px rgba(255, 228, 188, 0.05),
-              0 0 40px rgba(255, 220, 175, 0.025);
+              0 0 7px rgba(255, 244, 224, 0.11),
+              0 0 20px rgba(255, 228, 188, 0.06),
+              0 0 42px rgba(255, 220, 175, 0.028);
           }
         }
 
         @keyframes lit-picked-halo {
           0%,
           100% {
-            opacity: 0.04;
-            transform: scale(0.99);
+            opacity: 0;
+            transform: scale(0.988);
           }
           50% {
-            opacity: 0.58;
+            opacity: 0.66;
             transform: scale(1);
           }
         }
@@ -473,11 +470,11 @@ export default function HomeSlide({
         @keyframes lit-picked-under {
           0%,
           100% {
-            opacity: 0.02;
+            opacity: 0;
             transform: scaleX(0.97);
           }
           50% {
-            opacity: 0.38;
+            opacity: 0.44;
             transform: scaleX(1);
           }
         }
@@ -485,16 +482,16 @@ export default function HomeSlide({
         @keyframes lit-signature-breathe {
           0%,
           100% {
-            color: rgba(205, 201, 194, 0.54);
+            color: rgba(198, 194, 188, 0.44);
             text-shadow:
-              0 0 2px rgba(255, 244, 224, 0.008),
-              0 0 6px rgba(255, 230, 190, 0.003);
+              0 0 1px rgba(255, 244, 224, 0.003),
+              0 0 3px rgba(255, 230, 190, 0.001);
           }
           50% {
-            color: rgba(232, 224, 210, 0.82);
+            color: rgba(230, 221, 206, 0.84);
             text-shadow:
-              0 0 5px rgba(255, 242, 220, 0.06),
-              0 0 14px rgba(255, 226, 184, 0.028);
+              0 0 5px rgba(255, 242, 220, 0.07),
+              0 0 14px rgba(255, 226, 184, 0.03);
           }
         }
 
@@ -556,7 +553,7 @@ export default function HomeSlide({
 
         .selected-word-idle,
         .dimmed-word-idle {
-          color: rgba(205, 201, 194, 0.54);
+          color: rgba(198, 194, 188, 0.44);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -576,22 +573,17 @@ export default function HomeSlide({
         }
 
         .dimmed-word-active {
-          color: rgba(205, 201, 194, 0.54);
-          text-shadow: 0 0 3px rgba(255, 255, 255, 0.006);
+          color: rgba(198, 194, 188, 0.44);
+          text-shadow: none;
         }
 
-        .dimmed-word-active::before {
-          opacity: 0.03;
-          transform: scale(0.992);
-        }
-
+        .dimmed-word-active::before,
         .dimmed-word-active::after {
-          opacity: 0.02;
-          transform: scaleX(0.975);
+          opacity: 0;
         }
 
         .selected-signature-idle {
-          color: rgba(205, 201, 194, 0.54);
+          color: rgba(198, 194, 188, 0.44);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -603,15 +595,15 @@ export default function HomeSlide({
         }
 
         .meta-idle {
-          color: rgba(122, 120, 116, 0.68);
+          color: rgba(118, 116, 112, 0.62);
           opacity: 0;
           transform: translateY(8px);
           filter: blur(8px);
         }
 
         .meta-active {
-          color: rgba(136, 133, 128, 0.7);
-          text-shadow: 0 0 6px rgba(255, 255, 255, 0.006);
+          color: rgba(132, 129, 124, 0.68);
+          text-shadow: 0 0 5px rgba(255, 255, 255, 0.004);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
