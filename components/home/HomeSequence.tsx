@@ -36,6 +36,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [introVisible, setIntroVisible] = useState(true)
   const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
+  const [transitionDuration, setTransitionDuration] = useState(900)
+  const [revealingFinal, setRevealingFinal] = useState(false)
 
   const isAnimatingRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
@@ -73,19 +75,40 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [settings]
   )
 
+  const getTransitionDuration = useCallback((from: number, to: number) => {
+    if (from === 2 && to === 3) return 1280
+    if (from !== 3 && to === 3) return 1180
+    if (from === 3 && to !== 3) return 980
+    return 900
+  }, [])
+
   const goTo = useCallback(
     (nextIndex: number) => {
       if (isAnimatingRef.current) return
       if (nextIndex < 0 || nextIndex > slides.length - 1) return
+      if (nextIndex === current) return
+
+      const duration = getTransitionDuration(current, nextIndex)
 
       isAnimatingRef.current = true
+      setTransitionDuration(duration)
+
+      if (current !== 3 && nextIndex === 3) {
+        setRevealingFinal(true)
+      } else {
+        setRevealingFinal(false)
+      }
+
       setCurrent(nextIndex)
 
       window.setTimeout(() => {
         isAnimatingRef.current = false
-      }, 900)
+        if (nextIndex === 3) {
+          setRevealingFinal(false)
+        }
+      }, duration + 60)
     },
-    [slides.length]
+    [current, getTransitionDuration, slides.length]
   )
 
   useEffect(() => {
@@ -310,6 +333,9 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
+  const stageVeilOpacity =
+    current === 0 ? 0.17 : current === 1 ? 0.13 : current === 2 ? 0.08 : 0
+
   return (
     <div
       ref={containerRef}
@@ -324,6 +350,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         {slides.map((slide, index) => {
           const offset = (index - current) * 100
           const isActive = index === current
+          const innerOpacity = isActive ? (index === 3 ? 1 : 0.972) : 1
+          const innerScale = isActive ? (index === 3 ? 1 : 0.997) : 1.01
 
           return (
             <div
@@ -331,26 +359,59 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
               className="absolute inset-0 will-change-transform"
               style={{
                 transform: `translate3d(${offset}%, 0, 0)`,
-                transition: 'transform 900ms cubic-bezier(0.22, 1, 0.36, 1)',
+                transition: `transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
               aria-hidden={!isActive}
             >
-              <HomeSlide
-                imageUrl={slide.bg}
-                text={slide.text}
-                align={slide.align}
-                isLast={slide.isLast}
-                index={index}
-                total={slides.length}
-                active={isActive}
-                mobile={isMobile}
-                parallax={isActive ? parallax : INITIAL_PARALLAX}
-              />
+              <div
+                className="absolute inset-0 will-change-transform"
+                style={{
+                  opacity: innerOpacity,
+                  transform: `scale(${innerScale})`,
+                  transition: `opacity ${transitionDuration}ms ease, transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                }}
+              >
+                <HomeSlide
+                  imageUrl={slide.bg}
+                  text={slide.text}
+                  align={slide.align}
+                  isLast={slide.isLast}
+                  index={index}
+                  total={slides.length}
+                  active={isActive}
+                  mobile={isMobile}
+                  parallax={isActive ? parallax : INITIAL_PARALLAX}
+                />
+              </div>
             </div>
           )
         })}
       </div>
+
+      <div
+        className="pointer-events-none absolute inset-0 z-[62]"
+        style={{
+          opacity: revealingFinal ? 0 : stageVeilOpacity,
+          background:
+            current === 3
+              ? 'transparent'
+              : 'linear-gradient(to bottom, rgba(0,0,0,0.16), rgba(0,0,0,0.05) 22%, rgba(0,0,0,0.12) 100%)',
+          transition: `opacity ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+        }}
+      />
+
+      <div
+        className={`pointer-events-none absolute inset-0 z-[63] transition-all ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          revealingFinal ? 'opacity-100' : 'opacity-0'
+        }`}
+        style={{
+          transitionDuration: `${transitionDuration}ms`,
+          background:
+            'radial-gradient(circle at 50% 24%, rgba(255,255,255,0.035), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.018), transparent 24%)',
+          mixBlendMode: 'screen',
+        }}
+      />
 
       <div
         className={`pointer-events-none absolute inset-0 z-[70] bg-[#0D0D0D] transition-opacity duration-[1200ms] ease-out ${
@@ -362,7 +423,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         <>
           <button
             onClick={() => goTo(current - 1)}
-            className="pointer-events-auto fixed left-6 top-1/2 z-[60] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
+            className="pointer-events-auto fixed left-6 top-1/2 z-[80] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
             aria-label="Previous slide"
             type="button"
           >
@@ -371,7 +432,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
           <button
             onClick={() => goTo(current + 1)}
-            className="pointer-events-auto fixed right-6 top-1/2 z-[60] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
+            className="pointer-events-auto fixed right-6 top-1/2 z-[80] -translate-y-1/2 text-[24px] text-white/18 transition-all duration-300 hover:text-white/55"
             aria-label="Next slide"
             type="button"
           >
@@ -380,7 +441,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         </>
       )}
 
-      <div className="pointer-events-auto fixed bottom-8 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 md:bottom-10 md:gap-3">
+      <div className="pointer-events-auto fixed bottom-8 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 md:bottom-10 md:gap-3">
         {slides.map((_, index) => (
           <button
             key={index}
