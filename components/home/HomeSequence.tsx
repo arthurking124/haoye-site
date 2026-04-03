@@ -37,7 +37,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [introVisible, setIntroVisible] = useState(true)
   const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
   const [transitionDuration, setTransitionDuration] = useState(900)
-  const [revealingFinal, setRevealingFinal] = useState(false)
 
   const isAnimatingRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
@@ -76,8 +75,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   )
 
   const getTransitionDuration = useCallback((from: number, to: number) => {
-    if (from === 2 && to === 3) return 1280
-    if (from !== 3 && to === 3) return 1180
+    if (from === 2 && to === 3) return 1260
+    if (from !== 3 && to === 3) return 1160
     if (from === 3 && to !== 3) return 980
     return 900
   }, [])
@@ -92,20 +91,10 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
       isAnimatingRef.current = true
       setTransitionDuration(duration)
-
-      if (current !== 3 && nextIndex === 3) {
-        setRevealingFinal(true)
-      } else {
-        setRevealingFinal(false)
-      }
-
       setCurrent(nextIndex)
 
       window.setTimeout(() => {
         isAnimatingRef.current = false
-        if (nextIndex === 3) {
-          setRevealingFinal(false)
-        }
       }, duration + 60)
     },
     [current, getTransitionDuration, slides.length]
@@ -172,14 +161,12 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         ty: currentRef.current.ty + nextVelocity.ty,
       }
 
-      const nextState = {
+      setParallax({
         rotateX: Number(currentRef.current.rotateX.toFixed(4)),
         rotateY: Number(currentRef.current.rotateY.toFixed(4)),
         tx: Number(currentRef.current.tx.toFixed(4)),
         ty: Number(currentRef.current.ty.toFixed(4)),
-      }
-
-      setParallax(nextState)
+      })
 
       rafRef.current = window.requestAnimationFrame(animate)
     }
@@ -333,9 +320,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
-  const stageVeilOpacity =
-    current === 0 ? 0.17 : current === 1 ? 0.13 : current === 2 ? 0.08 : 0
-
   return (
     <div
       ref={containerRef}
@@ -350,8 +334,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         {slides.map((slide, index) => {
           const offset = (index - current) * 100
           const isActive = index === current
-          const innerOpacity = isActive ? (index === 3 ? 1 : 0.972) : 1
-          const innerScale = isActive ? (index === 3 ? 1 : 0.997) : 1.01
 
           return (
             <div
@@ -364,54 +346,21 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
               }}
               aria-hidden={!isActive}
             >
-              <div
-                className="absolute inset-0 will-change-transform"
-                style={{
-                  opacity: innerOpacity,
-                  transform: `scale(${innerScale})`,
-                  transition: `opacity ${transitionDuration}ms ease, transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-                }}
-              >
-                <HomeSlide
-                  imageUrl={slide.bg}
-                  text={slide.text}
-                  align={slide.align}
-                  isLast={slide.isLast}
-                  index={index}
-                  total={slides.length}
-                  active={isActive}
-                  mobile={isMobile}
-                  parallax={isActive ? parallax : INITIAL_PARALLAX}
-                />
-              </div>
+              <HomeSlide
+                imageUrl={slide.bg}
+                text={slide.text}
+                align={slide.align}
+                isLast={slide.isLast}
+                index={index}
+                total={slides.length}
+                active={isActive}
+                mobile={isMobile}
+                parallax={isActive ? parallax : INITIAL_PARALLAX}
+              />
             </div>
           )
         })}
       </div>
-
-      <div
-        className="pointer-events-none absolute inset-0 z-[62]"
-        style={{
-          opacity: revealingFinal ? 0 : stageVeilOpacity,
-          background:
-            current === 3
-              ? 'transparent'
-              : 'linear-gradient(to bottom, rgba(0,0,0,0.16), rgba(0,0,0,0.05) 22%, rgba(0,0,0,0.12) 100%)',
-          transition: `opacity ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
-        }}
-      />
-
-      <div
-        className={`pointer-events-none absolute inset-0 z-[63] transition-all ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          revealingFinal ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{
-          transitionDuration: `${transitionDuration}ms`,
-          background:
-            'radial-gradient(circle at 50% 24%, rgba(255,255,255,0.035), transparent 26%), linear-gradient(to bottom, rgba(255,255,255,0.018), transparent 24%)',
-          mixBlendMode: 'screen',
-        }}
-      />
 
       <div
         className={`pointer-events-none absolute inset-0 z-[70] bg-[#0D0D0D] transition-opacity duration-[1200ms] ease-out ${
