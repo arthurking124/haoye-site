@@ -168,9 +168,9 @@ export default function HomeSlide({
                       transform: atmosphereTransform,
                       transitionProperty: 'transform, opacity',
                       background:
-                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.032), transparent 28%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.022), transparent 40%)',
+                        'radial-gradient(circle at 50% 18%, rgba(255,255,255,0.018), transparent 26%), radial-gradient(circle at 50% 42%, rgba(255,255,255,0.010), transparent 36%)',
                       mixBlendMode: 'screen',
-                      filter: 'blur(24px)',
+                      filter: 'blur(22px)',
                     }}
                   />
 
@@ -185,11 +185,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.095), rgba(255,255,255,0.034) 28%, rgba(255,255,255,0.01) 52%, transparent 100%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.09), rgba(255,255,255,0.03) 28%, rgba(255,255,255,0.008) 52%, transparent 100%)',
                         clipPath: 'polygon(49.72% 0.1%, 50.72% 0.1%, 58% 100%, 42% 100%)',
                         mixBlendMode: 'screen',
                         filter:
-                          'blur(38px) drop-shadow(0 0 16px rgba(255,255,255,0.1))',
+                          'blur(36px) drop-shadow(0 0 14px rgba(255,255,255,0.08))',
                         animation: active
                           ? 'church-beam-breathe 19s cubic-bezier(0.42, 0, 0.2, 1) infinite'
                           : 'none',
@@ -201,11 +201,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.11), rgba(255,255,255,0.032) 24%, transparent 72%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.085), rgba(255,255,255,0.022) 24%, transparent 72%)',
                         clipPath: 'polygon(49.9% 0%, 50.45% 0%, 54.5% 100%, 45.5% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(14px)',
-                        opacity: active ? 0.38 : 0,
+                        filter: 'blur(12px)',
+                        opacity: active ? 0.26 : 0,
                         transition: 'opacity 2600ms ease 700ms',
                       }}
                     />
@@ -214,11 +214,11 @@ export default function HomeSlide({
                       className="absolute inset-0"
                       style={{
                         background:
-                          'linear-gradient(to bottom, rgba(255,255,255,0.024), transparent 60%)',
+                          'linear-gradient(to bottom, rgba(255,255,255,0.016), transparent 60%)',
                         clipPath: 'polygon(49.95% 0%, 50.15% 0%, 51.4% 100%, 48.6% 100%)',
                         mixBlendMode: 'screen',
-                        filter: 'blur(6px)',
-                        opacity: active ? 0.16 : 0,
+                        filter: 'blur(5px)',
+                        opacity: active ? 0.1 : 0,
                         transition: 'opacity 2400ms ease 900ms',
                       }}
                     />
@@ -236,10 +236,10 @@ export default function HomeSlide({
             </>
           ) : (
             <>
-              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.18),rgba(0,0,0,0.12)_24%,rgba(0,0,0,0.2)_54%,rgba(0,0,0,0.34)_100%)]" />
-              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.018),transparent_28%),radial-gradient(circle_at_50%_56%,rgba(255,255,255,0.012),transparent_34%)] mix-blend-screen" />
-              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_52%,transparent_0%,rgba(0,0,0,0.06)_36%,rgba(0,0,0,0.18)_64%,rgba(0,0,0,0.34)_100%)]" />
-              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_right,rgba(0,0,0,0.18),transparent_14%,transparent_86%,rgba(0,0,0,0.18))]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_bottom,rgba(0,0,0,0.16),rgba(0,0,0,0.11)_24%,rgba(0,0,0,0.18)_54%,rgba(0,0,0,0.31)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_24%,rgba(255,255,255,0.010),transparent_26%),radial-gradient(circle_at_50%_56%,rgba(255,255,255,0.006),transparent_32%)] mix-blend-screen" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(circle_at_50%_52%,transparent_0%,rgba(0,0,0,0.05)_38%,rgba(0,0,0,0.16)_66%,rgba(0,0,0,0.3)_100%)]" />
+              <div className="pointer-events-none absolute inset-0 z-[2] bg-[linear-gradient(to_right,rgba(0,0,0,0.14),transparent_14%,transparent_86%,rgba(0,0,0,0.14))]" />
             </>
           )}
 
@@ -250,7 +250,7 @@ export default function HomeSlide({
               }`}
               style={{
                 background:
-                  'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.016), transparent 24%), linear-gradient(to bottom, rgba(255,255,255,0.012), transparent 22%)',
+                  'radial-gradient(circle at 50% 12%, rgba(255,255,255,0.008), transparent 22%), linear-gradient(to bottom, rgba(255,255,255,0.006), transparent 20%)',
                 mixBlendMode: 'screen',
               }}
             />
@@ -266,20 +266,20 @@ export default function HomeSlide({
             isEntering ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.018),transparent_30%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.05)_44%,rgba(0,0,0,0.16)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_54%,rgba(255,255,255,0.012),transparent_30%),radial-gradient(circle_at_50%_50%,transparent_0%,rgba(0,0,0,0.05)_44%,rgba(0,0,0,0.15)_100%)]" />
 
           <div
             className="absolute inset-0"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(255,255,255,0.06), rgba(255,255,255,0.022) 26%, rgba(255,255,255,0.008) 54%, transparent 100%)',
+                'linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(255,255,255,0.018) 26%, rgba(255,255,255,0.006) 54%, transparent 100%)',
               clipPath: 'polygon(49.78% 0%, 50.72% 0%, 58.1% 100%, 41.9% 100%)',
               mixBlendMode: 'screen',
-              filter: 'blur(22px)',
+              filter: 'blur(20px)',
               transform: isEntering ? 'scaleY(1.016)' : 'scaleY(0.996)',
               transition:
                 'transform 360ms cubic-bezier(0.22,1,0.36,1), opacity 360ms ease',
-              opacity: isEntering ? 0.42 : 0,
+              opacity: isEntering ? 0.3 : 0,
             }}
           />
         </div>
@@ -468,11 +468,11 @@ export default function HomeSlide({
           transform: scale(0.985);
           background: radial-gradient(
             ellipse at 50% 52%,
-            rgba(255, 255, 255, 0.072),
-            rgba(255, 255, 255, 0.03) 34%,
+            rgba(255, 255, 255, 0.05),
+            rgba(255, 255, 255, 0.018) 34%,
             transparent 72%
           );
-          filter: blur(10px);
+          filter: blur(9px);
         }
 
         .illuminated-text::after {
@@ -481,7 +481,7 @@ export default function HomeSlide({
           left: -0.07em;
           right: -0.07em;
           bottom: 0.05em;
-          height: 0.2em;
+          height: 0.16em;
           pointer-events: none;
           border-radius: 999px;
           opacity: 0;
@@ -489,15 +489,15 @@ export default function HomeSlide({
           transition: opacity 1800ms ease, transform 1800ms ease;
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 255, 255, 0.11),
-            rgba(255, 255, 255, 0.038) 46%,
+            rgba(255, 255, 255, 0.08),
+            rgba(255, 255, 255, 0.024) 46%,
             transparent 78%
           );
-          filter: blur(6px);
+          filter: blur(5px);
         }
 
         .selected-word-idle {
-          color: rgba(223, 220, 214, 0.68);
+          color: rgba(223, 220, 214, 0.66);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -505,18 +505,18 @@ export default function HomeSlide({
         }
 
         .selected-word-active {
-          color: rgba(236, 233, 226, 0.88);
-          text-shadow: 0 0 4px rgba(255, 255, 255, 0.055),
-            0 0 12px rgba(255, 255, 255, 0.028);
+          color: rgba(232, 229, 222, 0.84);
+          text-shadow: 0 0 3px rgba(255, 255, 255, 0.036),
+            0 0 10px rgba(255, 255, 255, 0.018);
         }
 
         .selected-word-active::before {
-          opacity: 0.6;
+          opacity: 0.44;
           transform: scale(1);
         }
 
         .selected-word-active::after {
-          opacity: 0.46;
+          opacity: 0.32;
           transform: scaleX(1);
         }
 
@@ -530,16 +530,16 @@ export default function HomeSlide({
 
         .dimmed-word-active {
           color: rgba(214, 210, 202, 0.62);
-          text-shadow: 0 0 5px rgba(255, 255, 255, 0.014);
+          text-shadow: 0 0 4px rgba(255, 255, 255, 0.01);
         }
 
         .dimmed-word-active::before {
-          opacity: 0.08;
+          opacity: 0.05;
           transform: scale(0.992);
         }
 
         .dimmed-word-active::after {
-          opacity: 0.06;
+          opacity: 0.04;
           transform: scaleX(0.975);
         }
 
@@ -552,9 +552,9 @@ export default function HomeSlide({
         }
 
         .selected-signature-active {
-          color: rgba(231, 228, 221, 0.84);
-          text-shadow: 0 0 5px rgba(255, 255, 255, 0.048),
-            0 0 14px rgba(255, 255, 255, 0.022);
+          color: rgba(228, 224, 217, 0.8);
+          text-shadow: 0 0 4px rgba(255, 255, 255, 0.03),
+            0 0 10px rgba(255, 255, 255, 0.014);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -568,8 +568,8 @@ export default function HomeSlide({
         }
 
         .meta-active {
-          color: rgba(146, 143, 137, 0.76);
-          text-shadow: 0 0 10px rgba(255, 255, 255, 0.016);
+          color: rgba(144, 141, 135, 0.74);
+          text-shadow: 0 0 8px rgba(255, 255, 255, 0.01);
           opacity: 1;
           transform: translateY(0);
           filter: blur(0);
@@ -581,30 +581,30 @@ export default function HomeSlide({
         }
 
         .portal-target-active::after {
-          opacity: 0.52 !important;
-          transform: scaleX(1.015) !important;
+          opacity: 0.38 !important;
+          transform: scaleX(1.01) !important;
         }
 
         .portal-target-active::before {
-          opacity: 0.68 !important;
-          transform: scale(1.006) !important;
+          opacity: 0.5 !important;
+          transform: scale(1.004) !important;
         }
 
         .portal-target-dim {
-          opacity: 0.64 !important;
+          opacity: 0.66 !important;
           filter: blur(0.5px) !important;
           transform: translateY(1px) scale(0.998) !important;
         }
 
         .portal-signature-soften {
-          opacity: 0.78 !important;
-          filter: blur(0.8px) !important;
+          opacity: 0.8 !important;
+          filter: blur(0.7px) !important;
           transform: translateY(1px) !important;
         }
 
         .portal-meta-soften {
-          opacity: 0.6 !important;
-          filter: blur(1px) !important;
+          opacity: 0.62 !important;
+          filter: blur(0.9px) !important;
           transform: translateY(1px) !important;
         }
       `}</style>
