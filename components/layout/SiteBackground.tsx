@@ -10,73 +10,79 @@ export default function SiteBackground() {
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      {/* 基础深灰黑，不是纯黑 */}
-      <div className="absolute inset-0 bg-[#090909]" />
+      {/* 基础底色：不是纯黑，而是极深灰黑 */}
+      <div className="absolute inset-0 bg-[#070707]" />
 
-      {/* 纵向空气层次 */}
+      {/* 纵向空间层次 */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, rgba(18,18,18,0.88) 0%, rgba(8,8,8,0.96) 36%, rgba(10,10,10,0.98) 100%)',
+            'linear-gradient(to bottom, rgba(13,13,13,0.92) 0%, rgba(7,7,7,0.98) 36%, rgba(9,9,9,0.98) 100%)',
         }}
       />
 
-      {/* 左侧极轻“回声圈” */}
+      {/* 左侧主圆圈纹理：更接近你原始版本 */}
       <div
-        className="absolute inset-y-0 left-0 w-[44vw]"
+        className="absolute inset-y-0 left-0 w-[46vw]"
         style={{
           background: `
-            radial-gradient(circle at 26% 24%, rgba(255,255,255,0.020) 0, rgba(255,255,255,0.010) 4%, transparent 9%),
-            radial-gradient(circle at 26% 24%, transparent 0 10%, rgba(255,255,255,0.014) 10.5%, transparent 13.5%),
-            radial-gradient(circle at 26% 24%, transparent 0 14.5%, rgba(255,255,255,0.010) 15%, transparent 18.5%),
-            radial-gradient(circle at 26% 24%, transparent 0 19.5%, rgba(255,255,255,0.008) 20%, transparent 24.5%),
-            radial-gradient(circle at 26% 24%, transparent 0 25.5%, rgba(255,255,255,0.006) 26%, transparent 31%)
+            radial-gradient(circle at 22% 26%, rgba(255,255,255,0.020) 0 1.2%, transparent 1.3% 7.6%, rgba(255,255,255,0.014) 7.8% 8.05%, transparent 8.2% 13.2%, rgba(255,255,255,0.010) 13.4% 13.6%, transparent 13.8% 19.6%, rgba(255,255,255,0.007) 19.8% 20.0%, transparent 20.2% 27%),
+            radial-gradient(circle at 22% 26%, rgba(255,255,255,0.004), transparent 34%)
           `,
-          filter: 'blur(1px)',
-          opacity: 0.26,
+          filter: 'blur(0.6px)',
+          opacity: 0.42,
         }}
       />
 
-      {/* 右侧更弱的空间回声 */}
+      {/* 左侧外扩更大一圈，制造空气感 */}
       <div
-        className="absolute inset-y-0 right-0 w-[42vw]"
+        className="absolute inset-y-0 left-[-4vw] w-[56vw]"
         style={{
           background: `
-            radial-gradient(circle at 72% 68%, rgba(255,255,255,0.012) 0, rgba(255,255,255,0.006) 4%, transparent 9%),
-            radial-gradient(circle at 72% 68%, transparent 0 10%, rgba(255,255,255,0.008) 10.5%, transparent 14%),
-            radial-gradient(circle at 72% 68%, transparent 0 15%, rgba(255,255,255,0.006) 15.5%, transparent 19%)
+            radial-gradient(circle at 24% 30%, transparent 0 30%, rgba(255,255,255,0.006) 30.2% 30.35%, transparent 30.5% 38%, rgba(255,255,255,0.004) 38.2% 38.3%, transparent 38.5% 50%)
           `,
           filter: 'blur(1px)',
-          opacity: 0.16,
+          opacity: 0.24,
         }}
       />
 
-      {/* 极轻横向暗场，防止背景太平 */}
+      {/* 右侧极弱回声，避免右边完全死掉 */}
       <div
-        className="absolute inset-0"
+        className="absolute inset-y-0 right-0 w-[38vw]"
         style={{
-          background:
-            'linear-gradient(to right, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0.06) 16%, rgba(0,0,0,0.00) 38%, rgba(0,0,0,0.00) 62%, rgba(0,0,0,0.08) 84%, rgba(0,0,0,0.18) 100%)',
+          background: `
+            radial-gradient(circle at 72% 70%, rgba(255,255,255,0.010) 0 1%, transparent 1.1% 6.4%, rgba(255,255,255,0.007) 6.6% 6.8%, transparent 7% 11.8%, rgba(255,255,255,0.004) 12% 12.15%, transparent 12.3% 17%)
+          `,
+          filter: 'blur(0.8px)',
+          opacity: 0.14,
         }}
       />
 
-      {/* 顶部极轻雾感，不让页面死黑 */}
+      {/* 极轻顶部雾感 */}
       <div
-        className="absolute inset-x-0 top-0 h-[22vh]"
+        className="absolute inset-x-0 top-0 h-[24vh]"
         style={{
           background:
             'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.018), transparent 58%)',
-          opacity: 0.28,
+          opacity: 0.24,
         }}
       />
 
-      {/* 底部收束 */}
+      {/* 轻微横向暗场，让中间更聚拢 */}
       <div
-        className="absolute inset-x-0 bottom-0 h-[28vh]"
+        className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to top, rgba(0,0,0,0.22), transparent 72%)',
+            'linear-gradient(to right, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.05) 18%, rgba(0,0,0,0.00) 42%, rgba(0,0,0,0.00) 62%, rgba(0,0,0,0.06) 84%, rgba(0,0,0,0.14) 100%)',
+        }}
+      />
+
+      {/* 底部极轻收束 */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-[26vh]"
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.22), transparent 70%)',
         }}
       />
     </div>
