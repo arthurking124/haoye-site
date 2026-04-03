@@ -53,12 +53,12 @@ export default function HomeSlide({
         ? 'left-[8%] bottom-[24%] text-left'
         : 'left-[8%] bottom-[18%] text-left'
       : align === 'right'
-      ? mobile
-        ? 'right-[8%] bottom-[24%] text-right'
-        : 'right-[8%] bottom-[18%] text-right'
-      : mobile
-      ? 'left-1/2 top-[56%] -translate-x-1/2 text-center'
-      : 'left-1/2 top-[60%] -translate-x-1/2 text-center'
+        ? mobile
+          ? 'right-[8%] bottom-[24%] text-right'
+          : 'right-[8%] bottom-[18%] text-right'
+        : mobile
+          ? 'left-1/2 top-[56%] -translate-x-1/2 text-center'
+          : 'left-1/2 top-[60%] -translate-x-1/2 text-center'
 
   const bgRotateX = isLast ? parallax.rotateX * 0.38 : parallax.rotateX * 0.34
   const bgRotateY = isLast ? parallax.rotateY * 0.38 : parallax.rotateY * 0.34
@@ -100,7 +100,6 @@ export default function HomeSlide({
       }
 
       e.preventDefault()
-
       setPortalTarget(target)
       setIsEntering(true)
 
@@ -441,17 +440,17 @@ export default function HomeSlide({
         @keyframes lit-picked-breathe {
           0%,
           100% {
-            color: rgba(198, 194, 188, 0.34);
+            color: rgba(188, 184, 178, 0.24);
             text-shadow:
               0 0 0 rgba(255, 245, 228, 0),
               0 0 0 rgba(255, 234, 200, 0);
           }
           50% {
-            color: rgba(248, 236, 214, 0.98);
+            color: rgba(252, 240, 218, 1);
             text-shadow:
-              0 0 8px rgba(255, 244, 224, 0.13),
-              0 0 24px rgba(255, 228, 188, 0.07),
-              0 0 48px rgba(255, 220, 175, 0.03);
+              0 0 10px rgba(255, 244, 224, 0.16),
+              0 0 28px rgba(255, 228, 188, 0.09),
+              0 0 56px rgba(255, 220, 175, 0.04);
           }
         }
 
@@ -459,11 +458,11 @@ export default function HomeSlide({
           0%,
           100% {
             opacity: 0;
-            transform: scale(0.986);
+            transform: scale(0.984);
           }
           50% {
-            opacity: 0.82;
-            transform: scale(1);
+            opacity: 0.92;
+            transform: scale(1.008);
           }
         }
 
@@ -471,27 +470,27 @@ export default function HomeSlide({
           0%,
           100% {
             opacity: 0;
-            transform: scaleX(0.965);
+            transform: scaleX(0.962);
           }
           50% {
-            opacity: 0.56;
-            transform: scaleX(1);
+            opacity: 0.7;
+            transform: scaleX(1.02);
           }
         }
 
         @keyframes lit-signature-breathe {
           0%,
           100% {
-            color: rgba(198, 194, 188, 0.34);
+            color: rgba(188, 184, 178, 0.24);
             text-shadow:
               0 0 0 rgba(255, 244, 224, 0),
               0 0 0 rgba(255, 230, 190, 0);
           }
           50% {
-            color: rgba(232, 221, 204, 0.86);
+            color: rgba(236, 225, 208, 0.9);
             text-shadow:
-              0 0 5px rgba(255, 242, 220, 0.07),
-              0 0 16px rgba(255, 226, 184, 0.03);
+              0 0 6px rgba(255, 242, 220, 0.08),
+              0 0 18px rgba(255, 226, 184, 0.035);
           }
         }
 
@@ -553,7 +552,7 @@ export default function HomeSlide({
 
         .selected-word-idle,
         .dimmed-word-idle {
-          color: rgba(198, 194, 188, 0.34);
+          color: rgba(188, 184, 178, 0.24);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -561,19 +560,19 @@ export default function HomeSlide({
         }
 
         .selected-word-active {
-          animation: lit-picked-breathe 12.8s ease-in-out infinite;
+          animation: lit-picked-breathe 11.6s ease-in-out infinite;
         }
 
         .selected-word-active::before {
-          animation: lit-picked-halo 12.8s ease-in-out infinite;
+          animation: lit-picked-halo 11.6s ease-in-out infinite;
         }
 
         .selected-word-active::after {
-          animation: lit-picked-under 12.8s ease-in-out infinite;
+          animation: lit-picked-under 11.6s ease-in-out infinite;
         }
 
         .dimmed-word-active {
-          color: rgba(198, 194, 188, 0.34);
+          color: rgba(188, 184, 178, 0.24);
           text-shadow: none;
         }
 
@@ -583,7 +582,7 @@ export default function HomeSlide({
         }
 
         .selected-signature-idle {
-          color: rgba(198, 194, 188, 0.34);
+          color: rgba(188, 184, 178, 0.24);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -591,7 +590,7 @@ export default function HomeSlide({
         }
 
         .selected-signature-active {
-          animation: lit-signature-breathe 12.8s ease-in-out infinite;
+          animation: lit-signature-breathe 11.6s ease-in-out infinite;
         }
 
         .meta-idle {
