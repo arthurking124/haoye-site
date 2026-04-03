@@ -34,7 +34,7 @@ export default function HomeSlide({
   parallax = { rotateX: 0, rotateY: 0, tx: 0, ty: 0 },
 }: HomeSlideProps) {
   const router = useRouter()
-  const leaveTimerRef = useRef<number | null>(null)
+ const leaveTimerRef = useRef<number | null>(null)
 
   const [portalTarget, setPortalTarget] = useState<PortalTarget>(null)
   const [isEntering, setIsEntering] = useState(false)
