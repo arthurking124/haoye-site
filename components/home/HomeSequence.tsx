@@ -21,6 +21,16 @@ const INITIAL_PARALLAX: ParallaxState = {
   ty: 0,
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function soften(value: number) {
+  const sign = Math.sign(value)
+  const amount = Math.min(1, Math.abs(value))
+  return sign * Math.pow(amount, 1.18)
+}
+
 export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
@@ -34,6 +44,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const rafRef = useRef<number | null>(null)
   const targetRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const currentRef = useRef<ParallaxState>(INITIAL_PARALLAX)
+  const velocityRef = useRef<ParallaxState>(INITIAL_PARALLAX)
 
   const slides = useMemo(
     () => [
@@ -106,26 +117,46 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }, [])
 
   useEffect(() => {
-    const animate = () => {
-      const ease = 0.085
+    const spring = isMobile ? 0.09 : 0.105
+    const damping = isMobile ? 0.78 : 0.8
 
-      currentRef.current = {
+    const animate = () => {
+      const nextVelocity: ParallaxState = {
         rotateX:
-          currentRef.current.rotateX +
-          (targetRef.current.rotateX - currentRef.current.rotateX) * ease,
+          (velocityRef.current.rotateX +
+            (targetRef.current.rotateX - currentRef.current.rotateX) * spring) *
+          damping,
         rotateY:
-          currentRef.current.rotateY +
-          (targetRef.current.rotateY - currentRef.current.rotateY) * ease,
-        tx: currentRef.current.tx + (targetRef.current.tx - currentRef.current.tx) * ease,
-        ty: currentRef.current.ty + (targetRef.current.ty - currentRef.current.ty) * ease,
+          (velocityRef.current.rotateY +
+            (targetRef.current.rotateY - currentRef.current.rotateY) * spring) *
+          damping,
+        tx:
+          (velocityRef.current.tx +
+            (targetRef.current.tx - currentRef.current.tx) * spring) *
+          damping,
+        ty:
+          (velocityRef.current.ty +
+            (targetRef.current.ty - currentRef.current.ty) * spring) *
+          damping,
       }
 
-      setParallax({
+      velocityRef.current = nextVelocity
+
+      currentRef.current = {
+        rotateX: currentRef.current.rotateX + nextVelocity.rotateX,
+        rotateY: currentRef.current.rotateY + nextVelocity.rotateY,
+        tx: currentRef.current.tx + nextVelocity.tx,
+        ty: currentRef.current.ty + nextVelocity.ty,
+      }
+
+      const nextState = {
         rotateX: Number(currentRef.current.rotateX.toFixed(4)),
         rotateY: Number(currentRef.current.rotateY.toFixed(4)),
         tx: Number(currentRef.current.tx.toFixed(4)),
         ty: Number(currentRef.current.ty.toFixed(4)),
-      })
+      }
+
+      setParallax(nextState)
 
       rafRef.current = window.requestAnimationFrame(animate)
     }
@@ -137,34 +168,62 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         window.cancelAnimationFrame(rafRef.current)
       }
     }
-  }, [])
+  }, [isMobile])
+
+  const updateTargetFromPoint = useCallback(
+    (clientX: number, clientY: number, pointerType: 'mouse' | 'touch') => {
+      const container = containerRef.current
+      if (!container) return
+
+      const rect = container.getBoundingClientRect()
+      const x = clamp((clientX - rect.left) / rect.width, 0, 1)
+      const y = clamp((clientY - rect.top) / rect.height, 0, 1)
+
+      const nx = x * 2 - 1
+      const ny = y * 2 - 1
+
+      const deadZone = pointerType === 'touch' ? 0.09 : 0.055
+      const dx = Math.abs(nx) < deadZone ? 0 : nx
+      const dy = Math.abs(ny) < deadZone ? 0 : ny
+
+      const sx = soften(dx)
+      const sy = soften(dy)
+
+      const rotateAmount = pointerType === 'touch' ? 0.9 : 1.18
+      const translateAmount = pointerType === 'touch' ? 4.6 : 6.2
+
+      targetRef.current = {
+        rotateY: sx * rotateAmount,
+        rotateX: sy * -rotateAmount,
+        tx: sx * -translateAmount,
+        ty: sy * -translateAmount,
+      }
+    },
+    []
+  )
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (isMobile) return
-
-      const { clientX, clientY } = e
-      const { innerWidth, innerHeight } = window
-
-      const rawX = (clientX / innerWidth) * 2 - 1
-      const rawY = (clientY / innerHeight) * 2 - 1
-
-      const deadZone = 0.04
-      const x = Math.abs(rawX) < deadZone ? 0 : rawX
-      const y = Math.abs(rawY) < deadZone ? 0 : rawY
-
-      targetRef.current = {
-        rotateY: x * 1.5,
-        rotateX: y * -1.5,
-        tx: x * -8,
-        ty: y * -8,
-      }
+      updateTargetFromPoint(e.clientX, e.clientY, 'mouse')
     },
-    [isMobile]
+    [isMobile, updateTargetFromPoint]
   )
 
   const handleMouseLeave = useCallback(() => {
     targetRef.current = INITIAL_PARALLAX
+  }, [])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        targetRef.current = INITIAL_PARALLAX
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
   useEffect(() => {
@@ -219,11 +278,25 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX
+
+    if (e.touches[0]) {
+      updateTargetFromPoint(e.touches[0].clientX, e.touches[0].clientY, 'touch')
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (introVisible) return
+    if (!e.touches[0]) return
+
+    updateTargetFromPoint(e.touches[0].clientX, e.touches[0].clientY, 'touch')
   }
 
   const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
     if (introVisible) return
-    if (touchStartX.current === null) return
+    if (touchStartX.current === null) {
+      targetRef.current = INITIAL_PARALLAX
+      return
+    }
 
     const endX = e.changedTouches[0].clientX
     const diff = touchStartX.current - endX
@@ -234,6 +307,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }
 
     touchStartX.current = null
+    targetRef.current = INITIAL_PARALLAX
   }
 
   return (
@@ -243,6 +317,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       <div className="absolute inset-0">
