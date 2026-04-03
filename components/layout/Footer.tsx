@@ -4,9 +4,9 @@ import { usePathname } from 'next/navigation'
 
 export default function Footer() {
   const pathname = usePathname()
-  const isHome = pathname === '/' || pathname === ''
 
-  if (isHome) return null
+  // 首页不显示 footer，避免破坏四屏序章
+  if (pathname === '/' || pathname === '') return null
 
   return (
     <footer className="relative z-[20] border-t border-white/6">

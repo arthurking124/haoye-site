@@ -9,11 +9,10 @@ export default function PageShell({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const isHome = pathname === '/' || pathname === ''
-  const [visible, setVisible] = useState(isHome)
+  const [visible, setVisible] = useState(pathname === '/')
 
   useEffect(() => {
-    if (isHome) {
+    if (pathname === '/') {
       setVisible(true)
       return
     }
@@ -25,16 +24,19 @@ export default function PageShell({
     })
 
     return () => window.cancelAnimationFrame(id)
-  }, [isHome, pathname])
+  }, [pathname])
 
-  if (isHome) return <>{children}</>
+  // 首页不加这层过渡，避免破坏你的四屏节奏
+  if (pathname === '/') {
+    return <>{children}</>
+  }
 
   return (
     <div
-      className={`transition-all ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
+      className={`transition-all duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
         visible
-          ? 'translate-y-0 opacity-100 blur-0 duration-[760ms]'
-          : 'translate-y-[10px] opacity-0 blur-[4px] duration-[520ms]'
+          ? 'translate-y-0 opacity-100 blur-0'
+          : 'translate-y-[14px] opacity-0 blur-[6px]'
       }`}
     >
       {children}

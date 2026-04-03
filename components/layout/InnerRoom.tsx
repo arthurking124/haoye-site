@@ -12,7 +12,6 @@ export default function InnerRoom({
   variant = 'inner',
 }: InnerRoomProps) {
   const [visible, setVisible] = useState(false)
-  const isArchive = variant === 'archive'
 
   useEffect(() => {
     const id = window.requestAnimationFrame(() => {
@@ -22,18 +21,20 @@ export default function InnerRoom({
     return () => window.cancelAnimationFrame(id)
   }, [])
 
+  const isArchive = variant === 'archive'
+
   return (
     <div className="relative">
       <div
-        className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-24 transition-opacity ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          visible ? 'opacity-100 duration-[900ms]' : 'opacity-0 duration-[500ms]'
+        className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-24 transition-opacity duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] ${
+          visible ? 'opacity-100' : 'opacity-0'
         }`}
       >
         <div
           className={`absolute inset-0 ${
             isArchive
-              ? 'bg-[linear-gradient(to_bottom,rgba(255,255,255,0.018),transparent)]'
-              : 'bg-[linear-gradient(to_bottom,rgba(255,255,255,0.012),transparent)]'
+              ? 'bg-[linear-gradient(to_bottom,rgba(255,255,255,0.02),transparent)]'
+              : 'bg-[linear-gradient(to_bottom,rgba(255,255,255,0.015),transparent)]'
           }`}
         />
       </div>
@@ -43,8 +44,8 @@ export default function InnerRoom({
           visible
             ? 'translate-y-0 opacity-100 blur-0'
             : isArchive
-              ? 'translate-y-[10px] opacity-0 blur-[4px]'
-              : 'translate-y-[8px] opacity-0 blur-[3px]'
+            ? 'translate-y-[10px] opacity-0 blur-[4px]'
+            : 'translate-y-[8px] opacity-0 blur-[3px]'
         } ${isArchive ? 'duration-[820ms]' : 'duration-[760ms]'}`}
       >
         {children}
