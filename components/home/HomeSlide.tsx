@@ -354,7 +354,7 @@ export default function HomeSlide({
                   href="/images"
                   onClick={beginPortalEnter('/images', 'images')}
                   className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                    active ? 'selected-word-active' : 'selected-word-idle'
+                    active ? 'picked-word-active' : 'picked-word-idle'
                   } ${isTarget('images') ? 'portal-target-active' : ''} ${
                     isOther('images') ? 'portal-target-dim' : ''
                   }`}
@@ -366,7 +366,7 @@ export default function HomeSlide({
                   href="/notes"
                   onClick={beginPortalEnter('/notes', 'notes')}
                   className={`pointer-events-auto illuminated-text transition-all ease-out ${
-                    active ? 'selected-word-active' : 'selected-word-idle'
+                    active ? 'picked-word-active' : 'picked-word-idle'
                   } ${isTarget('notes') ? 'portal-target-active' : ''} ${
                     isOther('notes') ? 'portal-target-dim' : ''
                   }`}
@@ -437,44 +437,34 @@ export default function HomeSlide({
           }
         }
 
-        @keyframes lit-picked-breathe {
+        @keyframes picked-word-breathe {
           0%,
           100% {
-            color: rgba(188, 184, 178, 0.24);
+            color: rgba(188, 184, 178, 0.22);
             text-shadow:
-              0 0 0 rgba(255, 245, 228, 0),
-              0 0 0 rgba(255, 234, 200, 0);
+              0 0 0 rgba(255, 244, 224, 0),
+              0 0 0 rgba(255, 228, 188, 0);
+            filter: blur(0);
           }
           50% {
-            color: rgba(252, 240, 218, 1);
+            color: rgba(248, 236, 214, 0.98);
             text-shadow:
-              0 0 10px rgba(255, 244, 224, 0.16),
-              0 0 28px rgba(255, 228, 188, 0.09),
-              0 0 56px rgba(255, 220, 175, 0.04);
+              0 0 7px rgba(255, 244, 224, 0.14),
+              0 0 20px rgba(255, 228, 188, 0.07),
+              0 0 42px rgba(255, 220, 175, 0.03);
+            filter: blur(0);
           }
         }
 
-        @keyframes lit-picked-halo {
+        @keyframes picked-word-core {
           0%,
           100% {
             opacity: 0;
-            transform: scale(0.984);
+            transform: scaleX(0.985);
           }
           50% {
-            opacity: 0.92;
-            transform: scale(1.008);
-          }
-        }
-
-        @keyframes lit-picked-under {
-          0%,
-          100% {
-            opacity: 0;
-            transform: scaleX(0.962);
-          }
-          50% {
-            opacity: 0.7;
-            transform: scaleX(1.02);
+            opacity: 0.24;
+            transform: scaleX(1.01);
           }
         }
 
@@ -502,7 +492,7 @@ export default function HomeSlide({
           filter: blur(8px);
         }
 
-        .selected-word-active,
+        .picked-word-active,
         .dimmed-word-active,
         .selected-signature-active,
         .meta-active {
@@ -514,43 +504,43 @@ export default function HomeSlide({
         .illuminated-text::before {
           content: '';
           position: absolute;
-          left: -0.1em;
-          right: -0.1em;
-          top: -0.12em;
-          bottom: -0.1em;
+          left: -0.04em;
+          right: -0.04em;
+          top: -0.04em;
+          bottom: -0.04em;
           pointer-events: none;
           opacity: 0;
-          transform: scale(0.988);
+          transform: scaleX(0.985);
           background: radial-gradient(
-            ellipse at 50% 52%,
-            rgba(255, 238, 212, 0.18),
-            rgba(255, 226, 188, 0.07) 34%,
-            transparent 72%
+            ellipse at 50% 54%,
+            rgba(255, 240, 214, 0.16),
+            rgba(255, 226, 188, 0.05) 44%,
+            transparent 76%
           );
-          filter: blur(8px);
+          filter: blur(3px);
         }
 
         .illuminated-text::after {
           content: '';
           position: absolute;
-          left: -0.06em;
-          right: -0.06em;
-          bottom: 0.05em;
-          height: 0.14em;
+          left: -0.03em;
+          right: -0.03em;
+          bottom: 0.06em;
+          height: 0.1em;
           pointer-events: none;
           border-radius: 999px;
           opacity: 0;
-          transform: scaleX(0.96);
+          transform: scaleX(0.985);
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 244, 222, 0.16),
-            rgba(255, 228, 188, 0.05) 46%,
-            transparent 78%
+            rgba(255, 244, 222, 0.1),
+            rgba(255, 228, 188, 0.03) 50%,
+            transparent 80%
           );
-          filter: blur(4px);
+          filter: blur(3px);
         }
 
-        .selected-word-idle,
+        .picked-word-idle,
         .dimmed-word-idle {
           color: rgba(188, 184, 178, 0.24);
           text-shadow: none;
@@ -559,16 +549,13 @@ export default function HomeSlide({
           filter: blur(8px);
         }
 
-        .selected-word-active {
-          animation: lit-picked-breathe 11.6s ease-in-out infinite;
+        .picked-word-active {
+          animation: picked-word-breathe 11.6s ease-in-out infinite;
         }
 
-        .selected-word-active::before {
-          animation: lit-picked-halo 11.6s ease-in-out infinite;
-        }
-
-        .selected-word-active::after {
-          animation: lit-picked-under 11.6s ease-in-out infinite;
+        .picked-word-active::before,
+        .picked-word-active::after {
+          animation: picked-word-core 11.6s ease-in-out infinite;
         }
 
         .dimmed-word-active {
@@ -614,13 +601,13 @@ export default function HomeSlide({
         }
 
         .portal-target-active::after {
-          opacity: 0.24 !important;
-          transform: scaleX(1.008) !important;
+          opacity: 0.16 !important;
+          transform: scaleX(1.006) !important;
         }
 
         .portal-target-active::before {
-          opacity: 0.34 !important;
-          transform: scale(1.003) !important;
+          opacity: 0.2 !important;
+          transform: scaleX(1.004) !important;
         }
 
         .portal-target-dim {
