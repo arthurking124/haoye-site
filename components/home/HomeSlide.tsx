@@ -441,17 +441,17 @@ export default function HomeSlide({
         @keyframes lit-picked-breathe {
           0%,
           100% {
-            color: rgba(198, 194, 188, 0.44);
+            color: rgba(198, 194, 188, 0.34);
             text-shadow:
-              0 0 1px rgba(255, 245, 228, 0.004),
-              0 0 3px rgba(255, 234, 200, 0.002);
+              0 0 0 rgba(255, 245, 228, 0),
+              0 0 0 rgba(255, 234, 200, 0);
           }
           50% {
-            color: rgba(244, 234, 216, 0.96);
+            color: rgba(248, 236, 214, 0.98);
             text-shadow:
-              0 0 7px rgba(255, 244, 224, 0.11),
-              0 0 20px rgba(255, 228, 188, 0.06),
-              0 0 42px rgba(255, 220, 175, 0.028);
+              0 0 8px rgba(255, 244, 224, 0.13),
+              0 0 24px rgba(255, 228, 188, 0.07),
+              0 0 48px rgba(255, 220, 175, 0.03);
           }
         }
 
@@ -459,10 +459,10 @@ export default function HomeSlide({
           0%,
           100% {
             opacity: 0;
-            transform: scale(0.988);
+            transform: scale(0.986);
           }
           50% {
-            opacity: 0.66;
+            opacity: 0.82;
             transform: scale(1);
           }
         }
@@ -471,10 +471,10 @@ export default function HomeSlide({
           0%,
           100% {
             opacity: 0;
-            transform: scaleX(0.97);
+            transform: scaleX(0.965);
           }
           50% {
-            opacity: 0.44;
+            opacity: 0.56;
             transform: scaleX(1);
           }
         }
@@ -482,16 +482,16 @@ export default function HomeSlide({
         @keyframes lit-signature-breathe {
           0%,
           100% {
-            color: rgba(198, 194, 188, 0.44);
+            color: rgba(198, 194, 188, 0.34);
             text-shadow:
-              0 0 1px rgba(255, 244, 224, 0.003),
-              0 0 3px rgba(255, 230, 190, 0.001);
+              0 0 0 rgba(255, 244, 224, 0),
+              0 0 0 rgba(255, 230, 190, 0);
           }
           50% {
-            color: rgba(230, 221, 206, 0.84);
+            color: rgba(232, 221, 204, 0.86);
             text-shadow:
               0 0 5px rgba(255, 242, 220, 0.07),
-              0 0 14px rgba(255, 226, 184, 0.03);
+              0 0 16px rgba(255, 226, 184, 0.03);
           }
         }
 
@@ -524,8 +524,8 @@ export default function HomeSlide({
           transform: scale(0.988);
           background: radial-gradient(
             ellipse at 50% 52%,
-            rgba(255, 238, 212, 0.13),
-            rgba(255, 226, 188, 0.055) 34%,
+            rgba(255, 238, 212, 0.18),
+            rgba(255, 226, 188, 0.07) 34%,
             transparent 72%
           );
           filter: blur(8px);
@@ -544,8 +544,8 @@ export default function HomeSlide({
           transform: scaleX(0.96);
           background: radial-gradient(
             circle at 50% 50%,
-            rgba(255, 244, 222, 0.12),
-            rgba(255, 228, 188, 0.04) 46%,
+            rgba(255, 244, 222, 0.16),
+            rgba(255, 228, 188, 0.05) 46%,
             transparent 78%
           );
           filter: blur(4px);
@@ -553,7 +553,7 @@ export default function HomeSlide({
 
         .selected-word-idle,
         .dimmed-word-idle {
-          color: rgba(198, 194, 188, 0.44);
+          color: rgba(198, 194, 188, 0.34);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
@@ -573,7 +573,7 @@ export default function HomeSlide({
         }
 
         .dimmed-word-active {
-          color: rgba(198, 194, 188, 0.44);
+          color: rgba(198, 194, 188, 0.34);
           text-shadow: none;
         }
 
@@ -583,7 +583,7 @@ export default function HomeSlide({
         }
 
         .selected-signature-idle {
-          color: rgba(198, 194, 188, 0.44);
+          color: rgba(198, 194, 188, 0.34);
           text-shadow: none;
           opacity: 0;
           transform: translateY(10px);
