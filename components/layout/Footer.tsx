@@ -9,9 +9,17 @@ export default function Footer() {
   if (pathname === '/' || pathname === '') return null
 
   return (
-    <footer className="relative z-[20] border-t border-white/8">
-      <div className="mx-auto max-w-[1360px] px-6 py-8 md:px-10 md:py-10">
-        <p className="text-center text-[13px] leading-[1.9] text-[#8E8C88] md:text-[14px]">
+    <footer className="relative z-[20] border-t border-white/6">
+      <div className="mx-auto max-w-[1360px] px-6 py-10 md:px-10 md:py-14">
+        <p
+          className="
+            text-center
+            text-[12px] leading-[2.1]
+            tracking-[0.08em]
+            text-[#7E7B76]
+            md:text-[13px]
+          "
+        >
           生活有留白，灵魂自有回音。
         </p>
       </div>
