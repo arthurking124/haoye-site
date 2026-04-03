@@ -10,6 +10,7 @@ const INTRO_VOLUME = 0.18
 
 export default function SoundToggle() {
   const pathname = usePathname()
+  const isHome = pathname === '/' || pathname === ''
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fadeFrameRef = useRef<number | null>(null)
@@ -181,9 +182,7 @@ export default function SoundToggle() {
   }
 
   if (!isHydrated) return null
-
-  // 关键：首页不显示按钮
-  if (pathname === '/') return null
+  if (isHome) return null
 
   return (
     <button
@@ -195,22 +194,22 @@ export default function SoundToggle() {
         fixed bottom-6 right-6 z-[999]
         inline-flex items-center gap-3
         rounded-full border border-white/8
-        bg-[rgba(13,13,13,0.44)] px-3 py-2
-        text-[10px] tracking-[0.22em] text-[#8E8C88]
+        bg-[rgba(13,13,13,0.42)] px-3 py-2
+        text-[10px] tracking-[0.22em] text-[#807D78]
         backdrop-blur-md
         transition-all duration-300
-        hover:border-white/12 hover:text-[#C9C7C2]
+        hover:border-white/12 hover:text-[#BDB8B0]
         md:bottom-8 md:right-8 md:px-3.5 md:py-2.5 md:text-[11px]
       "
     >
       <span className="relative flex h-2 w-2 items-center justify-center">
         <span
           className={`absolute h-2 w-2 rounded-full transition-all duration-500 ${
-            soundEnabled ? 'bg-[#D7D3CC]/80' : 'bg-white/18'
+            soundEnabled ? 'bg-[#D3CEC6]/80' : 'bg-white/16'
           }`}
         />
         {soundEnabled ? (
-          <span className="absolute h-4 w-4 rounded-full border border-white/10 opacity-70" />
+          <span className="absolute h-4 w-4 rounded-full border border-white/10 opacity-60" />
         ) : null}
       </span>
 
