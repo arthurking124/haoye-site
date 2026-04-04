@@ -489,3 +489,20 @@ html[data-theme='light'] .surface-soft {
     scroll-behavior: auto !important;
   }
 }
+/* header 微呼吸线 */
+.header-breath-line {
+  animation: headerLineBreath 3.8s ease-in-out infinite;
+}
+
+@keyframes headerLineBreath {
+  0%, 100% {
+    opacity: 0.26;
+    transform: scaleX(0.995);
+    filter: blur(0px);
+  }
+  50% {
+    opacity: 0.52;
+    transform: scaleX(1);
+    filter: blur(0.1px);
+  }
+}

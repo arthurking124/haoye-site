@@ -209,15 +209,26 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
         onClick={() => void toggleAudio()}
         aria-label={soundEnabled ? 'Stop music' : 'Play music'}
         title={soundEnabled ? 'Stop music' : 'Play music'}
-        className="group flex h-6 w-6 items-center justify-center transition-transform duration-200 ease-out hover:scale-110"
-        style={{ color: 'var(--site-text-solid)' }}
+        className="group relative flex h-[32px] w-[32px] items-center justify-center rounded-full border transition-all duration-300 ease-out hover:scale-[1.06]"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--site-border) 88%, transparent)',
+          background: 'color-mix(in srgb, var(--site-bg) 86%, transparent)',
+          boxShadow: '0 0 0 rgba(255,255,255,0)',
+        }}
       >
+        <span
+          className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-all duration-300 group-hover:opacity-100"
+          style={{
+            boxShadow: '0 0 0 1px color-mix(in srgb, var(--site-text-solid) 16%, transparent), 0 0 14px color-mix(in srgb, var(--site-text-solid) 20%, transparent)',
+          }}
+        />
         <span
           className={
             soundEnabled
-              ? 'translate-y-[-1px] text-[14px] leading-none transition-opacity duration-200 group-hover:opacity-78'
-              : 'translate-y-[-2px] text-[14px] leading-none transition-opacity duration-200 group-hover:opacity-78'
+              ? 'translate-y-[-1px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
+              : 'translate-y-[-2px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
           }
+          style={{ color: 'var(--site-text-solid)' }}
         >
           {soundEnabled ? '～' : '—'}
         </span>
