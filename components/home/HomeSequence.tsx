@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent, TouchEvent } from 'react'
-import HomeSlide from './HomeSlide'
 import HomeIntroOverlay from './HomeIntroOverlay'
+import HomeSlide from './HomeSlide'
 
 type HomeSequenceProps = {
   settings: any
@@ -37,8 +37,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [introVisible, setIntroVisible] = useState(false)
-  const [homeRevealed, setHomeRevealed] = useState(false)
   const [introResolved, setIntroResolved] = useState(false)
+  const [revealStarted, setRevealStarted] = useState(false)
   const [transitionDuration, setTransitionDuration] = useState(900)
   const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
 
@@ -104,8 +104,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [current, getTransitionDuration, slides.length]
   )
 
-  const handleRevealStart = useCallback(() => {
-    setHomeRevealed(true)
+  const handleExpandStart = useCallback(() => {
+    setRevealStarted(true)
   }, [])
 
   const handleIntroComplete = useCallback(() => {
@@ -129,13 +129,13 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
     if (hasVisited) {
       setIntroVisible(false)
-      setHomeRevealed(true)
+      setRevealStarted(true)
       setIntroResolved(true)
       return
     }
 
     setIntroVisible(true)
-    setHomeRevealed(false)
+    setRevealStarted(false)
     setIntroResolved(true)
   }, [])
 
@@ -255,21 +255,16 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       if (isMobile) return
       e.preventDefault()
 
-      if (!introResolved) return
-      if (introVisible) return
+      if (!introResolved || introVisible) return
       if (isAnimatingRef.current) return
       if (Math.abs(e.deltaY) < 24) return
 
-      if (e.deltaY > 0) {
-        goTo(current + 1)
-      } else {
-        goTo(current - 1)
-      }
+      if (e.deltaY > 0) goTo(current + 1)
+      else goTo(current - 1)
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (!introResolved) return
-      if (introVisible) return
+      if (!introResolved || introVisible) return
 
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1)
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1)
@@ -286,9 +281,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }, [current, goTo, introResolved, introVisible, isMobile])
 
   useEffect(() => {
-    if (!introResolved) return
-    if (introVisible) return
-
+    if (!introResolved || introVisible) return
     window.dispatchEvent(new CustomEvent('haoye:intro-ready'))
   }, [introResolved, introVisible])
 
@@ -333,6 +326,22 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
+  const homeTransform = !introResolved
+    ? 'translate3d(0, 0, 0) scale(1)'
+    : introVisible
+      ? revealStarted
+        ? 'translate3d(0, 0, 0) scale(1)'
+        : 'translate3d(20vw, -16vh, 0) scale(0.18)'
+      : 'translate3d(0, 0, 0) scale(1)'
+
+  const homeOpacity = !introResolved ? 0 : introVisible ? (revealStarted ? 1 : 0.12) : 1
+  const homeBlur = introVisible ? (revealStarted ? 'blur(0px)' : 'blur(6px)') : 'blur(0px)'
+  const homeClip = introVisible
+    ? revealStarted
+      ? 'inset(0% 0% 0% 0%)'
+      : 'inset(0% 0% 78% 78%)'
+    : 'inset(0% 0% 0% 0%)'
+
   return (
     <div
       ref={containerRef}
@@ -344,11 +353,16 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       onTouchEnd={handleTouchEnd}
     >
       <div
-        className="absolute inset-0 transition-[transform,opacity,filter] duration-[1800ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
+        className="absolute inset-0 will-change-transform"
         style={{
-          transform: homeRevealed ? 'scale(1)' : 'scale(0.8)',
-          opacity: homeRevealed ? 1 : 0,
-          filter: homeRevealed ? 'blur(0px)' : 'blur(9px)',
+          transformOrigin: 'top right',
+          transform: homeTransform,
+          opacity: homeOpacity,
+          filter: homeBlur,
+          clipPath: homeClip,
+          transition:
+            'transform 2050ms cubic-bezier(0.22,1,0.36,1), opacity 900ms ease, filter 1600ms ease, clip-path 2050ms cubic-bezier(0.22,1,0.36,1)',
+          pointerEvents: introVisible ? 'none' : 'auto',
         }}
       >
         {slides.map((slide, index) => {
@@ -385,7 +399,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       {introResolved && (
         <HomeIntroOverlay
           visible={introVisible}
-          onRevealStart={handleRevealStart}
+          onExpandStart={handleExpandStart}
           onComplete={handleIntroComplete}
         />
       )}
