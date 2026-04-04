@@ -10,18 +10,20 @@ type HomeIntroOverlayProps = {
 
 type IntroPhase = 'idle' | 'spin' | 'expand' | 'fade' | 'done'
 
-const SPIN_MS = 1650
-const EXPAND_MS = 2050
-const FADE_MS = 720
+const SPIN_MS = 1680
+const EXPAND_MS = 2350
+const FADE_MS = 620
+const FRAME_LEFT = 28
+const FRAME_BOTTOM = 34
 
 export default function HomeIntroOverlay({
   visible,
   onExpandStart,
   onComplete,
 }: HomeIntroOverlayProps) {
-  const [soundEnabled, setSoundEnabled] = useState(true)
-  const [phase, setPhase] = useState<IntroPhase>('idle')
   const [mounted, setMounted] = useState(visible)
+  const [phase, setPhase] = useState<IntroPhase>('idle')
+  const [soundEnabled, setSoundEnabled] = useState(true)
 
   useEffect(() => {
     if (visible) {
@@ -29,7 +31,6 @@ export default function HomeIntroOverlay({
       setPhase('idle')
       return
     }
-
     setMounted(false)
   }, [visible])
 
@@ -43,15 +44,11 @@ export default function HomeIntroOverlay({
         setPhase('expand')
         onExpandStart()
       }, SPIN_MS)
-    }
-
-    if (phase === 'expand') {
+    } else if (phase === 'expand') {
       timerId = window.setTimeout(() => {
         setPhase('fade')
       }, EXPAND_MS)
-    }
-
-    if (phase === 'fade') {
+    } else if (phase === 'fade') {
       timerId = window.setTimeout(() => {
         setPhase('done')
         onComplete()
@@ -65,71 +62,109 @@ export default function HomeIntroOverlay({
     }
   }, [mounted, onComplete, onExpandStart, phase])
 
+  const overlayHidden = phase === 'fade' || phase === 'done'
   const enterHidden = phase !== 'idle'
-  const overlayFading = phase === 'fade' || phase === 'done'
-  const frameActive = phase === 'expand' || phase === 'fade' || phase === 'done'
-  const minuteRotation = phase === 'idle' ? 'rotate(38deg)' : 'rotate(450deg)'
+  const expanding = phase === 'expand' || phase === 'fade' || phase === 'done'
 
-  const overlayClassName = useMemo(() => {
-    let value = 'fixed inset-0 z-[140] bg-black transition-opacity duration-[720ms] ease-[cubic-bezier(0.22,1,0.36,1)] '
-    value += overlayFading ? 'pointer-events-none opacity-0' : 'opacity-100'
+  const rootClassName = useMemo(() => {
+    let value = 'fixed inset-0 z-[140] bg-black transition-opacity ease-[cubic-bezier(0.22,1,0.36,1)] '
+    value += overlayHidden ? 'pointer-events-none opacity-0' : 'opacity-100'
     return value
-  }, [overlayFading])
+  }, [overlayHidden])
 
   const enterClassName = useMemo(() => {
-    let value = 'text-[12px] uppercase tracking-[0.26em] underline underline-offset-[6px] decoration-[1px] '
+    let value = 'text-[12px] uppercase tracking-[0.28em] underline underline-offset-[6px] decoration-[1px] '
     value += 'transition-all duration-300 text-white/84 hover:-translate-y-px hover:text-white '
     value += enterHidden ? 'pointer-events-none opacity-0' : 'opacity-100 animate-[pulse_2.8s_ease-in-out_infinite]'
     return value
   }, [enterHidden])
+
+  const hourStyle = useMemo(() => {
+    return {
+      left: expanding ? FRAME_LEFT + 'px' : '50%',
+      top: expanding ? '0px' : '50%',
+      width: '2px',
+      height: expanding ? 'calc(100dvh - ' + FRAME_BOTTOM + 'px)' : '58px',
+      transform: expanding ? 'translateX(-50%)' : 'translate(-50%, -100%)',
+      transformOrigin: expanding ? 'top center' : 'bottom center',
+      transition:
+        'left ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'top ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'height ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'transform ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'opacity 280ms ease',
+    } as const
+  }, [expanding])
+
+  const minuteStyle = useMemo(() => {
+    let transform = 'translate(-50%, -100%) rotate(36deg)'
+    let transformOrigin: 'bottom center' | 'left center' = 'bottom center'
+    let left = '50%'
+    let top = '50%'
+    let width = '2px'
+    let height = '84px'
+    let transition = 'transform ' + SPIN_MS + 'ms cubic-bezier(0.65,0,0.35,1)'
+
+    if (phase === 'spin') {
+      transform = 'translate(-50%, -100%) rotate(450deg)'
+    }
+
+    if (expanding) {
+      transform = 'translateY(-50%)'
+      transformOrigin = 'left center'
+      left = FRAME_LEFT + 'px'
+      top = 'calc(100dvh - ' + FRAME_BOTTOM + 'px)'
+      width = 'calc(100vw - ' + FRAME_LEFT * 2 + 'px)'
+      height = '2px'
+      transition =
+        'left ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'top ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'width ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'height ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'transform ' + EXPAND_MS + 'ms cubic-bezier(0.22,1,0.36,1), ' +
+        'opacity 280ms ease'
+    }
+
+    return {
+      left,
+      top,
+      width,
+      height,
+      transform,
+      transformOrigin,
+      transition,
+    } as const
+  }, [expanding, phase])
 
   if (!mounted) {
     return null
   }
 
   return (
-    <div className={overlayClassName}>
+    <div
+      className={rootClassName}
+      style={{ transitionDuration: FADE_MS + 'ms' }}
+    >
       <div className="relative h-full w-full overflow-hidden bg-black">
         <div className="absolute inset-0">
           <div
-            className="absolute rounded-full bg-white/95"
-            style={{
-              left: frameActive ? '28px' : '50%',
-              top: frameActive ? '0px' : '50%',
-              width: '2px',
-              height: frameActive ? 'calc(100dvh - 34px)' : '58px',
-              transform: frameActive ? 'translateX(-50%)' : 'translate(-50%, -100%)',
-              transformOrigin: frameActive ? 'top center' : 'bottom center',
-              transition:
-                'left 2050ms cubic-bezier(0.22,1,0.36,1), top 2050ms cubic-bezier(0.22,1,0.36,1), height 2050ms cubic-bezier(0.22,1,0.36,1), transform 2050ms cubic-bezier(0.22,1,0.36,1), opacity 480ms ease',
-            }}
+            className="absolute rounded-full bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.18)]"
+            style={hourStyle}
           />
 
           <div
-            className="absolute rounded-full bg-white/95"
-            style={{
-              left: frameActive ? '28px' : '50%',
-              bottom: frameActive ? '34px' : '50%',
-              width: frameActive ? 'calc(100vw - 56px)' : '1.5px',
-              height: frameActive ? '2px' : '84px',
-              transform: frameActive
-                ? 'translateX(0) translateY(50%) rotate(0deg)'
-                : 'translate(-50%, 50%) ' + minuteRotation,
-              transformOrigin: frameActive ? 'left center' : 'bottom center',
-              transition: frameActive
-                ? 'left 2050ms cubic-bezier(0.22,1,0.36,1), bottom 2050ms cubic-bezier(0.22,1,0.36,1), width 2050ms cubic-bezier(0.22,1,0.36,1), height 520ms ease, transform 2050ms cubic-bezier(0.22,1,0.36,1), opacity 480ms ease'
-                : 'transform 1650ms cubic-bezier(0.65,0,0.35,1)',
-            }}
+            className="absolute rounded-full bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.18)]"
+            style={minuteStyle}
           />
 
           <div
-            className="absolute left-1/2 top-1/2 rounded-full bg-white/95"
+            className="absolute h-[4px] w-[4px] rounded-full bg-white/95"
             style={{
-              width: '4px',
-              height: '4px',
+              left: '50%',
+              top: '50%',
               transform: 'translate(-50%, -50%)',
-              opacity: frameActive ? 0 : 1,
-              transition: 'opacity 420ms ease',
+              opacity: expanding ? 0 : 1,
+              transition: 'opacity 220ms ease',
             }}
           />
         </div>
