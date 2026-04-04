@@ -1,16 +1,12 @@
 import './globals.css'
 
-import type { Metadata, Viewport } from 'next'
-import { Inter, Noto_Serif_SC } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/next'
-
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import PageShell from '@/components/layout/PageShell'
 import SoundToggle from '@/components/ui/SoundToggle'
 import ThemeToggle from '@/components/ui/ThemeToggle'
-
+import { Inter, Noto_Serif_SC } from 'next/font/google'
+import { Analytics } from '@vercel/analytics/react'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -24,50 +20,9 @@ const notoSerifSC = Noto_Serif_SC({
   weight: ['300', '400', '500'],
 })
 
-const siteUrl = 'https://www.haoye.cyou'
-const siteName = '皓野 | haoye.cyou'
-const siteDescription = '诗、图像，以及没有说完的沉默。'
-
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  applicationName: 'haoye.cyou',
-  title: {
-    default: siteName,
-    template: '%s | 皓野',
-  },
-  description: siteDescription,
-  alternates: {
-    canonical: '/',
-  },
-  authors: [{ name: '皓野' }],
-  creator: '皓野',
-  publisher: '皓野',
-  keywords: ['皓野', 'haoye', '诗', '图像', '摄影', 'notes', '个人网站'],
-  openGraph: {
-    type: 'website',
-    locale: 'zh_CN',
-    url: siteUrl,
-    siteName,
-    title: siteName,
-    description: siteDescription,
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: siteName,
-    description: siteDescription,
-  },
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon.ico',
-    apple: '/favicon.ico',
-  },
-}
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  viewportFit: 'cover',
-  themeColor: '#0d0d0d',
+export const metadata = {
+  title: '皓野 | haoye.cyou',
+  description: '诗、图像，以及没有说完的沉默。',
 }
 
 export default function RootLayout({
@@ -77,16 +32,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" suppressHydrationWarning>
-      <body
-        className={`${inter.variable} ${notoSerifSC.variable} bg-[#0D0D0D] text-[#F2F1EE] antialiased`}
-      >
+      <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
         <Header />
-        <main>
-          <PageShell>{children}</PageShell>
-        </main>
+        <main>{children}</main>
         <Footer />
         <SoundToggle />
-        <ThemeToggle/>
+        <ThemeToggle />
         <Analytics />
         <SpeedInsights />
       </body>
