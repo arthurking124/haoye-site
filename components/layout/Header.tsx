@@ -44,13 +44,13 @@ export default function Header() {
   return (
     <header className="fixed inset-x-0 top-0 z-[90]">
       <div className="mx-auto max-w-[1440px] px-5 pt-5 md:px-8 md:pt-6">
-        <div className="relative flex items-center justify-between pb-3 md:pb-[14px]">
+        <div className="group relative flex items-center justify-between pb-3 md:pb-[14px]">
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px header-breath-line"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-px transition-all duration-500 ease-out opacity-[0.015] group-hover:opacity-[0.18]"
             style={{
               background: scrolled
-                ? 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 74%, transparent) 8%, color-mix(in srgb, var(--site-border) 86%, transparent) 50%, color-mix(in srgb, var(--site-border) 74%, transparent) 92%, transparent 100%)'
-                : 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 44%, transparent) 10%, color-mix(in srgb, var(--site-border) 60%, transparent) 50%, color-mix(in srgb, var(--site-border) 44%, transparent) 90%, transparent 100%)',
+                ? 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 36%, transparent) 12%, color-mix(in srgb, var(--site-border) 52%, transparent) 50%, color-mix(in srgb, var(--site-border) 36%, transparent) 88%, transparent 100%)'
+                : 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 20%, transparent) 12%, color-mix(in srgb, var(--site-border) 30%, transparent) 50%, color-mix(in srgb, var(--site-border) 20%, transparent) 88%, transparent 100%)',
             }}
           />
 
@@ -72,7 +72,7 @@ export default function Header() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="group relative pb-[2px] text-[12px] tracking-[0.2em] transition-all duration-300 md:text-[13px]"
+                    className="group/item relative pb-[2px] text-[12px] tracking-[0.2em] transition-all duration-300 md:text-[13px]"
                     style={{
                       color: active
                         ? 'var(--site-text-solid)'
@@ -80,9 +80,10 @@ export default function Header() {
                       opacity: active ? 1 : 0.96,
                     }}
                   >
-                    <span className="transition-all duration-300 group-hover:opacity-100">
+                    <span className="transition-all duration-300 group-hover/item:opacity-100 group-hover/item:text-[var(--site-text-solid)]">
                       {item.label}
                     </span>
+
                     <span
                       className="pointer-events-none absolute bottom-[-7px] left-1/2 h-px -translate-x-1/2 transition-all duration-300"
                       style={{
@@ -91,14 +92,8 @@ export default function Header() {
                         opacity: active ? 0.82 : 0,
                       }}
                     />
-                    <span
-                      className="pointer-events-none absolute bottom-[-7px] left-1/2 h-px -translate-x-1/2 transition-all duration-300 group-hover:w-full group-hover:opacity-72"
-                      style={{
-                        width: active ? '0%' : '0%',
-                        background: 'var(--site-text-solid)',
-                        opacity: 0,
-                      }}
-                    />
+
+                    <span className="pointer-events-none absolute bottom-[-7px] left-1/2 h-px w-0 -translate-x-1/2 bg-[var(--site-text-solid)] opacity-0 transition-all duration-300 group-hover/item:w-full group-hover/item:opacity-70" />
                   </Link>
                 )
               })}
