@@ -1,7 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { MouseEvent, TouchEvent } from 'react'
+import type {
+  MouseEvent,
+  TouchEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react'
 import HomeSlide from './HomeSlide'
 import HomeIntroOverlay from './HomeIntroOverlay'
 
@@ -164,6 +168,26 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }, stepDuration)
   }, [])
 
+  const clearHomeLeavingFlag = useCallback(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.removeAttribute('data-home-leaving')
+    }
+  }, [])
+
+  const markHomeLeaving = useCallback(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-home-leaving', '1')
+    }
+    setIsPortalLeaving(true)
+  }, [])
+
+  useEffect(() => {
+    clearHomeLeavingFlag()
+    return () => {
+      clearHomeLeavingFlag()
+    }
+  }, [clearHomeLeavingFlag])
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -178,6 +202,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    clearHomeLeavingFlag()
     setIsPortalLeaving(false)
 
     const skipIntroOnce = sessionStorage.getItem('haoye-skip-intro-once')
@@ -193,11 +218,11 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
     setCurrent(0)
     setIntroVisible(true)
-  }, [fadeMusicToTarget, prepareAndPlayMusic])
+  }, [clearHomeLeavingFlag, fadeMusicToTarget, prepareAndPlayMusic])
 
   useEffect(() => {
     const onPortalEnter = () => {
-      setIsPortalLeaving(true)
+      markHomeLeaving()
     }
 
     window.addEventListener('haoye:portal-enter', onPortalEnter as EventListener)
@@ -208,7 +233,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         onPortalEnter as EventListener
       )
     }
-  }, [])
+  }, [markHomeLeaving])
 
   useEffect(() => {
     const spring = isMobile ? 0.09 : 0.105
@@ -409,8 +434,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
-  const handleLinkCapture = (e: MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement | null
+  const hideHomeOnInternalLinkStart = (targetNode: EventTarget | null) => {
+    const target = targetNode as HTMLElement | null
     const anchor = target?.closest('a[href]') as HTMLAnchorElement | null
 
     if (!anchor) return
@@ -429,16 +454,30 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
     if (!isInternal) return
 
-    setIsPortalLeaving(true)
+    markHomeLeaving()
+  }
+
+  const handlePointerDownCapture = (e: ReactPointerEvent<HTMLDivElement>) => {
+    hideHomeOnInternalLinkStart(e.target)
+  }
+
+  const handleTouchStartCapture = (e: TouchEvent<HTMLDivElement>) => {
+    hideHomeOnInternalLinkStart(e.target)
+  }
+
+  const handleClickCapture = (e: MouseEvent<HTMLDivElement>) => {
+    hideHomeOnInternalLinkStart(e.target)
   }
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-[100svh] w-full overflow-hidden bg-[#000] ${
+      className={`home-sequence-root relative h-[100svh] w-full overflow-hidden bg-[#000] ${
         isPortalLeaving ? 'pointer-events-none invisible opacity-0' : 'visible opacity-100'
       }`}
-      onClickCapture={handleLinkCapture}
+      onPointerDownCapture={handlePointerDownCapture}
+      onTouchStartCapture={handleTouchStartCapture}
+      onClickCapture={handleClickCapture}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
