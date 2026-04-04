@@ -37,6 +37,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [introVisible, setIntroVisible] = useState(true)
+  const [isPortalLeaving, setIsPortalLeaving] = useState(false)
   const [transitionDuration, setTransitionDuration] = useState(900)
   const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
 
@@ -177,6 +178,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
+    setIsPortalLeaving(false)
+
     const skipIntroOnce = sessionStorage.getItem('haoye-skip-intro-once')
 
     if (skipIntroOnce === '1') {
@@ -191,6 +194,21 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     setCurrent(0)
     setIntroVisible(true)
   }, [fadeMusicToTarget, prepareAndPlayMusic])
+
+  useEffect(() => {
+    const onPortalEnter = () => {
+      setIsPortalLeaving(true)
+    }
+
+    window.addEventListener('haoye:portal-enter', onPortalEnter as EventListener)
+
+    return () => {
+      window.removeEventListener(
+        'haoye:portal-enter',
+        onPortalEnter as EventListener
+      )
+    }
+  }, [])
 
   useEffect(() => {
     const spring = isMobile ? 0.09 : 0.105
@@ -289,10 +307,10 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
   const handleMouseMove = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
-      if (isMobile) return
+      if (isMobile || isPortalLeaving) return
       updateTargetFromPoint(e.clientX, e.clientY, 'mouse')
     },
-    [isMobile, updateTargetFromPoint]
+    [isMobile, isPortalLeaving, updateTargetFromPoint]
   )
 
   const handleMouseLeave = useCallback(() => {
@@ -315,7 +333,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     document.body.style.overflow = 'hidden'
 
     const onWheel = (e: WheelEvent) => {
-      if (isMobile) return
+      if (isMobile || isPortalLeaving) return
       e.preventDefault()
       if (introVisible) return
       if (isAnimatingRef.current) return
@@ -329,7 +347,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (introVisible) return
+      if (introVisible || isPortalLeaving) return
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1)
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1)
     }
@@ -342,7 +360,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       window.removeEventListener('wheel', onWheel)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [current, goTo, introVisible, isMobile])
+  }, [current, goTo, introVisible, isMobile, isPortalLeaving])
 
   useEffect(() => {
     if (introVisible) return
@@ -358,6 +376,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }, [current])
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    if (isPortalLeaving) return
     const touch = e.touches[0]
     if (!touch) return
     touchStartX.current = touch.clientX
@@ -365,14 +384,14 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }
 
   const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    if (introVisible) return
+    if (introVisible || isPortalLeaving) return
     const touch = e.touches[0]
     if (!touch) return
     updateTargetFromPoint(touch.clientX, touch.clientY, 'touch')
   }
 
   const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
-    if (introVisible) return
+    if (introVisible || isPortalLeaving) return
     if (touchStartX.current === null) {
       targetRef.current = INITIAL_PARALLAX
       return
@@ -393,7 +412,9 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-[100svh] w-full overflow-hidden bg-[#000]"
+      className={`relative h-[100svh] w-full overflow-hidden bg-[#000] transition-opacity duration-200 ${
+        isPortalLeaving ? 'pointer-events-none opacity-0' : 'opacity-100'
+      }`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
@@ -453,7 +474,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         }}
       />
 
-      {!isMobile && !introVisible && (
+      {!isMobile && !introVisible && !isPortalLeaving && (
         <>
           <button
             onClick={() => goTo(current - 1)}
@@ -475,7 +496,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         </>
       )}
 
-      {!introVisible && (
+      {!introVisible && !isPortalLeaving && (
         <div className="pointer-events-auto fixed bottom-8 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 md:bottom-10 md:gap-3">
           {slides.map((_, index) => {
             const active = current === index
