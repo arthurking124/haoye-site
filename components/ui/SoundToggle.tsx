@@ -204,13 +204,14 @@ export default function SoundToggle() {
       onClick={() => void toggleAudio()}
       aria-label={soundEnabled ? 'Stop music' : 'Play music'}
       title={soundEnabled ? 'Stop music' : 'Play music'}
-      className="fixed right-4 top-4 z-[90] flex h-12 w-12 items-center justify-center rounded-full bg-black/90 text-white shadow-[0_10px_30px_rgba(0,0,0,0.45)] ring-1 ring-white/12 backdrop-blur-md transition-all duration-300 hover:scale-[1.04] hover:bg-black md:right-8 md:top-6 md:h-14 md:w-14"
+      className="group fixed right-5 top-5 z-[120] flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-black/92 text-white shadow-[0_8px_24px_rgba(0,0,0,0.34)] ring-1 ring-white/10 backdrop-blur-sm transition-transform duration-200 ease-out hover:scale-110 md:right-8 md:top-6 md:h-10 md:w-10"
+      style={{ pointerEvents: 'auto' }}
     >
       <span
         className={
           soundEnabled
-            ? 'translate-y-[-1px] text-[24px] leading-none md:text-[28px]'
-            : 'translate-y-[-2px] text-[24px] leading-none md:text-[28px]'
+            ? 'translate-y-[-1px] text-[17px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[18px]'
+            : 'translate-y-[-2px] text-[17px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[18px]'
         }
       >
         {soundEnabled ? '～' : '—'}
