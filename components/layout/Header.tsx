@@ -11,6 +11,11 @@ const navItems = [
   { href: '/about', label: '我' },
 ]
 
+function skipIntroOnce() {
+  if (typeof window === 'undefined') return
+  window.sessionStorage.setItem('haoye-skip-intro-once', '1')
+}
+
 export default function Header() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
@@ -37,22 +42,29 @@ export default function Header() {
   if (pathname === '/' || pathname === '') return null
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-[120] transition-all duration-500 ${
-        scrolled
-          ? 'border-b border-white/8 bg-[rgba(13,13,13,0.72)] backdrop-blur-xl'
-          : 'bg-transparent'
-      }`}
-    >
-      <div className="mx-auto flex h-[68px] max-w-[1360px] items-center justify-between px-6 md:h-[76px] md:px-10">
+    <header className="fixed inset-x-0 top-0 z-[80] px-5 pt-5 md:px-8 md:pt-6">
+      <div
+        className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border px-5 py-3 backdrop-blur-md transition-all duration-300 md:px-6"
+        style={{
+          background: scrolled
+            ? 'rgba(var(--site-surface-rgb), 0.82)'
+            : 'rgba(var(--site-surface-rgb), 0.58)',
+          borderColor: 'var(--site-border)',
+          boxShadow: scrolled
+            ? '0 10px 28px rgba(0, 0, 0, 0.12)'
+            : '0 0 0 rgba(0, 0, 0, 0)',
+        }}
+      >
         <Link
           href="/"
-          className="site-nav text-[11px] tracking-[0.22em] text-[#C9C7C2] transition-colors duration-300 hover:text-[#F2F1EE] md:text-[12px]"
+          onClick={skipIntroOnce}
+          className="site-nav text-[13px] tracking-[0.22em] transition-opacity duration-300 hover:opacity-75 md:text-[14px]"
+          style={{ color: 'var(--site-text-solid)' }}
         >
           皓野
         </Link>
 
-        <nav className="flex items-center gap-4 md:gap-8">
+        <nav className="site-nav flex items-center gap-5 md:gap-7">
           {navItems.map((item) => {
             const active = pathname === item.href
 
@@ -60,18 +72,24 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`site-nav relative text-[11px] transition-colors duration-300 md:text-[12px] ${
-                  active
-                    ? 'text-[#F2F1EE]'
-                    : 'text-[#8E8C88] hover:text-[#C9C7C2]'
-                }`}
+                className="text-[12px] tracking-[0.2em] transition-colors duration-300 md:text-[13px]"
+                style={{
+                  color: active
+                    ? 'var(--site-text-solid)'
+                    : 'var(--site-muted)',
+                  opacity: active ? 1 : 0.92,
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLAnchorElement).style.color =
+                    'var(--site-text-solid)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLAnchorElement).style.color = active
+                    ? 'var(--site-text-solid)'
+                    : 'var(--site-muted)'
+                }}
               >
-                <span>{item.label}</span>
-                <span
-                  className={`absolute left-1/2 top-[calc(100%+8px)] h-[1px] -translate-x-1/2 bg-white/40 transition-all duration-500 ${
-                    active ? 'w-4 opacity-100' : 'w-0 opacity-0'
-                  }`}
-                />
+                {item.label}
               </Link>
             )
           })}
