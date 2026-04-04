@@ -4,174 +4,303 @@ import { useEffect, useMemo, useState } from 'react'
 
 type HomeIntroOverlayProps = {
   visible: boolean
-  onRevealStart: () => void
-  onComplete: () => void
+  onComplete?: () => void
 }
 
-type IntroPhase = 'idle' | 'spin' | 'fade' | 'done'
+type Phase = 'idle' | 'spinning' | 'fading'
 
-const SPIN_MS = 1650
-const FADE_MS = 900
-
-export default function HomeIntroOverlay({
-  visible,
-  onRevealStart,
-  onComplete,
-}: HomeIntroOverlayProps) {
-  const [mounted, setMounted] = useState(visible)
-  const [phase, setPhase] = useState<IntroPhase>('idle')
+export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverlayProps) {
+  const [phase, setPhase] = useState<Phase>('idle')
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   useEffect(() => {
-    if (visible) {
-      setMounted(true)
+    if (!visible) {
       setPhase('idle')
-      return
     }
-
-    setMounted(false)
   }, [visible])
 
-  useEffect(() => {
-    if (!mounted) return
-
-    let timerId: number | undefined
-
-    if (phase === 'spin') {
-      timerId = window.setTimeout(() => {
-        setPhase('fade')
-        onRevealStart()
-      }, SPIN_MS)
-    } else if (phase === 'fade') {
-      timerId = window.setTimeout(() => {
-        setPhase('done')
-        onComplete()
-      }, FADE_MS)
+  const minuteTransform = useMemo(() => {
+    if (phase === 'spinning') {
+      return 'translate(-50%, -100%) rotate(400deg)'
     }
+    return 'translate(-50%, -100%) rotate(40deg)'
+  }, [phase])
 
-    return () => {
-      if (typeof timerId === 'number') {
-        window.clearTimeout(timerId)
-      }
-    }
-  }, [mounted, onComplete, onRevealStart, phase])
+  const handleEnter = () => {
+    if (phase !== 'idle') return
 
-  const overlayHidden = phase === 'done'
-  const controlsHidden = phase !== 'idle'
-  const handsFading = phase === 'fade' || phase === 'done'
+    setPhase('spinning')
 
-  const rootClassName = useMemo(() => {
-    let value = 'fixed inset-0 z-[140] bg-black transition-opacity ease-[cubic-bezier(0.22,1,0.36,1)] '
-    value += overlayHidden ? 'pointer-events-none opacity-0' : 'opacity-100'
-    return value
-  }, [overlayHidden])
+    window.setTimeout(() => {
+      setPhase('fading')
+    }, 1500)
 
-  const enterClassName = useMemo(() => {
-    let value = 'text-[12px] uppercase tracking-[0.28em] underline underline-offset-[6px] decoration-[1px] '
-    value += 'transition-all duration-300 text-white/84 hover:-translate-y-px hover:text-white '
-    value += controlsHidden ? 'pointer-events-none opacity-0' : 'opacity-100 animate-[pulse_2.8s_ease-in-out_infinite]'
-    return value
-  }, [controlsHidden])
-
-  const hourStyle = {
-    left: '50%',
-    top: '50%',
-    width: '2px',
-    height: '58px',
-    transform: 'translate(-50%, -100%) rotate(0deg)',
-    transformOrigin: 'bottom center',
-    opacity: handsFading ? 0 : 0.95,
-    transition: 'opacity ' + FADE_MS + 'ms ease',
-  } as const
-
-  const minuteTransform = phase === 'spin'
-    ? 'translate(-50%, -100%) rotate(450deg)'
-    : 'translate(-50%, -100%) rotate(90deg)'
-
-  const minuteStyle = {
-    left: '50%',
-    top: '50%',
-    width: '2px',
-    height: '84px',
-    transform: minuteTransform,
-    transformOrigin: 'bottom center',
-    opacity: handsFading ? 0 : 0.95,
-    transition:
-      (phase === 'spin'
-        ? 'transform ' + SPIN_MS + 'ms cubic-bezier(0.65,0,0.35,1), '
-        : '') +
-      'opacity ' + FADE_MS + 'ms ease',
-  } as const
-
-  if (!mounted) {
-    return null
+    window.setTimeout(() => {
+      onComplete?.()
+      setPhase('idle')
+    }, 2350)
   }
 
+  if (!visible) return null
+
   return (
-    <div className={rootClassName} style={{ transitionDuration: FADE_MS + 'ms' }}>
-      <div className="relative h-full w-full overflow-hidden bg-black">
-        <div className="absolute inset-0">
-          <div
-            className="absolute rounded-full bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.18)]"
-            style={hourStyle}
-          />
+    <div
+      className={phase === 'fading' ? 'intro fade-out' : 'intro'}
+      style={{ zIndex: 120 }}
+    >
+      <style jsx>{`
+        .intro {
+          position: absolute;
+          inset: 0;
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 1;
+          transition: opacity 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+        }
 
-          <div
-            className="absolute rounded-full bg-white/95 shadow-[0_0_8px_rgba(255,255,255,0.18)]"
-            style={minuteStyle}
-          />
+        .intro.fade-out {
+          opacity: 0;
+          pointer-events: none;
+        }
 
-          <div
-            className="absolute h-[4px] w-[4px] rounded-full bg-white/95"
-            style={{
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              opacity: handsFading ? 0 : 1,
-              transition: 'opacity ' + FADE_MS + 'ms ease',
-            }}
-          />
-        </div>
+        .clock-core {
+          position: relative;
+          width: 180px;
+          height: 180px;
+          transform: translateY(-48px);
+        }
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-9 z-10 flex flex-col items-center text-center sm:bottom-10">
-          <div className="pointer-events-auto mb-8 sm:mb-9">
+        .hand {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform-origin: bottom center;
+          background: rgba(255, 255, 255, 0.96);
+          border-radius: 999px;
+        }
+
+        .hour {
+          width: 2px;
+          height: 54px;
+          transform: translate(-50%, -100%) rotate(310deg);
+          opacity: 0.92;
+          transition: opacity 0.9s ease;
+        }
+
+        .minute {
+          width: 1.5px;
+          height: 78px;
+          opacity: 1;
+          transition:
+            transform 1.75s cubic-bezier(0.65, 0, 0.35, 1),
+            opacity 0.9s ease;
+        }
+
+        .intro.fade-out .hour,
+        .intro.fade-out .minute,
+        .intro.fade-out .center-dot,
+        .intro.fade-out .bottom-ui {
+          opacity: 0;
+        }
+
+        .center-dot {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 4px;
+          height: 4px;
+          transform: translate(-50%, -50%);
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.96);
+          transition: opacity 0.9s ease;
+        }
+
+        .bottom-ui {
+          position: absolute;
+          left: 50%;
+          bottom: 40px;
+          transform: translateX(-50%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          z-index: 20;
+          text-align: center;
+          transition: opacity 0.45s ease;
+        }
+
+        .enter {
+          border: none;
+          background: transparent;
+          color: rgba(255, 255, 255, 0.84);
+          font-size: 12px;
+          letter-spacing: 0.26em;
+          text-transform: uppercase;
+          text-decoration: underline;
+          text-underline-offset: 6px;
+          text-decoration-thickness: 1px;
+          cursor: pointer;
+          padding: 0;
+          margin: 0 0 34px 0;
+          animation: breathe 2.6s ease-in-out infinite;
+          transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease;
+        }
+
+        .enter:hover {
+          color: #fff;
+          transform: translateY(-1px);
+        }
+
+        .enter.hide {
+          opacity: 0;
+          animation: none;
+          pointer-events: none;
+        }
+
+        .sound-row {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          margin: 0;
+          user-select: none;
+        }
+
+        .sound-label {
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          color: rgba(255, 255, 255, 0.6);
+          white-space: nowrap;
+        }
+
+        .sound-controls {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .sound-btn {
+          border: none;
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          color: rgba(255, 255, 255, 0.34);
+          font-size: 11px;
+          letter-spacing: 0.04em;
+          text-transform: lowercase;
+          cursor: pointer;
+          transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .sound-btn:hover {
+          color: rgba(255, 255, 255, 0.72);
+          transform: translateY(-1px);
+        }
+
+        .sound-btn.active {
+          color: rgba(255, 255, 255, 0.88);
+        }
+
+        .sound-sep {
+          color: rgba(255, 255, 255, 0.22);
+          font-size: 11px;
+          line-height: 1;
+        }
+
+        .site-mark {
+          margin-top: 14px;
+          font-size: 10px;
+          letter-spacing: 0.08em;
+          color: rgba(255, 255, 255, 0.18);
+          white-space: nowrap;
+          text-transform: lowercase;
+        }
+
+        @keyframes breathe {
+          0%,
+          100% {
+            opacity: 0.55;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .clock-core {
+            width: 140px;
+            height: 140px;
+            transform: translateY(-36px);
+          }
+
+          .hour {
+            height: 42px;
+          }
+
+          .minute {
+            height: 62px;
+          }
+
+          .bottom-ui {
+            bottom: 34px;
+          }
+
+          .enter {
+            margin-bottom: 30px;
+            font-size: 11px;
+          }
+
+          .sound-row {
+            gap: 18px;
+          }
+
+          .site-mark {
+            margin-top: 12px;
+          }
+        }
+      `}</style>
+
+      <div className="clock-core" aria-hidden="true">
+        <div className="hand hour" />
+        <div className="hand minute" style={{ transform: minuteTransform }} />
+        <div className="center-dot" />
+      </div>
+
+      <div className="bottom-ui">
+        <button
+          className={phase === 'idle' ? 'enter' : 'enter hide'}
+          id="enterBtn"
+          type="button"
+          onClick={handleEnter}
+        >
+          Enter
+        </button>
+
+        <div className="sound-row" aria-label="sound toggle">
+          <div className="sound-label">Sound</div>
+          <div className="sound-controls">
             <button
+              className={soundEnabled ? 'sound-btn active' : 'sound-btn'}
+              id="soundOn"
               type="button"
-              className={enterClassName}
-              onClick={() => {
-                if (phase !== 'idle') return
-                setPhase('spin')
-              }}
+              onClick={() => setSoundEnabled(true)}
             >
-              Enter
+              on
+            </button>
+            <span className="sound-sep">/</span>
+            <button
+              className={!soundEnabled ? 'sound-btn active' : 'sound-btn'}
+              id="soundOff"
+              type="button"
+              onClick={() => setSoundEnabled(false)}
+            >
+              off
             </button>
           </div>
-
-          <div className="pointer-events-auto flex items-center gap-6 text-[11px] text-white/55 transition-opacity duration-300" style={{ opacity: controlsHidden ? 0 : 1 }}>
-            <span>Sound</span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={soundEnabled ? 'text-white/90 transition-colors' : 'text-white/35 transition-colors'}
-                onClick={() => setSoundEnabled(true)}
-              >
-                on
-              </button>
-              <span className="text-white/25">/</span>
-              <button
-                type="button"
-                className={!soundEnabled ? 'text-white/90 transition-colors' : 'text-white/35 transition-colors'}
-                onClick={() => setSoundEnabled(false)}
-              >
-                off
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 text-[10px] tracking-[0.08em] text-white/20 transition-opacity duration-300" style={{ opacity: controlsHidden ? 0 : 1 }}>
-            www.haoye.cyou
-          </div>
         </div>
+
+        <div className="site-mark">www.haoye.cyou</div>
       </div>
     </div>
   )
