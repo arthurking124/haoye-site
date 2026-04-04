@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type TouchEvent } from 'react'
 import HomeSlide from './HomeSlide'
+import HomeIntroOverlay from './HomeIntroOverlay'
 
 type HomeSequenceProps = {
   settings: any
@@ -13,6 +14,8 @@ type ParallaxState = {
   tx: number
   ty: number
 }
+
+type IntroStage = 'idle' | 'spinning' | 'forming' | 'revealing' | 'done'
 
 const INITIAL_PARALLAX: ParallaxState = {
   rotateX: 0,
@@ -34,18 +37,21 @@ function soften(value: number) {
 export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
-  const [introVisible, setIntroVisible] = useState(true)
+  const [introStage, setIntroStage] = useState<IntroStage>('idle')
   const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
   const [transitionDuration, setTransitionDuration] = useState(900)
 
   const isAnimatingRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
-
+  const introTimersRef = useRef<number[]>([])
   const rafRef = useRef<number | null>(null)
   const targetRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const currentRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const velocityRef = useRef<ParallaxState>(INITIAL_PARALLAX)
+
+  const introVisible = introStage !== 'done'
+  const homeRevealActive = introStage === 'revealing' || introStage === 'done'
 
   const slides = useMemo(
     () => [
@@ -81,6 +87,24 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     return 900
   }, [])
 
+  const clearIntroTimers = useCallback(() => {
+    introTimersRef.current.forEach((timer) => window.clearTimeout(timer))
+    introTimersRef.current = []
+  }, [])
+
+  const startIntro = useCallback(() => {
+    if (introStage !== 'idle') return
+
+    setIntroStage('spinning')
+    clearIntroTimers()
+
+    introTimersRef.current = [
+      window.setTimeout(() => setIntroStage('forming'), 1500),
+      window.setTimeout(() => setIntroStage('revealing'), 2450),
+      window.setTimeout(() => setIntroStage('done'), 3850),
+    ]
+  }, [clearIntroTimers, introStage])
+
   const goTo = useCallback(
     (nextIndex: number) => {
       if (isAnimatingRef.current) return
@@ -88,7 +112,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       if (nextIndex === current) return
 
       const duration = getTransitionDuration(current, nextIndex)
-
       isAnimatingRef.current = true
       setTransitionDuration(duration)
       setCurrent(nextIndex)
@@ -115,18 +138,15 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     const hasVisited = sessionStorage.getItem('haoye-home-intro-seen')
 
     if (hasVisited) {
-      setIntroVisible(false)
+      setIntroStage('done')
       return
     }
 
     sessionStorage.setItem('haoye-home-intro-seen', '1')
+    setIntroStage('idle')
 
-    const timer = window.setTimeout(() => {
-      setIntroVisible(false)
-    }, 1000)
-
-    return () => window.clearTimeout(timer)
-  }, [])
+    return () => clearIntroTimers()
+  }, [clearIntroTimers])
 
   useEffect(() => {
     const spring = isMobile ? 0.09 : 0.105
@@ -143,17 +163,14 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
             (targetRef.current.rotateY - currentRef.current.rotateY) * spring) *
           damping,
         tx:
-          (velocityRef.current.tx +
-            (targetRef.current.tx - currentRef.current.tx) * spring) *
+          (velocityRef.current.tx + (targetRef.current.tx - currentRef.current.tx) * spring) *
           damping,
         ty:
-          (velocityRef.current.ty +
-            (targetRef.current.ty - currentRef.current.ty) * spring) *
+          (velocityRef.current.ty + (targetRef.current.ty - currentRef.current.ty) * spring) *
           damping,
       }
 
       velocityRef.current = nextVelocity
-
       currentRef.current = {
         rotateX: currentRef.current.rotateX + nextVelocity.rotateX,
         rotateY: currentRef.current.rotateY + nextVelocity.rotateY,
@@ -191,11 +208,9 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
       const nx = x * 2 - 1
       const ny = y * 2 - 1
-
       const deadZone = pointerType === 'touch' ? 0.09 : 0.055
       const dx = Math.abs(nx) < deadZone ? 0 : nx
       const dy = Math.abs(ny) < deadZone ? 0 : ny
-
       const sx = soften(dx)
       const sy = soften(dy)
 
@@ -213,7 +228,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   )
 
   const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
+    (e: MouseEvent<HTMLDivElement>) => {
       if (isMobile) return
       updateTargetFromPoint(e.clientX, e.clientY, 'mouse')
     },
@@ -232,7 +247,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }
 
     document.addEventListener('visibilitychange', onVisibility)
-
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [])
 
@@ -243,7 +257,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     const onWheel = (e: WheelEvent) => {
       if (isMobile) return
       e.preventDefault()
-
       if (introVisible) return
       if (isAnimatingRef.current) return
       if (Math.abs(e.deltaY) < 24) return
@@ -257,7 +270,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (introVisible) return
-
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1)
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1)
     }
@@ -274,7 +286,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
   useEffect(() => {
     if (introVisible) return
-
     window.dispatchEvent(new CustomEvent('haoye:intro-ready'))
   }, [introVisible])
 
@@ -286,7 +297,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     )
   }, [current])
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     touchStartX.current = e.touches[0].clientX
 
     if (e.touches[0]) {
@@ -294,15 +305,16 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     }
   }
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
     if (introVisible) return
     if (!e.touches[0]) return
 
     updateTargetFromPoint(e.touches[0].clientX, e.touches[0].clientY, 'touch')
   }
 
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
     if (introVisible) return
+
     if (touchStartX.current === null) {
       targetRef.current = INITIAL_PARALLAX
       return
@@ -312,13 +324,21 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     const diff = touchStartX.current - endX
 
     if (Math.abs(diff) > 40) {
-      if (diff > 0) goTo(current + 1)
-      else goTo(current - 1)
+      if (diff > 0) {
+        goTo(current + 1)
+      } else {
+        goTo(current - 1)
+      }
     }
 
     touchStartX.current = null
     targetRef.current = INITIAL_PARALLAX
   }
+
+  const homeClassName = [
+    'absolute inset-0 transition-[transform,opacity,filter] duration-[1800ms]',
+    'ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform',
+  ].join(' ')
 
   return (
     <div
@@ -330,7 +350,14 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      <div className="absolute inset-0">
+      <div
+        className={homeClassName}
+        style={{
+          transform: homeRevealActive ? 'scale(1)' : 'scale(0.78)',
+          opacity: homeRevealActive ? 1 : 0,
+          filter: homeRevealActive ? 'blur(0px)' : 'blur(8px)',
+        }}
+      >
         {slides.map((slide, index) => {
           const offset = (index - current) * 100
           const isActive = index === current
@@ -340,8 +367,8 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
               key={index}
               className="absolute inset-0 will-change-transform"
               style={{
-                transform: `translate3d(${offset}%, 0, 0)`,
-                transition: `transform ${transitionDuration}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+                transform: 'translate3d(' + offset + '%, 0, 0)',
+                transition: 'transform ' + transitionDuration + 'ms cubic-bezier(0.22, 1, 0.36, 1)',
                 pointerEvents: isActive ? 'auto' : 'none',
               }}
               aria-hidden={!isActive}
@@ -362,13 +389,9 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         })}
       </div>
 
-      <div
-        className={`pointer-events-none absolute inset-0 z-[70] bg-[#0D0D0D] transition-opacity duration-[1200ms] ease-out ${
-          introVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-      />
+      <HomeIntroOverlay stage={introStage} onEnter={startIntro} mobile={isMobile} />
 
-      {!isMobile && (
+      {!isMobile && !introVisible && (
         <>
           <button
             onClick={() => goTo(current - 1)}
@@ -390,25 +413,29 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         </>
       )}
 
-      <div className="pointer-events-auto fixed bottom-8 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 md:bottom-10 md:gap-3">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goTo(index)}
-            className={`h-[3px] rounded-full transition-all duration-500 ${
-              current === index
-                ? isMobile
-                  ? 'w-8 bg-white/55'
-                  : 'w-10 bg-white/65'
-                : isMobile
-                ? 'w-5 bg-white/12'
-                : 'w-6 bg-white/15'
-            }`}
-            aria-label={`Go to screen ${index + 1}`}
-            type="button"
-          />
-        ))}
-      </div>
+      {!introVisible && (
+        <div className="pointer-events-auto fixed bottom-8 left-1/2 z-[80] flex -translate-x-1/2 items-center gap-2 md:bottom-10 md:gap-3">
+          {slides.map((_, index) => {
+            let dotClassName = 'h-[3px] rounded-full transition-all duration-500 '
+
+            if (current === index) {
+              dotClassName += isMobile ? 'w-8 bg-white/55' : 'w-10 bg-white/65'
+            } else {
+              dotClassName += isMobile ? 'w-5 bg-white/12' : 'w-6 bg-white/15'
+            }
+
+            return (
+              <button
+                key={index}
+                onClick={() => goTo(index)}
+                className={dotClassName}
+                aria-label={'Go to screen ' + (index + 1)}
+                type="button"
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
