@@ -49,6 +49,12 @@
   --line-soft: var(--site-line-soft);
   --selection-bg: var(--site-selection-bg);
   --selection-fg: var(--site-selection-fg);
+
+  --home-text-solid: #f2f1ee;
+  --home-soft: #c9c7c2;
+  --home-muted: #8e8c88;
+  --home-faint: #6f6d69;
+  --home-line: rgba(255, 255, 255, 0.10);
 }
 
 html[data-theme='light'] {
@@ -82,6 +88,12 @@ html[data-theme='light'] {
   --site-reading-blockquote: rgba(17, 17, 17, 0.72);
 
   --soft: rgba(17, 17, 17, 0.72);
+
+  --home-text-solid: #f2f1ee;
+  --home-soft: #c9c7c2;
+  --home-muted: #8e8c88;
+  --home-faint: #6f6d69;
+  --home-line: rgba(255, 255, 255, 0.10);
 }
 
 html {

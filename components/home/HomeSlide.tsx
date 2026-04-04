@@ -133,7 +133,7 @@ export default function HomeSlide({
     : 'translate3d(0,0,0)'
 
   return (
-    <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C]">
+    <section className="relative h-screen w-screen shrink-0 overflow-hidden bg-[#0B0B0C] text-[var(--home-text-solid)]">
       {imageUrl ? (
         <>
           <div
