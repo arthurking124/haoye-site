@@ -506,3 +506,21 @@ html[data-home-leaving='1'] .home-sequence-root {
   visibility: hidden !important;
   pointer-events: none !important;
 }
+.signature-mark-wrap {
+  width: min(220px, 42vw);
+  color: var(--site-faint);
+  opacity: 0.96;
+}
+
+.signature-mark-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+@media (max-width: 767px) {
+  .signature-mark-wrap {
+    width: min(170px, 48vw);
+  }
+}

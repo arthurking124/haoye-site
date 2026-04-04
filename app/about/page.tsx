@@ -5,6 +5,7 @@ import { PortableText } from '@portabletext/react'
 
 import { sanityClient } from '@/lib/sanity.client'
 import { aboutPageQuery } from '@/lib/queries'
+import SignatureMark from '@/components/ui/SignatureMark'
 
 export default async function AboutPage() {
   const about = await sanityClient.fetch<{
@@ -116,6 +117,10 @@ export default async function AboutPage() {
                   这里暂时还没有留下更多内容。
                 </p>
               )}
+
+              <div className="mt-14 flex justify-end md:mt-20">
+                <SignatureMark />
+              </div>
             </div>
           </div>
         </div>
