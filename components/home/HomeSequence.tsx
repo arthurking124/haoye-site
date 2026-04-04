@@ -36,7 +36,7 @@ function soften(value: number) {
 export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
-  const [introVisible, setIntroVisible] = useState(false)
+  const [introVisible, setIntroVisible] = useState(true)
   const [homeRevealed, setHomeRevealed] = useState(false)
   const [introResolved, setIntroResolved] = useState(false)
   const [transitionDuration, setTransitionDuration] = useState(900)
@@ -103,12 +103,11 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [current, getTransitionDuration, slides.length]
   )
 
-  const handleExpandStart = useCallback(() => {
+  const handleRevealStart = useCallback(() => {
     setHomeRevealed(true)
   }, [])
 
   const handleIntroComplete = useCallback(() => {
-    sessionStorage.setItem('haoye-home-intro-seen', '1')
     setIntroVisible(false)
   }, [])
 
@@ -124,15 +123,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }, [])
 
   useEffect(() => {
-    const hasVisited = sessionStorage.getItem('haoye-home-intro-seen')
-
-    if (hasVisited) {
-      setIntroVisible(false)
-      setHomeRevealed(true)
-      setIntroResolved(true)
-      return
-    }
-
     setIntroVisible(true)
     setHomeRevealed(false)
     setIntroResolved(true)
@@ -308,16 +298,9 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
-  const homeTransform = homeRevealed
-    ? 'translate3d(0,0,0) scale(1)'
-    : 'translate3d(27vw,-18vh,0) scale(0.17)'
-
-  const homeClipPath = homeRevealed
-    ? 'inset(0 0 0 0)'
-    : 'inset(0 0 74% 72%)'
-
-  const homeOpacity = homeRevealed ? 1 : 0.02
-  const homeFilter = homeRevealed ? 'blur(0px)' : 'blur(8px)'
+  const homeTransform = homeRevealed ? 'scale(1)' : 'scale(0.985)'
+  const homeOpacity = homeRevealed ? 1 : 0
+  const homeFilter = homeRevealed ? 'blur(0px)' : 'blur(10px)'
 
   return (
     <div
@@ -332,16 +315,14 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       <div
         className="absolute inset-0 will-change-transform"
         style={{
-          transformOrigin: 'top right',
+          transformOrigin: 'center center',
           transform: homeTransform,
-          clipPath: homeClipPath,
           opacity: homeOpacity,
           filter: homeFilter,
           transition:
-            'transform 2350ms cubic-bezier(0.22,1,0.36,1), ' +
-            'clip-path 2350ms cubic-bezier(0.22,1,0.36,1), ' +
-            'opacity 680ms ease, ' +
-            'filter 1600ms ease',
+            'transform 1200ms cubic-bezier(0.22,1,0.36,1), ' +
+            'opacity 900ms ease, ' +
+            'filter 1200ms ease',
         }}
       >
         {slides.map((slide, index) => {
@@ -379,7 +360,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       {introResolved ? (
         <HomeIntroOverlay
           visible={introVisible}
-          onExpandStart={handleExpandStart}
+          onRevealStart={handleRevealStart}
           onComplete={handleIntroComplete}
         />
       ) : null}
