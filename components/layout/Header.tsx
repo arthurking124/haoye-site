@@ -98,7 +98,7 @@ export default function Header() {
               })}
             </nav>
 
-            <div className="flex items-center gap-4 md:gap-[18px]">
+            <div className="flex translate-x-[6px] items-center gap-4 md:translate-x-[10px] md:gap-[18px]">
               <SoundToggle inline />
               <ThemeToggle inline />
             </div>
