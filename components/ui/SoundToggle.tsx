@@ -204,14 +204,14 @@ export default function SoundToggle() {
       onClick={() => void toggleAudio()}
       aria-label={soundEnabled ? 'Stop music' : 'Play music'}
       title={soundEnabled ? 'Stop music' : 'Play music'}
-      className="group fixed right-5 top-[18px] z-[120] flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/92 text-white shadow-[0_6px_18px_rgba(0,0,0,0.28)] ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 ease-out hover:scale-110 hover:bg-black md:right-8 md:top-[20px] md:h-8 md:w-8"
+      className="group fixed right-[56px] top-[18px] z-[120] flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full bg-black/92 text-white shadow-[0_6px_18px_rgba(0,0,0,0.24)] ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 ease-out hover:scale-110 hover:bg-black md:right-[74px] md:top-[20px] md:h-[28px] md:w-[28px]"
       style={{ pointerEvents: 'auto' }}
     >
       <span
         className={
           soundEnabled
-            ? 'translate-y-[-1px] text-[13px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[14px]'
-            : 'translate-y-[-2px] text-[13px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[14px]'
+            ? 'translate-y-[-1px] text-[12px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[13px]'
+            : 'translate-y-[-2px] text-[12px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[13px]'
         }
       >
         {soundEnabled ? '～' : '—'}
