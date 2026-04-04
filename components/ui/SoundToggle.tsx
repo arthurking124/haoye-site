@@ -226,7 +226,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
           className={
             soundEnabled
               ? 'translate-y-[-1px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
-              : 'translate-y-[-2px] text-[12px] leading-none transition-all duration-300 group-hover:opacity-85'
+              : 'translate-y-[-2px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
           }
           style={{ color: 'var(--site-text-solid)' }}
         >
