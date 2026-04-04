@@ -9,6 +9,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import PageShell from '@/components/layout/PageShell'
 import SoundToggle from '@/components/ui/SoundToggle'
+import ThemeToggle from '@/components/ui/ThemeToggle'
+
 
 const inter = Inter({
   subsets: ['latin'],
@@ -84,6 +86,7 @@ export default function RootLayout({
         </main>
         <Footer />
         <SoundToggle />
+        <ThemeToggle/>
         <Analytics />
         <SpeedInsights />
       </body>

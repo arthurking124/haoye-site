@@ -1,25 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --color-bg: #0b0b0c;
-  --color-text: #f2f1ee;
-  --color-soft: #c9c7c2;
-  --color-muted: #8e8c88;
+  --site-bg: #0b0b0c;
+  --site-surface: #111111;
+  --site-text: #f2f1ee;
+  --site-soft: #c9c7c2;
+  --site-muted: #8e8c88;
+  --site-faint: #6f6d69;
+  --site-border: rgba(255, 255, 255, 0.18);
+  --site-line: rgba(255, 255, 255, 0.08);
+  --site-line-soft: rgba(255, 255, 255, 0.05);
+  --selection-bg: rgba(242, 241, 238, 0.16);
+  --selection-fg: #f2f1ee;
+
+  --color-bg: var(--site-bg);
+  --color-text: var(--site-text);
+  --color-soft: var(--site-soft);
+  --color-muted: var(--site-muted);
+
+  --bg: var(--site-bg);
+  --fg: var(--site-text);
+  --muted: var(--site-soft);
+  --soft: #a6a39d;
+  --dim: var(--site-muted);
+  --faint: var(--site-faint);
+  --line: var(--site-line);
+  --line-soft: var(--site-line-soft);
+}
+
+html[data-theme='light'] {
+  --site-bg: #d9d9d4;
+  --site-surface: #d9d9d4;
+  --site-text: #111111;
+  --site-soft: rgba(0, 0, 0, 0.72);
+  --site-muted: rgba(0, 0, 0, 0.56);
+  --site-faint: rgba(0, 0, 0, 0.42);
+  --site-border: rgba(0, 0, 0, 0.22);
+  --site-line: rgba(0, 0, 0, 0.12);
+  --site-line-soft: rgba(0, 0, 0, 0.08);
+  --selection-bg: rgba(17, 17, 17, 0.12);
+  --selection-fg: #111111;
+
+  --soft: rgba(0, 0, 0, 0.64);
 }
 
 html {
   scroll-behavior: smooth;
+  background: var(--site-bg);
+  color: var(--site-text);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--site-bg);
+  color: var(--site-text);
   letter-spacing: 0.01em;
   font-family: var(--font-cn), serif;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  transition: background-color 260ms ease, color 260ms ease;
 }
 
 ::selection {
-  background: rgba(255, 255, 255, 0.14);
+  background: var(--selection-bg);
+  color: var(--selection-fg);
 }
 
 body::before {
@@ -33,8 +78,29 @@ body::before {
   z-index: 0;
 }
 
+html[data-theme='light'] body::before {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.035), transparent 28%),
+    radial-gradient(circle at 80% 75%, rgba(0, 0, 0, 0.022), transparent 24%);
+}
+
 a {
+  text-decoration: none;
   transition: color 0.28s ease, opacity 0.28s ease;
+}
+
+img {
+  image-rendering: auto;
+  backface-visibility: hidden;
+  -webkit-user-drag: none;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  -webkit-tap-highlight-color: transparent;
 }
 
 .prose {
@@ -49,6 +115,36 @@ a {
   color: var(--color-text);
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.26);
+}
+
 /* 英文/小字系统 */
 .font-ui {
   font-family: var(--font-inter), sans-serif;
@@ -57,8 +153,8 @@ a {
 
 /* 首页主句 */
 .home-line {
-  font-family: var(--font-cn), serif;
-  font-weight: 400;
+  font-family: var(--font-cn), var(--font-inter), serif;
+  font-weight: 300;
   letter-spacing: 0.02em;
   text-rendering: optimizeLegibility;
 }
@@ -67,14 +163,15 @@ a {
 .home-signature {
   font-family: var(--font-cn), serif;
   font-weight: 400;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.14em;
   opacity: 0.92;
+  line-height: 1.5;
 }
 
 /* 首页入口 */
 .home-entry {
-  font-family: var(--font-cn), serif;
-  font-weight: 400;
+  font-family: var(--font-cn), var(--font-inter), serif;
+  font-weight: 300;
   letter-spacing: 0.14em;
   text-rendering: optimizeLegibility;
 }
@@ -82,8 +179,9 @@ a {
 /* 域名和声音、小字 */
 .home-meta {
   font-family: var(--font-inter), sans-serif;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.16em;
   font-weight: 300;
+  line-height: 1.45;
 }
 
 /* 页码 */
@@ -93,16 +191,15 @@ a {
   font-weight: 300;
 }
 
-/* 顶部导航也更统一 */
+/* 顶部导航 */
 .site-nav {
   font-family: var(--font-inter), sans-serif;
   letter-spacing: 0.18em;
-  font-weight: 300;
+  line-height: 1.2;
+  font-weight: 400;
 }
-/* =========================
-   影页增强
-   ========================= */
 
+/* ========================= 影页增强 ========================= */
 .image-cover {
   display: block;
   width: 100%;
@@ -118,17 +215,14 @@ a {
   }
 }
 
-/* =========================
-   诗页增强
-   ========================= */
-
+/* ========================= 诗页增强 ========================= */
 .poem-cover {
   display: block;
   width: 100%;
   max-height: 520px;
   object-fit: cover;
   filter: saturate(0.92) contrast(0.96) brightness(0.92);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.22), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
 }
 
 .poem-body {
@@ -136,9 +230,9 @@ a {
 }
 
 .poem-body p {
-  margin-top: 0;
-  margin-bottom: 1.42em;
+  margin: 0 0 1.15em 0;
   color: #d3d0ca;
+  white-space: pre-wrap;
 }
 
 .poem-body p:last-child {
@@ -193,111 +287,8 @@ a {
 .text-container.inactive {
   opacity: 0;
 }
-/* =========================
-   Haoye refined typography
-   append to the end of app/globals.css
-   ========================= */
 
-:root {
-  --bg: #0d0d0d;
-  --fg: #f2f1ee;
-  --muted: #c9c7c2;
-  --soft: #a6a39d;
-  --dim: #8e8c88;
-  --faint: #6f6d69;
-  --line: rgba(255, 255, 255, 0.08);
-  --line-soft: rgba(255, 255, 255, 0.05);
-  --selection-bg: rgba(242, 241, 238, 0.16);
-  --selection-fg: #f2f1ee;
-}
-
-html {
-  background: var(--bg);
-  color: var(--fg);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  scroll-behavior: smooth;
-}
-
-body {
-  background: var(--bg);
-  color: var(--fg);
-  font-feature-settings: 'liga' 1, 'kern' 1;
-}
-
-::selection {
-  background: var(--selection-bg);
-  color: var(--selection-fg);
-}
-
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-a {
-  text-decoration: none;
-}
-
-img {
-  image-rendering: auto;
-  backface-visibility: hidden;
-  -webkit-user-drag: none;
-}
-
-button,
-a,
-input,
-textarea,
-select {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* ---------- site micro-typography ---------- */
-
-.site-nav {
-  letter-spacing: 0.18em;
-  line-height: 1.2;
-  font-weight: 400;
-}
-
-.home-line {
-  font-family: var(--font-cn), var(--font-inter), serif;
-  font-weight: 300;
-  letter-spacing: 0.02em;
-}
-
-.home-signature {
-  letter-spacing: 0.14em;
-  line-height: 1.5;
-}
-
-.home-meta {
-  letter-spacing: 0.16em;
-  line-height: 1.45;
-}
-
-.home-entry {
-  font-family: var(--font-cn), var(--font-inter), serif;
-  font-weight: 300;
-}
-
-/* ---------- interior reading rhythm ---------- */
-
+/* interior reading rhythm */
 .reading-body {
   max-width: 68ch;
 }
@@ -306,6 +297,11 @@ select {
   margin: 0 0 1.35em 0;
   color: #d7d3cc;
   line-height: 2.02;
+}
+
+html[data-theme='light'] .reading-body p,
+html[data-theme='light'] .poem-body p {
+  color: rgba(0, 0, 0, 0.72);
 }
 
 .reading-body p:last-child {
@@ -338,6 +334,12 @@ select {
   color: #d7d3cc;
 }
 
+html[data-theme='light'] .reading-body ul,
+html[data-theme='light'] .reading-body ol,
+html[data-theme='light'] .reading-body blockquote {
+  color: rgba(0, 0, 0, 0.68);
+}
+
 .reading-body li {
   margin: 0.45em 0;
   line-height: 1.95;
@@ -346,15 +348,22 @@ select {
 .reading-body a {
   color: #ddd9d1;
   border-bottom: 1px solid rgba(221, 217, 209, 0.18);
-  transition:
-    color 220ms ease,
-    border-color 220ms ease,
-    opacity 220ms ease;
+  transition: color 220ms ease, border-color 220ms ease, opacity 220ms ease;
 }
 
 .reading-body a:hover {
   color: var(--fg);
   border-color: rgba(242, 241, 238, 0.4);
+}
+
+html[data-theme='light'] .reading-body a {
+  color: rgba(0, 0, 0, 0.76);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+
+html[data-theme='light'] .reading-body a:hover {
+  color: #111111;
+  border-color: rgba(0, 0, 0, 0.34);
 }
 
 .reading-body strong {
@@ -369,29 +378,21 @@ select {
   color: #cfcac2;
 }
 
-/* ---------- poem detail ---------- */
-
-.poem-body p {
-  margin: 0 0 1.15em 0;
-  white-space: pre-wrap;
+html[data-theme='light'] .reading-body blockquote {
+  border-left-color: rgba(0, 0, 0, 0.12);
 }
 
-.poem-body p:last-child {
-  margin-bottom: 0;
-}
-
-.poem-cover {
-  box-shadow:
-    0 18px 60px rgba(0, 0, 0, 0.22),
-    0 1px 0 rgba(255, 255, 255, 0.03) inset;
-}
-
-/* ---------- section atmosphere ---------- */
-
+/* section atmosphere */
 .surface-soft {
   background:
     linear-gradient(to bottom, rgba(255, 255, 255, 0.015), transparent 24%),
     linear-gradient(to top, rgba(255, 255, 255, 0.01), transparent 18%);
+}
+
+html[data-theme='light'] .surface-soft {
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.018), transparent 24%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.012), transparent 18%);
 }
 
 .edge-line {
@@ -402,8 +403,7 @@ select {
   border-color: var(--line-soft);
 }
 
-/* ---------- transitions ---------- */
-
+/* transitions */
 .motion-soft {
   transition:
     color 260ms ease,
@@ -415,14 +415,10 @@ select {
 }
 
 .motion-image {
-  transition:
-    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 700ms ease,
-    filter 700ms ease;
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1), opacity 700ms ease, filter 700ms ease;
 }
 
-/* ---------- utility tones ---------- */
-
+/* utility tones */
 .text-faint {
   color: var(--faint);
 }
@@ -439,8 +435,7 @@ select {
   color: var(--muted);
 }
 
-/* ---------- spacing / screen polish ---------- */
-
+/* spacing / screen polish */
 .screen-balance {
   min-height: 100svh;
 }
