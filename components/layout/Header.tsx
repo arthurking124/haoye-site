@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import SoundToggle from '@/components/ui/SoundToggle'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 const navItems = [
   { href: '/poems', label: '诗' },
@@ -27,7 +29,7 @@ export default function Header() {
 
   useEffect(() => {
     const onScroll = () => {
-      setScrolled(window.scrollY > 16)
+      setScrolled(window.scrollY > 18)
     }
 
     onScroll()
@@ -37,63 +39,58 @@ export default function Header() {
   }, [])
 
   if (!mounted) return null
-
-  // 首页保持纯净，不显示顶部导航
   if (pathname === '/' || pathname === '') return null
 
   return (
-    <header className="fixed inset-x-0 top-0 z-[80] px-5 pt-5 md:px-8 md:pt-6">
-      <div
-        className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border px-5 py-3 backdrop-blur-md transition-all duration-300 md:px-6"
-        style={{
-          background: scrolled
-            ? 'rgba(var(--site-surface-rgb), 0.82)'
-            : 'rgba(var(--site-surface-rgb), 0.58)',
-          borderColor: 'var(--site-border)',
-          boxShadow: scrolled
-            ? '0 10px 28px rgba(0, 0, 0, 0.12)'
-            : '0 0 0 rgba(0, 0, 0, 0)',
-        }}
-      >
-        <Link
-          href="/"
-          onClick={skipIntroOnce}
-          className="site-nav text-[13px] tracking-[0.22em] transition-opacity duration-300 hover:opacity-75 md:text-[14px]"
-          style={{ color: 'var(--site-text-solid)' }}
+    <header className="fixed inset-x-0 top-0 z-[90]">
+      <div className="mx-auto max-w-[1440px] px-5 pt-5 md:px-8 md:pt-6">
+        <div
+          className="flex items-center justify-between border-b pb-3 md:pb-[14px]"
+          style={{
+            borderColor: scrolled
+              ? 'var(--site-border)'
+              : 'color-mix(in srgb, var(--site-border) 78%, transparent)',
+            background: 'transparent',
+          }}
         >
-          皓野
-        </Link>
+          <Link
+            href="/"
+            onClick={skipIntroOnce}
+            className="site-nav text-[13px] tracking-[0.22em] transition-opacity duration-300 hover:opacity-70 md:text-[14px]"
+            style={{ color: 'var(--site-text-solid)' }}
+          >
+            皓野
+          </Link>
 
-        <nav className="site-nav flex items-center gap-5 md:gap-7">
-          {navItems.map((item) => {
-            const active = pathname === item.href
+          <div className="flex items-center gap-7 md:gap-10">
+            <nav className="site-nav flex items-center gap-6 md:gap-8">
+              {navItems.map((item) => {
+                const active = pathname === item.href
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="text-[12px] tracking-[0.2em] transition-colors duration-300 md:text-[13px]"
-                style={{
-                  color: active
-                    ? 'var(--site-text-solid)'
-                    : 'var(--site-muted)',
-                  opacity: active ? 1 : 0.92,
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLAnchorElement).style.color =
-                    'var(--site-text-solid)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLAnchorElement).style.color = active
-                    ? 'var(--site-text-solid)'
-                    : 'var(--site-muted)'
-                }}
-              >
-                {item.label}
-              </Link>
-            )
-          })}
-        </nav>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-[12px] tracking-[0.2em] transition-opacity duration-300 md:text-[13px]"
+                    style={{
+                      color: active
+                        ? 'var(--site-text-solid)'
+                        : 'var(--site-muted)',
+                      opacity: active ? 1 : 0.94,
+                    }}
+                  >
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            <div className="flex items-center gap-3 md:gap-4">
+              <SoundToggle inline />
+              <ThemeToggle inline />
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   )

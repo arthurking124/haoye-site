@@ -7,7 +7,11 @@ type ThemeMode = 'dark' | 'light'
 
 const STORAGE_KEY = 'haoye-theme'
 
-export default function ThemeToggle() {
+type ThemeToggleProps = {
+  inline?: boolean
+}
+
+export default function ThemeToggle({ inline = false }: ThemeToggleProps) {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
   const [theme, setTheme] = useState<ThemeMode>('dark')
@@ -33,6 +37,36 @@ export default function ThemeToggle() {
 
   if (!mounted || pathname === '/' || pathname === '') {
     return null
+  }
+
+  if (inline) {
+    const isLight = theme === 'light'
+
+    return (
+      <button
+        type="button"
+        onClick={toggleTheme}
+        aria-label={isLight ? 'Switch to dark background' : 'Switch to light background'}
+        title={isLight ? 'Switch to dark background' : 'Switch to light background'}
+        className={
+          isLight
+            ? 'relative h-[18px] w-[34px] rounded-full border transition-transform duration-200 ease-out hover:scale-105'
+            : 'relative h-[18px] w-[34px] rounded-full border transition-transform duration-200 ease-out hover:scale-105'
+        }
+        style={{
+          background: isLight ? '#d9d9d4' : '#050505',
+          borderColor: isLight ? 'rgba(17,17,17,0.48)' : 'rgba(255,255,255,0.72)',
+        }}
+      >
+        <span
+          className="absolute top-1/2 h-[14px] w-[14px] -translate-y-1/2 rounded-full transition-all duration-200 ease-out"
+          style={{
+            left: isLight ? '2px' : '18px',
+            background: isLight ? '#0e0e0e' : '#f5f3ef',
+          }}
+        />
+      </button>
+    )
   }
 
   const isLight = theme === 'light'

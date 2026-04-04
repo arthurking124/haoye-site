@@ -8,7 +8,11 @@ const BASE_VOLUME = 0.24
 const FOURTH_SCREEN_VOLUME = 0.28
 const INTRO_VOLUME = 0.18
 
-export default function SoundToggle() {
+type SoundToggleProps = {
+  inline?: boolean
+}
+
+export default function SoundToggle({ inline = false }: SoundToggleProps) {
   const pathname = usePathname()
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const fadeFrameRef = useRef<number | null>(null)
@@ -196,6 +200,29 @@ export default function SoundToggle() {
 
   if (!isHydrated || pathname === '/' || pathname === '') {
     return null
+  }
+
+  if (inline) {
+    return (
+      <button
+        type="button"
+        onClick={() => void toggleAudio()}
+        aria-label={soundEnabled ? 'Stop music' : 'Play music'}
+        title={soundEnabled ? 'Stop music' : 'Play music'}
+        className="group flex h-6 w-6 items-center justify-center transition-transform duration-200 ease-out hover:scale-110"
+        style={{ color: 'var(--site-text-solid)' }}
+      >
+        <span
+          className={
+            soundEnabled
+              ? 'translate-y-[-1px] text-[14px] leading-none transition-opacity duration-200 group-hover:opacity-78'
+              : 'translate-y-[-2px] text-[14px] leading-none transition-opacity duration-200 group-hover:opacity-78'
+          }
+        >
+          {soundEnabled ? '～' : '—'}
+        </span>
+      </button>
+    )
   }
 
   return (
