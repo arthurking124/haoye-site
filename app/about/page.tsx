@@ -2,7 +2,6 @@ export const revalidate = 60
 
 import { notFound } from 'next/navigation'
 import { PortableText } from '@portabletext/react'
-
 import { sanityClient } from '@/lib/sanity.client'
 import { aboutPageQuery } from '@/lib/queries'
 
@@ -18,104 +17,49 @@ export default async function AboutPage() {
   }
 
   return (
-    <div className="min-h-[100svh] bg-[#0D0D0D] text-[#F2F1EE]">
-      <div className="mx-auto max-w-[1040px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
-        <header className="max-w-[720px]">
-          <p className="text-[11px] tracking-[0.22em] text-[#7F7D79]">BEHIND THE DOOR</p>
-
-          <h1 className="mt-6 text-[34px] font-light leading-[1.35] md:text-[54px] md:leading-[1.28]">
-            {about.title || '我'}
-          </h1>
-
-          {about.subtitle ? (
-            <p className="mt-6 max-w-[560px] text-[14px] leading-[1.95] text-[#8E8C88] md:text-[15px]">
-              {about.subtitle}
+    <main className="screen-balance page-top-offset relative z-[1] bg-[var(--site-bg)] text-[var(--site-text)]">
+      <section className="mx-auto max-w-[1440px] px-5 pb-20 md:px-8 md:pb-28">
+        <div className="grid gap-14 md:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] md:gap-20">
+          <div className="surface-soft edge-line rounded-[28px] border p-7 md:p-10">
+            <p className="font-ui text-[11px] tracking-[0.42em] text-[var(--site-muted)]">
+              BEHIND THE DOOR
             </p>
-          ) : null}
-        </header>
 
-        <div className="mt-18 border-t border-white/8 pt-10 md:mt-24 md:pt-14">
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
-            <div>
-              <p className="text-[11px] tracking-[0.18em] text-[#6F6D69]">01</p>
-              <p className="mt-4 text-[11px] tracking-[0.22em] text-[#8E8C88]">
-                ABOUT
+            <h1 className="mt-7 home-line text-[68px] leading-none text-[var(--site-text-solid)] md:text-[92px]">
+              {about.title || '我'}
+            </h1>
+
+            {about.subtitle ? (
+              <p className="mt-8 max-w-[24ch] text-[17px] leading-[1.95] text-[var(--site-soft)] md:text-[19px]">
+                {about.subtitle}
               </p>
+            ) : null}
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-[84px_minmax(0,1fr)] md:gap-10">
+            <div className="edge-line-soft flex items-start justify-between border-b pb-3 md:block md:border-b-0 md:border-r md:pb-0 md:pr-6">
+              <span className="font-ui text-[11px] tracking-[0.34em] text-[var(--site-faint)]">
+                01
+              </span>
+              <span className="font-ui text-[11px] tracking-[0.28em] text-[var(--site-muted)] md:mt-4 md:block">
+                ABOUT
+              </span>
             </div>
 
-            <div className="max-w-[640px]">
+            <div className="surface-soft edge-line rounded-[28px] border p-7 md:p-10">
               {about.body ? (
-                <div
-                  className="
-                    max-w-none
-                    [&_p]:mb-[1.35em]
-                    [&_p]:text-[15px]
-                    [&_p]:leading-[2.05]
-                    [&_p]:text-[#D7D3CC]
-                    [&_p:last-child]:mb-0
-
-                    [&_h2]:mt-[2.1em]
-                    [&_h2]:mb-[0.8em]
-                    [&_h2]:text-[26px]
-                    [&_h2]:font-light
-                    [&_h2]:leading-[1.45]
-                    [&_h2]:tracking-[0.04em]
-                    [&_h2]:text-[#F2F1EE]
-
-                    [&_h3]:mt-[2.1em]
-                    [&_h3]:mb-[0.8em]
-                    [&_h3]:text-[20px]
-                    [&_h3]:font-light
-                    [&_h3]:leading-[1.5]
-                    [&_h3]:tracking-[0.04em]
-                    [&_h3]:text-[#F2F1EE]
-
-                    [&_h4]:mt-[2.1em]
-                    [&_h4]:mb-[0.8em]
-                    [&_h4]:font-light
-                    [&_h4]:leading-[1.5]
-                    [&_h4]:tracking-[0.04em]
-                    [&_h4]:text-[#F2F1EE]
-
-                    [&_ul]:mb-[1.4em]
-                    [&_ul]:pl-[1.1em]
-                    [&_ul]:text-[#D7D3CC]
-
-                    [&_ol]:mb-[1.4em]
-                    [&_ol]:pl-[1.1em]
-                    [&_ol]:text-[#D7D3CC]
-
-                    [&_li]:my-[0.45em]
-                    [&_li]:leading-[1.95]
-
-                    [&_a]:border-b
-                    [&_a]:border-[rgba(215,211,204,0.18)]
-                    [&_a]:text-[#D7D3CC]
-                    [&_a]:no-underline
-                    [&_a]:transition-colors
-                    [&_a]:duration-200
-                    hover:[&_a]:text-[#F2F1EE]
-
-                    [&_strong]:font-normal
-                    [&_strong]:text-[#F2F1EE]
-
-                    md:[&_p]:text-[16px]
-                    md:[&_p]:leading-[2.12]
-                    md:[&_h2]:text-[30px]
-                    md:[&_h3]:text-[22px]
-                  "
-                >
+                <div className="reading-body prose prose-invert max-w-none">
                   <PortableText value={about.body} />
                 </div>
               ) : (
-                <p className="text-[15px] leading-[2.05] text-[#A6A39D]">
+                <p className="text-[16px] leading-[1.95] text-[var(--site-soft)]">
                   这里暂时还没有留下更多内容。
                 </p>
               )}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
