@@ -111,7 +111,7 @@ export default function HomeSlide({
 
       leaveTimerRef.current = window.setTimeout(() => {
         router.push(href)
-      }, 300)
+      }, 80)
     }
 
   const isTarget = (target: Exclude<PortalTarget, null>) =>
@@ -311,7 +311,7 @@ export default function HomeSlide({
           </p>
 
           <p
-            className={`home-signature text-[#C9C7C2] ${
+            className={`home-signature text-[var(--home-soft)] ${
               mobile ? 'mt-4 text-[14px]' : 'mt-5 text-[15px] md:text-[16px]'
             }`}
           >
