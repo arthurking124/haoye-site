@@ -100,35 +100,37 @@ export default async function PoemDetailPage({
   const poemDate = formatPoemDate(poem.publishedAt)
 
   return (
-    <div className="min-h-[100svh] bg-[#0D0D0D] text-[#F2F1EE]">
+    <div className="min-h-[100svh] bg-[var(--site-bg)] text-[var(--site-text-solid)]">
       <InnerRoom variant="inner">
         <div className="mx-auto max-w-[1040px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
-          <header className="border-t border-white/8 pt-8 md:pt-10">
+          <header className="border-t border-[color:var(--site-border-soft)] pt-8 md:pt-10">
             <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
               <div>
                 <Link
                   href="/poems"
-                  className="site-nav text-[11px] tracking-[0.18em] text-[#8E8C88] transition-colors duration-300 hover:text-[#C9C7C2]"
+                  className="site-nav text-[11px] tracking-[0.18em] text-[var(--site-dim)] transition-colors duration-300 hover:text-[var(--site-soft)]"
                 >
                   回到诗
                 </Link>
 
-                <p className="mt-5 text-[11px] tracking-[0.18em] text-[#6F6D69]">POEM</p>
+                <p className="mt-5 text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+                  POEM
+                </p>
 
                 {poemDate ? (
-                  <p className="mt-4 text-[11px] tracking-[0.18em] text-[#8E8C88]">
+                  <p className="mt-4 text-[11px] tracking-[0.18em] text-[var(--site-dim)]">
                     {poemDate}
                   </p>
                 ) : null}
               </div>
 
               <div className="max-w-[680px]">
-                <h1 className="home-line text-[32px] leading-[1.38] text-[#F2F1EE] md:text-[48px] md:leading-[1.34]">
+                <h1 className="home-line text-[32px] leading-[1.38] text-[var(--site-text-solid)] md:text-[48px] md:leading-[1.34]">
                   《{poem.title || '未命名'}》
                 </h1>
 
                 {poem.intro ? (
-                  <p className="mt-6 max-w-[560px] text-[14px] leading-[1.98] text-[#8E8C88] md:text-[15px]">
+                  <p className="mt-6 max-w-[560px] text-[14px] leading-[1.98] text-[var(--site-dim)] md:text-[15px]">
                     {poem.intro}
                   </p>
                 ) : null}
@@ -141,7 +143,7 @@ export default async function PoemDetailPage({
               <div className="grid grid-cols-1 gap-8 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
                 <div />
 
-                <div className="max-w-[760px] overflow-hidden rounded-[18px] bg-white/[0.03]">
+                <div className="max-w-[760px] overflow-hidden rounded-[18px] bg-[color:var(--site-border-soft)]">
                   <img
                     src={urlFor(poem.coverImage).width(1500).quality(90).url()}
                     alt={poem.title || 'poem-cover'}
@@ -152,18 +154,20 @@ export default async function PoemDetailPage({
             </section>
           ) : null}
 
-          <section className="mt-14 border-t border-white/8 pt-10 md:mt-18 md:pt-14">
+          <section className="mt-14 border-t border-[color:var(--site-border-soft)] pt-10 md:mt-18 md:pt-14">
             <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
               <div>
-                <p className="text-[11px] tracking-[0.18em] text-[#6F6D69]">TEXT</p>
-                <p className="mt-4 text-[11px] tracking-[0.22em] text-[#8E8C88]">
+                <p className="text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+                  TEXT
+                </p>
+                <p className="mt-4 text-[11px] tracking-[0.22em] text-[var(--site-dim)]">
                   INNER ROOM
                 </p>
               </div>
 
               <div className="max-w-[640px]">
                 <div className="poem-body">
-                  <div className="home-line text-[18px] leading-[2.18] text-[#D7D3CC] md:text-[20px] md:leading-[2.24]">
+                  <div className="home-line text-[18px] leading-[2.18] text-[var(--site-reading)] md:text-[20px] md:leading-[2.24]">
                     <PortableText value={poem.body} />
                   </div>
                 </div>
