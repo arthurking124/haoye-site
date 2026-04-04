@@ -409,12 +409,36 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     targetRef.current = INITIAL_PARALLAX
   }
 
+  const handleLinkCapture = (e: MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement | null
+    const anchor = target?.closest('a[href]') as HTMLAnchorElement | null
+
+    if (!anchor) return
+    if (anchor.target === '_blank') return
+    if (anchor.hasAttribute('download')) return
+
+    const href = anchor.getAttribute('href')
+    if (!href) return
+    if (href.startsWith('#')) return
+    if (href.startsWith('mailto:')) return
+    if (href.startsWith('tel:')) return
+
+    const isInternal =
+      href.startsWith('/') ||
+      href.startsWith(window.location.origin)
+
+    if (!isInternal) return
+
+    setIsPortalLeaving(true)
+  }
+
   return (
     <div
       ref={containerRef}
-      className={`relative h-[100svh] w-full overflow-hidden bg-[#000] transition-opacity duration-200 ${
-        isPortalLeaving ? 'pointer-events-none opacity-0' : 'opacity-100'
+      className={`relative h-[100svh] w-full overflow-hidden bg-[#000] ${
+        isPortalLeaving ? 'pointer-events-none invisible opacity-0' : 'visible opacity-100'
       }`}
+      onClickCapture={handleLinkCapture}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onTouchStart={handleTouchStart}
