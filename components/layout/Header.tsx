@@ -46,11 +46,10 @@ export default function Header() {
       <div className="mx-auto max-w-[1440px] px-5 pt-5 md:px-8 md:pt-6">
         <div className="group relative flex items-center justify-between pb-3 md:pb-[14px]">
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-px transition-all duration-500 ease-out opacity-[0.015] group-hover:opacity-[0.18]"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-px opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
             style={{
-              background: scrolled
-                ? 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 36%, transparent) 12%, color-mix(in srgb, var(--site-border) 52%, transparent) 50%, color-mix(in srgb, var(--site-border) 36%, transparent) 88%, transparent 100%)'
-                : 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-border) 20%, transparent) 12%, color-mix(in srgb, var(--site-border) 30%, transparent) 50%, color-mix(in srgb, var(--site-border) 20%, transparent) 88%, transparent 100%)',
+              background:
+                'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--site-text-solid) 18%, transparent) 12%, color-mix(in srgb, var(--site-text-solid) 38%, transparent) 50%, color-mix(in srgb, var(--site-text-solid) 18%, transparent) 88%, transparent 100%)',
             }}
           />
 
