@@ -209,7 +209,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
         onClick={() => void toggleAudio()}
         aria-label={soundEnabled ? 'Stop music' : 'Play music'}
         title={soundEnabled ? 'Stop music' : 'Play music'}
-        className="group relative flex h-[32px] w-[32px] items-center justify-center rounded-full border transition-all duration-300 ease-out hover:scale-[1.06]"
+        className="group relative flex h-[28px] w-[28px] items-center justify-center rounded-full border transition-all duration-300 ease-out hover:scale-[1.06]"
         style={{
           borderColor: 'color-mix(in srgb, var(--site-border) 88%, transparent)',
           background: 'color-mix(in srgb, var(--site-bg) 86%, transparent)',
@@ -226,7 +226,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
           className={
             soundEnabled
               ? 'translate-y-[-1px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
-              : 'translate-y-[-2px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
+              : 'translate-y-[-2px] text-[12px] leading-none transition-all duration-300 group-hover:opacity-85'
           }
           style={{ color: 'var(--site-text-solid)' }}
         >
