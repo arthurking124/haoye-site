@@ -1,23 +1,43 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type HomeIntroOverlayProps = {
   visible: boolean
+  onEnter?: (soundEnabled: boolean) => void
   onComplete?: () => void
 }
 
 type Phase = 'idle' | 'spinning' | 'fading'
 
-export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverlayProps) {
+const SPIN_START_MS = 1500
+const COMPLETE_MS = 2350
+
+export default function HomeIntroOverlay({
+  visible,
+  onEnter,
+  onComplete,
+}: HomeIntroOverlayProps) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const timersRef = useRef<number[]>([])
 
   useEffect(() => {
     if (!visible) {
       setPhase('idle')
+      return
     }
+
+    setPhase('idle')
+    setSoundEnabled(true)
   }, [visible])
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((timer) => window.clearTimeout(timer))
+      timersRef.current = []
+    }
+  }, [])
 
   const minuteTransform = useMemo(() => {
     if (phase === 'spinning') {
@@ -29,25 +49,30 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
   const handleEnter = () => {
     if (phase !== 'idle') return
 
+    timersRef.current.forEach((timer) => window.clearTimeout(timer))
+    timersRef.current = []
+
+    onEnter?.(soundEnabled)
     setPhase('spinning')
 
-    window.setTimeout(() => {
-      setPhase('fading')
-    }, 1500)
+    timersRef.current.push(
+      window.setTimeout(() => {
+        setPhase('fading')
+      }, SPIN_START_MS)
+    )
 
-    window.setTimeout(() => {
-      onComplete?.()
-      setPhase('idle')
-    }, 2350)
+    timersRef.current.push(
+      window.setTimeout(() => {
+        onComplete?.()
+        setPhase('idle')
+      }, COMPLETE_MS)
+    )
   }
 
   if (!visible) return null
 
   return (
-    <div
-      className={phase === 'fading' ? 'intro fade-out' : 'intro'}
-      style={{ zIndex: 120 }}
-    >
+    <div className={phase === 'fading' ? 'intro fade-out' : 'intro'} style={{ zIndex: 120 }}>
       <style jsx>{`
         .intro {
           position: absolute;
@@ -214,7 +239,6 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
           letter-spacing: 0.08em;
           color: rgba(255, 255, 255, 0.18);
           white-space: nowrap;
-          text-transform: lowercase;
         }
 
         @keyframes breathe {
@@ -270,7 +294,6 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
       <div className="bottom-ui">
         <button
           className={phase === 'idle' ? 'enter' : 'enter hide'}
-          id="enterBtn"
           type="button"
           onClick={handleEnter}
         >
@@ -282,7 +305,6 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
           <div className="sound-controls">
             <button
               className={soundEnabled ? 'sound-btn active' : 'sound-btn'}
-              id="soundOn"
               type="button"
               onClick={() => setSoundEnabled(true)}
             >
@@ -291,7 +313,6 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
             <span className="sound-sep">/</span>
             <button
               className={!soundEnabled ? 'sound-btn active' : 'sound-btn'}
-              id="soundOff"
               type="button"
               onClick={() => setSoundEnabled(false)}
             >
@@ -300,7 +321,7 @@ export default function HomeIntroOverlay({ visible, onComplete }: HomeIntroOverl
           </div>
         </div>
 
-        <div className="site-mark">www.haoye.cyou</div>
+        <div className="site-mark">©haoye.cyou</div>
       </div>
     </div>
   )

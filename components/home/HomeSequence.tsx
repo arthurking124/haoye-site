@@ -37,15 +37,20 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const [current, setCurrent] = useState(0)
   const [isMobile, setIsMobile] = useState(false)
   const [introVisible, setIntroVisible] = useState(true)
-  const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
   const [transitionDuration, setTransitionDuration] = useState(900)
+  const [parallax, setParallax] = useState<ParallaxState>(INITIAL_PARALLAX)
+
   const isAnimatingRef = useRef(false)
   const touchStartX = useRef<number | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
+
   const rafRef = useRef<number | null>(null)
   const targetRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const currentRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const velocityRef = useRef<ParallaxState>(INITIAL_PARALLAX)
+
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const volumeTimerRef = useRef<number | null>(null)
 
   const slides = useMemo(
     () => [
@@ -74,6 +79,13 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [settings]
   )
 
+  const homeAudioSrc =
+    settings?.homeAudioUrl ||
+    settings?.homeMusicUrl ||
+    settings?.bgmUrl ||
+    settings?.siteMusicUrl ||
+    '/audio/home.mp3'
+
   const getTransitionDuration = useCallback((from: number, to: number) => {
     if (from === 2 && to === 3) return 1260
     if (from !== 3 && to === 3) return 1160
@@ -88,7 +100,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       if (nextIndex === current) return
 
       const duration = getTransitionDuration(current, nextIndex)
-
       isAnimatingRef.current = true
       setTransitionDuration(duration)
       setCurrent(nextIndex)
@@ -100,6 +111,58 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [current, getTransitionDuration, slides.length]
   )
 
+  const prepareAndPlayMusic = useCallback(() => {
+    if (typeof window === 'undefined') return
+    if (!homeAudioSrc) return
+
+    let audio = audioRef.current
+
+    if (!audio) {
+      audio = new Audio(homeAudioSrc)
+      audio.loop = true
+      audio.preload = 'auto'
+      audioRef.current = audio
+    }
+
+    if (audio.src !== new URL(homeAudioSrc, window.location.origin).toString()) {
+      audio.src = homeAudioSrc
+      audio.loop = true
+      audio.preload = 'auto'
+    }
+
+    audio.volume = 0.01
+    const playPromise = audio.play()
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {})
+    }
+  }, [homeAudioSrc])
+
+  const fadeMusicToTarget = useCallback((targetVolume = 0.62) => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (volumeTimerRef.current !== null) {
+      window.clearInterval(volumeTimerRef.current)
+      volumeTimerRef.current = null
+    }
+
+    const startVolume = Number.isFinite(audio.volume) ? audio.volume : 0.01
+    const steps = 18
+    const stepDuration = 70
+    let step = 0
+
+    volumeTimerRef.current = window.setInterval(() => {
+      step += 1
+      const progress = Math.min(step / steps, 1)
+      audio.volume = startVolume + (targetVolume - startVolume) * progress
+
+      if (progress >= 1 && volumeTimerRef.current !== null) {
+        window.clearInterval(volumeTimerRef.current)
+        volumeTimerRef.current = null
+      }
+    }, stepDuration)
+  }, [])
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -110,6 +173,24 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const skipIntroOnce = sessionStorage.getItem('haoye-skip-intro-once')
+
+    if (skipIntroOnce === '1') {
+      sessionStorage.removeItem('haoye-skip-intro-once')
+      setCurrent(0)
+      setIntroVisible(false)
+      prepareAndPlayMusic()
+      fadeMusicToTarget()
+      return
+    }
+
+    setCurrent(0)
+    setIntroVisible(true)
+  }, [fadeMusicToTarget, prepareAndPlayMusic])
 
   useEffect(() => {
     const spring = isMobile ? 0.09 : 0.105
@@ -136,6 +217,7 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       }
 
       velocityRef.current = nextVelocity
+
       currentRef.current = {
         rotateX: currentRef.current.rotateX + nextVelocity.rotateX,
         rotateY: currentRef.current.rotateY + nextVelocity.rotateY,
@@ -161,6 +243,17 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       }
     }
   }, [isMobile])
+
+  useEffect(() => {
+    return () => {
+      if (volumeTimerRef.current !== null) {
+        window.clearInterval(volumeTimerRef.current)
+      }
+      if (audioRef.current) {
+        audioRef.current.pause()
+      }
+    }
+  }, [])
 
   const updateTargetFromPoint = useCallback(
     (clientX: number, clientY: number, pointerType: 'mouse' | 'touch') => {
@@ -207,6 +300,17 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   }, [])
 
   useEffect(() => {
+    const onVisibility = () => {
+      if (document.hidden) {
+        targetRef.current = INITIAL_PARALLAX
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
+
+  useEffect(() => {
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
@@ -217,13 +321,15 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       if (isAnimatingRef.current) return
       if (Math.abs(e.deltaY) < 24) return
 
-      if (e.deltaY > 0) goTo(current + 1)
-      else goTo(current - 1)
+      if (e.deltaY > 0) {
+        goTo(current + 1)
+      } else {
+        goTo(current - 1)
+      }
     }
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (introVisible) return
-
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1)
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1)
     }
@@ -237,6 +343,19 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       window.removeEventListener('keydown', onKeyDown)
     }
   }, [current, goTo, introVisible, isMobile])
+
+  useEffect(() => {
+    if (introVisible) return
+    window.dispatchEvent(new CustomEvent('haoye:intro-ready'))
+  }, [introVisible])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('haoye:screen-change', {
+        detail: { index: current },
+      })
+    )
+  }, [current])
 
   const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
     const touch = e.touches[0]
@@ -320,7 +439,19 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
         })}
       </div>
 
-      <HomeIntroOverlay visible={introVisible} onComplete={() => setIntroVisible(false)} />
+      <HomeIntroOverlay
+        visible={introVisible}
+        onEnter={(soundEnabled) => {
+          if (soundEnabled) {
+            prepareAndPlayMusic()
+          }
+        }}
+        onComplete={() => {
+          setCurrent(0)
+          setIntroVisible(false)
+          fadeMusicToTarget()
+        }}
+      />
 
       {!isMobile && !introVisible && (
         <>
