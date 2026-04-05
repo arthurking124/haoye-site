@@ -71,7 +71,7 @@ export default function HomeSplineScene() {
       <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-b from-black/10 via-transparent to-black/10" />
 
       <nav
-        className={`absolute top-7 left-1/2 z-20 flex -translate-x-1/2 items-center gap-7 transition-all duration-700 md:top-8 md:left-[47.2%] md:gap-9 ${
+        className={`absolute top-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-7 transition-all duration-700 md:top-10 md:left-[38.5%] md:gap-9 ${
           introVisible ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
         }`}
       >
