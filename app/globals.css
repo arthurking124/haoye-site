@@ -819,3 +819,216 @@ html[data-theme='light'] .haoye-images-enter:hover {
     transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
+/* =========================================
+   HAOYE / Poems
+   White theme only
+   不改变黑色主题结构，只让白色主题拥有自己的气息
+   ========================================= */
+html[data-theme='light'] .haoye-poems-page,
+html[data-theme='light'] .haoye-poem-detail-page {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.24), transparent 24%),
+    radial-gradient(circle at 86% 76%, rgba(214, 204, 190, 0.10), transparent 22%),
+    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
+}
+
+html[data-theme='light'] .haoye-poems-header {
+  max-width: 600px;
+}
+
+html[data-theme='light'] .haoye-poems-kicker {
+  opacity: 0.66;
+  letter-spacing: 0.28em;
+}
+
+html[data-theme='light'] .haoye-poems-title {
+  letter-spacing: 0.015em;
+}
+
+html[data-theme='light'] .haoye-poems-intro {
+  max-width: 29ch;
+  line-height: 2.04;
+  color: rgba(108, 101, 92, 0.70);
+}
+
+html[data-theme='light'] .haoye-poems-list {
+  margin-top: 3.8rem;
+}
+
+html[data-theme='light'] .haoye-poems-item {
+  border-top-color: rgba(56, 47, 37, 0.04);
+  padding-top: 2.7rem;
+}
+
+html[data-theme='light'] .haoye-poems-index,
+html[data-theme='light'] .haoye-poems-date {
+  color: rgba(164, 154, 143, 0.84);
+}
+
+html[data-theme='light'] .haoye-poems-item-title {
+  letter-spacing: 0.01em;
+}
+
+html[data-theme='light'] .haoye-poems-item-intro {
+  color: rgba(108, 101, 92, 0.72);
+  line-height: 2.04;
+  max-width: 34ch;
+}
+
+html[data-theme='light'] .haoye-poems-enter {
+  color: rgba(95, 86, 76, 0.66);
+  letter-spacing: 0.24em;
+}
+
+html[data-theme='light'] .haoye-poems-enter:hover {
+  color: var(--site-text-solid);
+}
+
+html[data-theme='light'] .haoye-poems-media {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.58),
+    inset 0 -1px 0 rgba(56,47,37,0.018),
+    0 10px 26px rgba(88, 72, 56, 0.045);
+}
+
+html[data-theme='light'] .haoye-poems-cover {
+  filter: saturate(0.965) contrast(0.988) brightness(0.992);
+}
+
+html[data-theme='light'] .haoye-poems-overlay {
+  background:
+    linear-gradient(to top, rgba(255,255,255,0.015), rgba(255,255,255,0.004), rgba(255,255,255,0.012));
+}
+
+/* 白色主题下，让诗列表更像停顿的片段，不是普通条目 */
+@media (min-width: 768px) {
+  html[data-theme='light'] .haoye-poems-list {
+    margin-top: 5.2rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item {
+    padding-top: 3.4rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='0'] .haoye-poems-row {
+    grid-template-columns: minmax(0, 0.86fr) minmax(240px, 0.82fr);
+    gap: 4.4rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='0'] .haoye-poems-main {
+    max-width: 34ch;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='0'] .haoye-poems-media {
+    margin-top: 0.8rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='1'] .haoye-poems-row {
+    grid-template-columns: minmax(260px, 0.76fr) minmax(0, 0.9fr);
+    gap: 5rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='1'] .haoye-poems-main {
+    order: 2;
+    max-width: 35ch;
+    padding-top: 1.8rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='1'] .haoye-poems-media {
+    order: 1;
+    max-width: 92%;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='2'] .haoye-poems-row {
+    grid-template-columns: minmax(0, 0.92fr) minmax(230px, 0.72fr);
+    gap: 4.2rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='2'] .haoye-poems-main {
+    max-width: 36ch;
+    padding-top: 0.8rem;
+  }
+
+  html[data-theme='light'] .haoye-poems-item[data-index='2'] .haoye-poems-media {
+    max-width: 88%;
+    margin-left: auto;
+  }
+
+  html[data-theme='light'] .haoye-poems-item:hover .haoye-poems-cover {
+    transform: scale(1.01);
+    filter: saturate(0.972) contrast(0.992) brightness(0.996);
+  }
+}
+
+/* ---------- poem detail / white theme ---------- */
+html[data-theme='light'] .haoye-poem-header,
+html[data-theme='light'] .haoye-poem-text-section {
+  border-top-color: rgba(56, 47, 37, 0.042);
+}
+
+html[data-theme='light'] .haoye-poem-back {
+  color: rgba(108, 101, 92, 0.72);
+}
+
+html[data-theme='light'] .haoye-poem-back:hover {
+  color: var(--site-text-solid);
+}
+
+html[data-theme='light'] .haoye-poem-tag,
+html[data-theme='light'] .haoye-poem-date,
+html[data-theme='light'] .haoye-poem-text-meta p {
+  color: rgba(157, 149, 136, 0.84);
+}
+
+html[data-theme='light'] .haoye-poem-title {
+  letter-spacing: 0.012em;
+}
+
+html[data-theme='light'] .haoye-poem-intro {
+  max-width: 31ch;
+  line-height: 2.04;
+  color: rgba(108, 101, 92, 0.72);
+}
+
+html[data-theme='light'] .haoye-poem-cover-wrap {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.58),
+    inset 0 -1px 0 rgba(56,47,37,0.018),
+    0 10px 26px rgba(88, 72, 56, 0.045);
+}
+
+html[data-theme='light'] .haoye-poem-cover {
+  filter: saturate(0.965) contrast(0.988) brightness(0.992);
+}
+
+html[data-theme='light'] .haoye-poem-text-body {
+  max-width: 36em;
+}
+
+html[data-theme='light'] .haoye-poem-text-body .home-line {
+  color: var(--site-reading);
+}
+
+html[data-theme='light'] .haoye-poem-text-body .poem-body p {
+  line-height: 2.24;
+}
+
+@media (min-width: 768px) {
+  html[data-theme='light'] .haoye-poem-hero {
+    max-width: 36ch;
+  }
+
+  html[data-theme='light'] .haoye-poem-cover-wrap {
+    max-width: 700px;
+    margin-left: 4%;
+  }
+
+  html[data-theme='light'] .haoye-poem-text-body {
+    max-width: 37em;
+    margin-left: 6%;
+  }
+}
