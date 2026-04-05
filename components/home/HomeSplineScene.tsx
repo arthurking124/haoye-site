@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import HomeIntroOverlay from './HomeIntroOverlay'
 
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
@@ -16,12 +16,16 @@ const navItems = [
   { href: '/about', label: '我' },
 ]
 
+const NAV_FREQUENCIES = [220, 233.08, 246.94, 261.63]
+
 export default function HomeSplineScene() {
   const [introVisible, setIntroVisible] = useState(true)
   const [scenePath, setScenePath] = useState('/scene-desktop.splinecode')
   const [mounted, setMounted] = useState(false)
   const [hoveredHref, setHoveredHref] = useState<string | null>(null)
   const [pressedHref, setPressedHref] = useState<string | null>(null)
+
+  const audioContextRef = useRef<AudioContext | null>(null)
 
   useEffect(() => {
     const updateScene = () => {
@@ -43,8 +47,103 @@ export default function HomeSplineScene() {
     setMounted(true)
 
     window.addEventListener('resize', updateScene)
-    return () => window.removeEventListener('resize', updateScene)
+
+    return () => {
+      window.removeEventListener('resize', updateScene)
+    }
   }, [])
+
+  const getAudioContext = () => {
+    if (typeof window === 'undefined') return null
+
+    const AudioContextClass =
+      window.AudioContext ||
+      (
+        window as typeof window & {
+          webkitAudioContext?: typeof AudioContext
+        }
+      ).webkitAudioContext
+
+    if (!AudioContextClass) return null
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass()
+    }
+
+    if (audioContextRef.current.state === 'suspended') {
+      void audioContextRef.current.resume()
+    }
+
+    return audioContextRef.current
+  }
+
+  const playNavTone = (index: number) => {
+    const ctx = getAudioContext()
+    if (!ctx) return
+
+    const frequency = NAV_FREQUENCIES[index] ?? NAV_FREQUENCIES[0]
+    const now = ctx.currentTime + 0.005
+
+    const masterGain = ctx.createGain()
+    const filter = ctx.createBiquadFilter()
+
+    filter.type = 'lowpass'
+    filter.frequency.setValueAtTime(1650, now)
+    filter.Q.setValueAtTime(0.6, now)
+
+    masterGain.gain.setValueAtTime(0.0001, now)
+    masterGain.gain.linearRampToValueAtTime(0.02, now + 0.012)
+    masterGain.gain.exponentialRampToValueAtTime(0.004, now + 0.18)
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.62)
+
+    const osc1 = ctx.createOscillator()
+    const osc2 = ctx.createOscillator()
+    const osc3 = ctx.createOscillator()
+
+    const gain1 = ctx.createGain()
+    const gain2 = ctx.createGain()
+    const gain3 = ctx.createGain()
+
+    osc1.type = 'triangle'
+    osc2.type = 'sine'
+    osc3.type = 'sine'
+
+    osc1.frequency.setValueAtTime(frequency, now)
+    osc2.frequency.setValueAtTime(frequency * 2, now)
+    osc3.frequency.setValueAtTime(frequency * 3.01, now)
+
+    osc1.detune.setValueAtTime(-2, now)
+    osc2.detune.setValueAtTime(1, now)
+    osc3.detune.setValueAtTime(3, now)
+
+    gain1.gain.setValueAtTime(0.7, now)
+    gain2.gain.setValueAtTime(0.18, now)
+    gain3.gain.setValueAtTime(0.08, now)
+
+    osc1.connect(gain1)
+    osc2.connect(gain2)
+    osc3.connect(gain3)
+
+    gain1.connect(filter)
+    gain2.connect(filter)
+    gain3.connect(filter)
+
+    filter.connect(masterGain)
+    masterGain.connect(ctx.destination)
+
+    osc1.start(now)
+    osc2.start(now)
+    osc3.start(now)
+
+    osc1.stop(now + 0.65)
+    osc2.stop(now + 0.65)
+    osc3.stop(now + 0.65)
+  }
+
+  const handleNavPress = (href: string, index: number) => {
+    setPressedHref(href)
+    playNavTone(index)
+  }
 
   const getNavStyle = (href: string) => {
     const isPressed = pressedHref === href
@@ -85,7 +184,7 @@ export default function HomeSplineScene() {
           introVisible ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'
         }`}
       >
-        {navItems.map((item) => (
+        {navItems.map((item, index) => (
           <Link
             key={item.href}
             href={item.href}
@@ -96,10 +195,14 @@ export default function HomeSplineScene() {
               setHoveredHref((current) => (current === item.href ? null : current))
               setPressedHref((current) => (current === item.href ? null : current))
             }}
-            onMouseDown={() => setPressedHref(item.href)}
-            onMouseUp={() => setPressedHref((current) => (current === item.href ? null : current))}
-            onTouchStart={() => setPressedHref(item.href)}
-            onTouchEnd={() => setPressedHref((current) => (current === item.href ? null : current))}
+            onMouseDown={() => handleNavPress(item.href, index)}
+            onMouseUp={() =>
+              setPressedHref((current) => (current === item.href ? null : current))
+            }
+            onTouchStart={() => handleNavPress(item.href, index)}
+            onTouchEnd={() =>
+              setPressedHref((current) => (current === item.href ? null : current))
+            }
           >
             {item.label}
           </Link>
