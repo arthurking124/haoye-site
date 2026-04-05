@@ -1032,3 +1032,98 @@ html[data-theme='light'] .haoye-poem-text-body .poem-body p {
     margin-left: 6%;
   }
 }
+/* =========================================
+   HAOYE / About
+   White theme only
+   不改变黑色主题结构，只让白色主题更安静、更自由
+   ========================================= */
+html[data-theme='light'] .haoye-about-page {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.22), transparent 24%),
+    radial-gradient(circle at 86% 76%, rgba(214, 204, 190, 0.08), transparent 22%),
+    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
+}
+
+html[data-theme='light'] .haoye-about-header {
+  max-width: 620px;
+}
+
+html[data-theme='light'] .haoye-about-kicker {
+  opacity: 0.66;
+  letter-spacing: 0.28em;
+}
+
+html[data-theme='light'] .haoye-about-title {
+  letter-spacing: 0.014em;
+}
+
+html[data-theme='light'] .haoye-about-subtitle {
+  max-width: 31ch;
+  line-height: 2.04;
+  color: rgba(108, 101, 92, 0.70);
+}
+
+html[data-theme='light'] .haoye-about-section {
+  border-top-color: rgba(56, 47, 37, 0.04);
+}
+
+html[data-theme='light'] .haoye-about-index,
+html[data-theme='light'] .haoye-about-tag {
+  color: rgba(164, 154, 143, 0.84);
+}
+
+html[data-theme='light'] .haoye-about-main {
+  max-width: 38em;
+}
+
+html[data-theme='light'] .haoye-about-rich p {
+  color: rgba(63, 56, 49, 0.82);
+}
+
+html[data-theme='light'] .haoye-about-rich h2,
+html[data-theme='light'] .haoye-about-rich h3,
+html[data-theme='light'] .haoye-about-rich h4 {
+  letter-spacing: 0.045em;
+}
+
+html[data-theme='light'] .haoye-about-rich a {
+  border-bottom-color: rgba(56, 47, 37, 0.05);
+}
+
+html[data-theme='light'] .haoye-about-rich a:hover {
+  color: var(--site-text-solid);
+}
+
+html[data-theme='light'] .haoye-about-empty {
+  color: rgba(108, 101, 92, 0.72);
+}
+
+html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
+  color: rgba(157, 149, 136, 0.78);
+  opacity: 0.84;
+}
+
+/* 白色主题下，这页更像“存在的停留区”，不是介绍页 */
+@media (min-width: 768px) {
+  html[data-theme='light'] .haoye-about-section > div {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 2.2rem;
+  }
+
+  html[data-theme='light'] .haoye-about-rail {
+    padding-top: 0.35rem;
+  }
+
+  html[data-theme='light'] .haoye-about-main {
+    max-width: 39em;
+    margin-left: 4%;
+  }
+
+  html[data-theme='light'] .haoye-about-rich p {
+    line-height: 2.18;
+  }
+
+  html[data-theme='light'] .haoye-about-signature {
+    margin-top: 6.8rem;
+  }
+}

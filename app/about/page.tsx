@@ -19,39 +19,40 @@ export default async function AboutPage() {
   }
 
   return (
-    <div className="min-h-[100svh] bg-[var(--site-bg)] text-[var(--site-text-solid)]">
+    <div className="haoye-about-page min-h-[100svh] bg-[var(--site-bg)] text-[var(--site-text-solid)]">
       <div className="mx-auto max-w-[1040px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
-        <header className="max-w-[720px]">
-          <p className="text-[11px] tracking-[0.22em] text-[var(--site-faint)]">
+        <header className="haoye-about-header max-w-[720px]">
+          <p className="haoye-about-kicker text-[11px] tracking-[0.22em] text-[var(--site-faint)]">
             BEHIND THE DOOR
           </p>
 
-          <h1 className="mt-6 text-[34px] font-light leading-[1.35] text-[var(--site-text-solid)] md:text-[54px] md:leading-[1.28]">
+          <h1 className="haoye-about-title mt-6 text-[34px] font-light leading-[1.35] text-[var(--site-text-solid)] md:text-[54px] md:leading-[1.28]">
             {about.title || '我'}
           </h1>
 
           {about.subtitle ? (
-            <p className="mt-6 max-w-[560px] text-[14px] leading-[1.95] text-[var(--site-dim)] md:text-[15px]">
+            <p className="haoye-about-subtitle mt-6 max-w-[560px] text-[14px] leading-[1.95] text-[var(--site-dim)] md:text-[15px]">
               {about.subtitle}
             </p>
           ) : null}
         </header>
 
-        <div className="mt-18 border-t border-[color:var(--site-border-soft)] pt-10 md:mt-24 md:pt-14">
+        <div className="haoye-about-section mt-18 border-t border-[color:var(--site-border-soft)] pt-10 md:mt-24 md:pt-14">
           <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
-            <div>
-              <p className="text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+            <div className="haoye-about-rail">
+              <p className="haoye-about-index text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
                 01
               </p>
-              <p className="mt-4 text-[11px] tracking-[0.22em] text-[var(--site-dim)]">
+              <p className="haoye-about-tag mt-4 text-[11px] tracking-[0.22em] text-[var(--site-dim)]">
                 ABOUT
               </p>
             </div>
 
-            <div className="max-w-[640px]">
+            <div className="haoye-about-main max-w-[640px]">
               {about.body ? (
                 <div
                   className="
+                    haoye-about-rich
                     max-w-none
                     [&_p]:mb-[1.35em]
                     [&_p]:text-[15px]
@@ -113,12 +114,12 @@ export default async function AboutPage() {
                   <PortableText value={about.body} />
                 </div>
               ) : (
-                <p className="text-[15px] leading-[2.05] text-[var(--site-soft)]">
+                <p className="haoye-about-empty text-[15px] leading-[2.05] text-[var(--site-soft)]">
                   这里暂时还没有留下更多内容。
                 </p>
               )}
 
-              <div className="mt-16 flex justify-end md:mt-24">
+              <div className="haoye-about-signature mt-16 flex justify-end md:mt-24">
                 <SignatureMark />
               </div>
             </div>
