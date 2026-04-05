@@ -38,7 +38,7 @@ export default function SignatureMark() {
   }, [])
 
   return (
-    <div className="w-[300px] text-[var(--site-faint)] opacity-100 md:w-[400px]">
+    <div className="w-[340px] text-[var(--site-faint)] opacity-100 md:w-[460px]">
       <svg
         ref={svgRef}
         viewBox="-7 906 900 300"
