@@ -118,7 +118,7 @@ export default async function AboutPage() {
                 </p>
               )}
 
-              <div className="mt-14 flex justify-end md:mt-20">
+              <div className="mt-16 flex justify-end md:mt-24">
                 <SignatureMark />
               </div>
             </div>

@@ -19,7 +19,6 @@ export default function SignatureMark() {
       path.style.strokeDasharray = `${length}`
       path.style.strokeDashoffset = `${length}`
       path.style.opacity = '1'
-      return length
     }
 
     prepare(main)
@@ -39,12 +38,12 @@ export default function SignatureMark() {
   }, [])
 
   return (
-    <div className="signature-mark-wrap">
+    <div className="w-[300px] text-[var(--site-faint)] opacity-100 md:w-[400px]">
       <svg
         ref={svgRef}
         viewBox="-7 906 900 300"
         xmlns="http://www.w3.org/2000/svg"
-        className="signature-mark-svg"
+        className="block h-auto w-full overflow-visible"
         aria-hidden="true"
       >
         <g
