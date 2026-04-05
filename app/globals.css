@@ -619,151 +619,203 @@ html[data-home-leaving='1'] .home-sequence-root {
 }
 /* =========================================
    HAOYE / Images page
-   White theme only
-   不改变黑色主题结构，只让白色主题拥有另一种气质
+   White theme only / v2
+   只改变白色主题的版式关系，不碰黑色主题
    ========================================= */
 html[data-theme='light'] .haoye-images-page {
   background:
-    radial-gradient(circle at 18% 12%, rgba(255,255,255,0.34), transparent 26%),
+    radial-gradient(circle at 16% 12%, rgba(255,255,255,0.28), transparent 24%),
+    radial-gradient(circle at 84% 76%, rgba(215, 206, 192, 0.12), transparent 22%),
     linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
 }
 
 html[data-theme='light'] .haoye-images-header {
-  max-width: 640px;
+  max-width: 560px;
 }
 
 html[data-theme='light'] .haoye-images-kicker {
-  letter-spacing: 0.26em;
-  opacity: 0.72;
+  letter-spacing: 0.28em;
+  opacity: 0.68;
 }
 
 html[data-theme='light'] .haoye-images-title {
-  letter-spacing: 0.02em;
+  letter-spacing: 0.015em;
 }
 
 html[data-theme='light'] .haoye-images-intro {
-  max-width: 33ch;
-  line-height: 2.08;
-  color: rgba(108, 101, 92, 0.72);
+  max-width: 30ch;
+  line-height: 2.06;
+  color: rgba(108, 101, 92, 0.68);
 }
 
 html[data-theme='light'] .haoye-images-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  margin-top: 3.8rem;
 }
 
 html[data-theme='light'] .haoye-images-item {
-  padding-top: 3.4rem;
-  padding-bottom: 3.9rem;
-  border-top-color: rgba(56, 47, 37, 0.045);
+  border-top-color: rgba(56, 47, 37, 0.04);
+  padding-top: 3.1rem;
+  padding-bottom: 3.4rem;
+}
+
+html[data-theme='light'] .haoye-images-item > div {
+  gap: 1.5rem;
 }
 
 html[data-theme='light'] .haoye-images-index {
-  color: rgba(157, 149, 136, 0.86);
+  color: rgba(164, 154, 143, 0.84);
+  letter-spacing: 0.22em;
 }
 
 html[data-theme='light'] .haoye-images-media {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.16) 100%);
+    linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.65),
-    inset 0 -1px 0 rgba(56,47,37,0.02),
-    0 10px 28px rgba(85, 72, 58, 0.05);
+    inset 0 1px 0 rgba(255,255,255,0.58),
+    inset 0 -1px 0 rgba(56,47,37,0.018),
+    0 10px 26px rgba(88, 72, 56, 0.045);
+  border-radius: 22px;
 }
 
 html[data-theme='light'] .haoye-images-cover {
-  filter: saturate(0.96) contrast(0.985) brightness(0.988);
+  filter: saturate(0.965) contrast(0.988) brightness(0.992);
 }
 
 html[data-theme='light'] .haoye-images-overlay {
   background:
-    linear-gradient(to top, rgba(255,255,255,0.04), rgba(255,255,255,0.01), rgba(255,255,255,0.03));
+    linear-gradient(to top, rgba(255,255,255,0.015), rgba(255,255,255,0.004), rgba(255,255,255,0.012));
 }
 
 html[data-theme='light'] .haoye-images-glow {
   display: none;
 }
 
+html[data-theme='light'] .haoye-images-copy {
+  justify-content: flex-start;
+}
+
 html[data-theme='light'] .haoye-images-item-title {
-  letter-spacing: 0.018em;
+  letter-spacing: 0.012em;
 }
 
 html[data-theme='light'] .haoye-images-item-subtitle {
-  color: rgba(108, 101, 92, 0.72);
-  line-height: 2.04;
+  color: rgba(108, 101, 92, 0.70);
+  line-height: 2.02;
 }
 
 html[data-theme='light'] .haoye-images-enter {
-  color: rgba(79, 72, 63, 0.72);
+  color: rgba(95, 86, 76, 0.66);
+  letter-spacing: 0.24em;
 }
 
 html[data-theme='light'] .haoye-images-enter:hover {
   color: var(--site-text-solid);
 }
 
+/* ---------- desktop layout rewrite: only white theme ---------- */
 @media (min-width: 768px) {
+  html[data-theme='light'] .haoye-images-list {
+    margin-top: 5.5rem;
+  }
+
+  html[data-theme='light'] .haoye-images-item {
+    padding-top: 4.3rem;
+    padding-bottom: 5.2rem;
+  }
+
+  html[data-theme='light'] .haoye-images-item > div {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 1.8rem;
+  }
+
+  /* 第一组：图像主导，文字像在旁边被轻轻放出来 */
   html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-row {
-    grid-template-columns: minmax(0, 1.14fr) minmax(280px, 0.68fr);
-    gap: 5.2rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-row {
-    grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.04fr);
-    gap: 5.8rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-media {
-    order: 2;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-copy {
-    order: 1;
-    padding-top: 2.4rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-row {
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.78fr);
-    gap: 4.8rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-copy {
-    padding-top: 1.2rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-copy {
-    padding-top: 2.6rem;
+    display: block;
   }
 
   html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-media {
-    max-width: 92%;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-media {
-    max-width: 88%;
-    margin-left: auto;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-media {
-    max-width: 90%;
+    max-width: 60%;
   }
 
   html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-copy {
-    max-width: 32ch;
+    max-width: 30ch;
+    margin-left: 66%;
+    margin-top: -12.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-item-title {
+    font-size: 40px;
+    line-height: 1.24;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-enter {
+    margin-top: 2.9rem;
+  }
+
+  /* 第二组：图像靠右，文字靠左，不是简单左右栏 */
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-row {
+    display: block;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-media {
+    max-width: 56%;
+    margin-left: auto;
   }
 
   html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-copy {
     max-width: 31ch;
-    margin-left: 3.6rem;
+    margin-left: 6%;
+    margin-top: -11.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-item-title {
+    font-size: 38px;
+    line-height: 1.25;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-enter {
+    margin-top: 2.7rem;
+  }
+
+  /* 第三组：回收一点，形成节奏，不再是模板重复 */
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-row {
+    display: block;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-media {
+    max-width: 68%;
+    margin-left: 4%;
   }
 
   html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-copy {
     max-width: 34ch;
-    margin-left: 1.2rem;
+    margin-left: 17%;
+    margin-top: 2.4rem;
+    position: relative;
+    z-index: 2;
   }
 
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-item-title {
+    font-size: 36px;
+    line-height: 1.26;
+  }
+
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-enter {
+    margin-top: 2.5rem;
+  }
+
+  /* 白色主题 hover：更清一点，不是发亮表演 */
   html[data-theme='light'] .haoye-images-item:hover .haoye-images-cover {
     transform: scale(1.01);
-    filter: saturate(0.98) contrast(0.99) brightness(0.995);
+    filter: saturate(0.975) contrast(0.992) brightness(0.996);
+  }
+
+  html[data-theme='light'] .haoye-images-item:hover .haoye-images-copy {
+    transform: translateY(-1px);
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
