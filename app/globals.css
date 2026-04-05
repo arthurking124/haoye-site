@@ -60,40 +60,70 @@
 html[data-theme='light'] {
   color-scheme: light;
 
-  --site-bg: #d9d9d4;
-  --site-bg-rgb: 217, 217, 212;
-  --site-surface: #d9d9d4;
-  --site-surface-rgb: 217, 217, 212;
+  /* 皓野：不是 light mode，是自由白场 */
+  --site-bg: #f6f3ec;
+  --site-bg-rgb: 246, 243, 236;
+  --site-surface: #fbf8f2;
+  --site-surface-rgb: 251, 248, 242;
 
-  --site-text: rgba(17, 17, 17, 0.92);
-  --site-text-solid: #111111;
-  --site-soft: rgba(17, 17, 17, 0.78);
-  --site-muted: rgba(17, 17, 17, 0.6);
-  --site-dim: rgba(17, 17, 17, 0.48);
-  --site-faint: rgba(17, 17, 17, 0.36);
+  /* 字：不是压在白上，而是从白里显出来 */
+  --site-text: rgba(51, 46, 40, 0.90);
+  --site-text-solid: #332e28;
+  --site-soft: rgba(79, 72, 63, 0.82);
+  --site-muted: rgba(106, 98, 88, 0.68);
+  --site-dim: rgba(130, 120, 108, 0.56);
+  --site-faint: rgba(157, 148, 136, 0.78);
 
-  --site-border: rgba(17, 17, 17, 0.24);
-  --site-border-soft: rgba(17, 17, 17, 0.12);
-  --site-line-soft: rgba(17, 17, 17, 0.08);
+  /* 边界：不是线，是压痕 / 浮雕 */
+  --site-border: rgba(56, 47, 37, 0.10);
+  --site-border-soft: rgba(56, 47, 37, 0.06);
+  --site-line-soft: rgba(56, 47, 37, 0.035);
 
-  --site-selection-bg: rgba(17, 17, 17, 0.12);
-  --site-selection-fg: #111111;
+  --site-selection-bg: rgba(179, 164, 139, 0.14);
+  --site-selection-fg: #332e28;
 
-  --site-scroll-track: rgba(17, 17, 17, 0.04);
-  --site-scroll-thumb: rgba(17, 17, 17, 0.16);
-  --site-scroll-thumb-hover: rgba(17, 17, 17, 0.26);
+  --site-scroll-track: rgba(56, 47, 37, 0.03);
+  --site-scroll-thumb: rgba(56, 47, 37, 0.12);
+  --site-scroll-thumb-hover: rgba(56, 47, 37, 0.18);
 
-  --site-reading: rgba(17, 17, 17, 0.82);
-  --site-reading-link: rgba(17, 17, 17, 0.88);
-  --site-reading-blockquote: rgba(17, 17, 17, 0.72);
+  --site-reading: rgba(63, 56, 49, 0.84);
+  --site-reading-link: rgba(51, 46, 40, 0.90);
+  --site-reading-blockquote: rgba(92, 84, 75, 0.72);
 
-  --soft: rgba(17, 17, 17, 0.72);
+  /* compatibility aliases */
+  --color-bg: var(--site-bg);
+  --color-text: var(--site-text-solid);
+  --color-soft: var(--site-soft);
+  --color-muted: var(--site-dim);
 
+  --bg: var(--site-bg);
+  --fg: var(--site-text-solid);
+  --muted: var(--site-soft);
+  --soft: rgba(79, 72, 63, 0.78);
+  --dim: var(--site-dim);
+  --faint: var(--site-faint);
+  --line: var(--site-border-soft);
+  --line-soft: var(--site-line-soft);
+  --selection-bg: var(--site-selection-bg);
+  --selection-fg: var(--site-selection-fg);
+
+  /* 首页先不接管，黑色首页保持原样 */
   --home-text-solid: #f2f1ee;
   --home-soft: #c9c7c2;
   --home-muted: #8e8c88;
   --home-faint: #6f6d69;
   --home-line: rgba(255, 255, 255, 0.10);
+
+  /* 皓野专属 token */
+  --haoye-white-1: #f6f3ec;
+  --haoye-white-2: #fbf8f2;
+  --haoye-white-3: #efeae1;
+  --haoye-ink-1: #332e28;
+  --haoye-ink-2: #6a6258;
+  --haoye-ink-3: #9d9488;
+  --haoye-accent: #b3a48b;
+  --haoye-relief-light: rgba(255, 255, 255, 0.82);
+  --haoye-relief-shadow: rgba(56, 47, 37, 0.08);
 }
 
 html {
@@ -116,6 +146,14 @@ body {
     color 260ms ease;
 }
 
+html[data-theme='light'] body {
+  background:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.78), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgba(216, 208, 194, 0.20), transparent 26%),
+    linear-gradient(180deg, #fbf8f2 0%, #f6f3ec 100%);
+  color: var(--site-text);
+}
+
 ::selection {
   background: var(--site-selection-bg);
   color: var(--site-selection-fg);
@@ -134,13 +172,38 @@ body::before {
 
 html[data-theme='light'] body::before {
   background:
-    radial-gradient(circle at 20% 20%, rgba(0, 0, 0, 0.04), transparent 28%),
-    radial-gradient(circle at 80% 75%, rgba(0, 0, 0, 0.025), transparent 24%);
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.78), transparent 30%),
+    radial-gradient(circle at 82% 72%, rgba(179, 164, 139, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 52%);
 }
 
 a {
   text-decoration: none;
   transition: color 0.28s ease, opacity 0.28s ease;
+}
+
+html[data-theme='light'] a {
+  transition:
+    opacity 220ms ease,
+    color 220ms ease,
+    filter 220ms ease,
+    transform 220ms ease;
+}
+
+html[data-theme='light'] a:hover {
+  color: var(--site-text-solid);
+  filter: brightness(1.02);
+}
+
+html[data-theme='light'] a:active {
+  opacity: 0.78;
+  filter: saturate(0.92) brightness(0.98);
+  transform: translateY(0.5px);
+}
+
+html[data-theme='light'] button:active {
+  opacity: 0.8;
+  transform: translateY(0.5px);
 }
 
 img {
@@ -390,6 +453,42 @@ select {
   color: var(--site-reading-blockquote);
 }
 
+/* 皓野主题的阅读气息 */
+html[data-theme='light'] .reading-body {
+  max-width: 72ch;
+}
+
+html[data-theme='light'] .reading-body p {
+  color: var(--site-reading);
+  line-height: 2.16;
+}
+
+html[data-theme='light'] .reading-body h2,
+html[data-theme='light'] .reading-body h3,
+html[data-theme='light'] .reading-body h4 {
+  color: var(--site-text-solid);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+html[data-theme='light'] .reading-body blockquote {
+  border-left: 1px solid var(--site-border-soft);
+  color: var(--site-reading-blockquote);
+}
+
+html[data-theme='light'] .text-faint {
+  color: rgba(157, 148, 136, 0.88);
+}
+
+html[data-theme='light'] .text-dim {
+  color: rgba(130, 120, 108, 0.68);
+}
+
+html[data-theme='light'] .text-soft,
+html[data-theme='light'] .text-muted {
+  color: rgba(79, 72, 63, 0.82);
+}
+
 /* ---------- section atmosphere ---------- */
 .surface-soft {
   background:
@@ -399,8 +498,10 @@ select {
 
 html[data-theme='light'] .surface-soft {
   background:
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.03), transparent 24%),
-    linear-gradient(to top, rgba(0, 0, 0, 0.02), transparent 18%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.18) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--haoye-relief-light),
+    inset 0 -1px 0 rgba(56, 47, 37, 0.02);
 }
 
 .edge-line {
@@ -501,11 +602,13 @@ html[data-theme='light'] .surface-soft {
     scroll-behavior: auto !important;
   }
 }
+
 html[data-home-leaving='1'] .home-sequence-root {
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
 .signature-mark-wrap {
   width: min(220px, 42vw);
   color: var(--site-faint);
