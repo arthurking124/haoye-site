@@ -1127,3 +1127,118 @@ html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
     margin-top: 6.8rem;
   }
 }
+/* =========================================
+   HAOYE / Notes
+   White theme only
+   保留现有分组结构，只让皓野主题更像“回响场”
+   ========================================= */
+html[data-theme='light'] .haoye-notes-page {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.20), transparent 24%),
+    radial-gradient(circle at 86% 78%, rgba(214, 204, 190, 0.08), transparent 22%),
+    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
+}
+
+html[data-theme='light'] .haoye-notes-header {
+  max-width: 560px;
+}
+
+html[data-theme='light'] .haoye-notes-kicker {
+  opacity: 0.66;
+  letter-spacing: 0.28em;
+}
+
+html[data-theme='light'] .haoye-notes-title {
+  letter-spacing: 0.014em;
+}
+
+html[data-theme='light'] .haoye-notes-intro {
+  max-width: 30ch;
+  line-height: 2.04;
+  color: rgba(108, 101, 92, 0.70);
+}
+
+html[data-theme='light'] .haoye-notes-groups {
+  margin-top: 4rem;
+}
+
+html[data-theme='light'] .haoye-notes-group {
+  border-top-color: rgba(56, 47, 37, 0.038);
+  padding-top: 2.9rem;
+}
+
+html[data-theme='light'] .haoye-notes-index,
+html[data-theme='light'] .haoye-notes-kind {
+  color: rgba(164, 154, 143, 0.84);
+}
+
+html[data-theme='light'] .haoye-notes-stack {
+  row-gap: 2.1rem;
+}
+
+html[data-theme='light'] .haoye-notes-item {
+  max-width: 760px;
+}
+
+html[data-theme='light'] .haoye-notes-trace {
+  background: rgba(56, 47, 37, 0.06);
+}
+
+html[data-theme='light'] .haoye-notes-item:hover .haoye-notes-trace {
+  background: rgba(56, 47, 37, 0.12);
+}
+
+html[data-theme='light'] .haoye-notes-item-title {
+  letter-spacing: 0.01em;
+}
+
+html[data-theme='light'] .haoye-notes-line {
+  color: rgba(95, 87, 77, 0.74);
+  max-width: 40ch;
+  line-height: 2.04;
+}
+
+/* 白色主题下，“与”不该像 notes 模板，要更像经过后的回响 */
+@media (min-width: 768px) {
+  html[data-theme='light'] .haoye-notes-groups {
+    margin-top: 5.4rem;
+  }
+
+  html[data-theme='light'] .haoye-notes-group {
+    padding-top: 3.3rem;
+  }
+
+  html[data-theme='light'] .haoye-notes-group > div {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 2.2rem;
+  }
+
+  html[data-theme='light'] .haoye-notes-group[data-index='0'] .haoye-notes-stack {
+    margin-left: 1%;
+  }
+
+  html[data-theme='light'] .haoye-notes-group[data-index='1'] .haoye-notes-stack {
+    margin-left: 8%;
+  }
+
+  html[data-theme='light'] .haoye-notes-group[data-index='2'] .haoye-notes-stack {
+    margin-left: 4%;
+  }
+
+  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-copy {
+    max-width: 34em;
+  }
+
+  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-copy {
+    max-width: 30em;
+  }
+
+  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-copy {
+    max-width: 36em;
+  }
+
+  html[data-theme='light'] .haoye-notes-item:hover .haoye-notes-item-row {
+    transform: translateY(-1px);
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
