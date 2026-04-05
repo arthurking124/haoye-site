@@ -1,11 +1,20 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 export default function Footer() {
   const pathname = usePathname()
+  const [mounted, setMounted] = useState(false)
 
-  // 首页不显示 footer，避免破坏四屏序章
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // 等客户端挂载完成后再判断路由，避免首页先闪出 footer
+  if (!mounted) return null
+
+  // 首页不显示 footer
   if (pathname === '/' || pathname === '') return null
 
   return (
