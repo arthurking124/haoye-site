@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import HomeIntroOverlay from './HomeIntroOverlay'
 
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
@@ -18,6 +18,21 @@ const navItems = [
 
 export default function HomeSplineScene() {
   const [introVisible, setIntroVisible] = useState(true)
+  const [scenePath, setScenePath] = useState('/scene-desktop.splinecode')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    const updateScene = () => {
+      const isMobile = window.innerWidth < 768
+      setScenePath(isMobile ? '/scene-mobile.splinecode' : '/scene-desktop.splinecode')
+    }
+
+    updateScene()
+    setMounted(true)
+
+    window.addEventListener('resize', updateScene)
+    return () => window.removeEventListener('resize', updateScene)
+  }, [])
 
   return (
     <main className="relative h-[100svh] w-full overflow-hidden bg-black text-white">
@@ -26,10 +41,8 @@ export default function HomeSplineScene() {
           introVisible ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-          <div className="h-full w-full origin-center scale-[0.72] transform-gpu sm:scale-[0.82] md:scale-100">
-            <Spline scene="/scene.splinecode" />
-          </div>
+        <div className="h-full w-full">
+          {mounted && <Spline key={scenePath} scene={scenePath} />}
         </div>
       </div>
 
@@ -53,7 +66,9 @@ export default function HomeSplineScene() {
 
       <HomeIntroOverlay
         visible={introVisible}
-        onEnter={() => {}}
+        onEnter={() => {
+          setIntroVisible(false)
+        }}
         onComplete={() => {
           setIntroVisible(false)
         }}
