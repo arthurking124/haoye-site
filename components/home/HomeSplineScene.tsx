@@ -29,6 +29,16 @@ export default function HomeSplineScene() {
       setScenePath(isMobile ? '/scene-mobile.splinecode' : '/scene-desktop.splinecode')
     }
 
+    const skipIntroOnce =
+      typeof window !== 'undefined'
+        ? window.sessionStorage.getItem('haoye-skip-intro-once')
+        : null
+
+    if (skipIntroOnce === '1') {
+      window.sessionStorage.removeItem('haoye-skip-intro-once')
+      setIntroVisible(false)
+    }
+
     updateScene()
     setMounted(true)
 
