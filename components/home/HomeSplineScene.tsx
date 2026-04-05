@@ -26,8 +26,10 @@ export default function HomeSplineScene() {
           introVisible ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        <div className="h-full w-full">
-          <Spline scene="/scene.splinecode" />
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          <div className="h-full w-full origin-center scale-[0.72] transform-gpu sm:scale-[0.82] md:scale-100">
+            <Spline scene="/scene.splinecode" />
+          </div>
         </div>
       </div>
 
@@ -42,7 +44,7 @@ export default function HomeSplineScene() {
           <Link
             key={item.href}
             href={item.href}
-            className="text-[12px] tracking-[0.28em] text-white/82 transition-colors duration-300 hover:text-white md:text-[13px]"
+            className="text-[11px] tracking-[0.32em] text-white/82 transition-colors duration-300 hover:text-white md:text-[13px] md:tracking-[0.28em]"
           >
             {item.label}
           </Link>
