@@ -3,8 +3,6 @@ import './globals.css'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import SoundToggle from '@/components/ui/SoundToggle'
-import ThemeToggle from '@/components/ui/ThemeToggle'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 
@@ -21,6 +19,7 @@ const notoSerifSC = Noto_Serif_SC({
 })
 
 export const metadata = {
+  metadataBase: new URL('https://www.haoye.cyou'),
   title: '皓野 | haoye.cyou',
   description: '诗、图像，以及没有说完的沉默。',
 }
@@ -36,8 +35,6 @@ export default function RootLayout({
         <Header />
         <main>{children}</main>
         <Footer />
-       
-      
         <Analytics />
         <SpeedInsights />
       </body>
