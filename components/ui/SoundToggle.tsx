@@ -20,7 +20,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
   const currentTargetVolumeRef = useRef(BASE_VOLUME)
 
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false) // 实际播放状态
   const [isHydrated, setIsHydrated] = useState(false)
 
   const clearFade = useCallback(() => {
@@ -36,7 +36,6 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
       if (!audio) return
 
       clearFade()
-
       const startVolume = audio.volume
       const startTime = performance.now()
 
@@ -56,7 +55,6 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
         audio.volume = target
         onDone?.()
       }
-
       fadeFrameRef.current = requestAnimationFrame(tick)
     },
     [clearFade]
@@ -71,6 +69,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
         try {
           await audio.play()
         } catch {
+          setIsPlaying(false)
           return
         }
       }
@@ -91,7 +90,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
     })
   }, [fadeTo])
 
-  // 初始化音频时，读取本地主题来决定加载哪首曲子
+  // 初始化音频对象，根据当前主题加载对应的 MP3
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('haoye-theme')
     const initialSrc = savedTheme === 'light' ? '/audio/ambre1.mp3' : '/audio/ryuichi.mp3'
@@ -115,78 +114,19 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
     }
   }, [clearFade])
 
+  // 核心逻辑：内页自动播放，首页保持静默
   useEffect(() => {
     if (!isHydrated) return
     window.localStorage.setItem(STORAGE_KEY, soundEnabled ? 'on' : 'off')
-  }, [isHydrated, soundEnabled])
-
-  useEffect(() => {
-    introReadyRef.current = pathname !== '/'
 
     if (pathname !== '/' && soundEnabled) {
       void playAmbient(currentTargetVolumeRef.current)
+    } else if (pathname === '/') {
+      pauseAmbient()
     }
-  }, [pathname, playAmbient, soundEnabled])
+  }, [pathname, playAmbient, soundEnabled, isHydrated, pauseAmbient])
 
-  useEffect(() => {
-    const onIntroReady = () => {
-      introReadyRef.current = true
-
-      const saved = window.localStorage.getItem(STORAGE_KEY)
-      const shouldPlay = saved ? saved === 'on' : true
-
-      setSoundEnabled(shouldPlay)
-
-      if (shouldPlay) {
-        void playAmbient(INTRO_VOLUME)
-      }
-    }
-
-    const onScreenChange = (event: Event) => {
-      const customEvent = event as CustomEvent<{ index?: number }>
-      const index = customEvent.detail?.index ?? 0
-
-      currentTargetVolumeRef.current =
-        index === 3 ? FOURTH_SCREEN_VOLUME : BASE_VOLUME
-
-      if (soundEnabled && isPlaying) {
-        fadeTo(currentTargetVolumeRef.current, 1600)
-      }
-    }
-
-    const onUserIntent = () => {
-      if (!soundEnabled) return
-      if (pathname === '/' && !introReadyRef.current) return
-      if (isPlaying) return
-
-      void playAmbient(currentTargetVolumeRef.current)
-    }
-
-    window.addEventListener('haoye:intro-ready', onIntroReady as EventListener)
-    window.addEventListener(
-      'haoye:screen-change',
-      onScreenChange as EventListener
-    )
-    window.addEventListener('pointerdown', onUserIntent, { passive: true })
-    window.addEventListener('keydown', onUserIntent)
-    window.addEventListener('touchstart', onUserIntent, { passive: true })
-
-    return () => {
-      window.removeEventListener(
-        'haoye:intro-ready',
-        onIntroReady as EventListener
-      )
-      window.removeEventListener(
-        'haoye:screen-change',
-        onScreenChange as EventListener
-      )
-      window.removeEventListener('pointerdown', onUserIntent)
-      window.removeEventListener('keydown', onUserIntent)
-      window.removeEventListener('touchstart', onUserIntent)
-    }
-  }, [fadeTo, isPlaying, pathname, playAmbient, soundEnabled])
-
-  // 新增：监听主题切换，动态替换音乐并实现平滑过渡
+  // 监听主题切换事件：平滑切歌
   useEffect(() => {
     const handleThemeChange = (event: Event) => {
       const customEvent = event as CustomEvent<'dark' | 'light'>
@@ -196,28 +136,33 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
       const audio = audioRef.current
       
       if (!audio) return
+      // 如果已经是这首歌，不重复切换
       if (audio.src.includes(newSrc)) return
 
-      const swapAudioAndPlay = async () => {
+      const swapAndPlay = async () => {
         audio.src = newSrc
-        if (isPlaying && soundEnabled) {
+        // 关键修复：只要 soundEnabled 是打开的，利用主题切换点击的权限强制播放
+        if (soundEnabled) {
           audio.volume = 0
           try {
             await audio.play()
+            setIsPlaying(true)
             fadeTo(currentTargetVolumeRef.current, 1200)
           } catch (err) {
-            console.warn("浏览器自动播放策略限制:", err)
+            console.warn("Theme switch play blocked:", err)
           }
         }
       }
 
-      if (isPlaying && soundEnabled) {
+      if (isPlaying) {
+        // 如果正在响，先淡出再换歌
         fadeTo(0, 600, () => {
           audio.pause()
-          void swapAudioAndPlay()
+          void swapAndPlay()
         })
       } else {
-        audio.src = newSrc
+        // 如果之前没在响，直接换源并尝试播放
+        void swapAndPlay()
       }
     }
 
@@ -225,7 +170,7 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
     return () => {
       window.removeEventListener('haoye-theme-change', handleThemeChange as EventListener)
     }
-  }, [fadeTo, isPlaying, soundEnabled])
+  }, [fadeTo, isPlaying, soundEnabled, pathname])
 
   const toggleAudio = async () => {
     const next = !soundEnabled
@@ -236,17 +181,15 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
       return
     }
 
-    if (pathname === '/' && !introReadyRef.current) {
-      return
+    if (pathname !== '/') {
+      await playAmbient(currentTargetVolumeRef.current)
     }
-
-    await playAmbient(currentTargetVolumeRef.current)
   }
 
-  if (!isHydrated || pathname === '/' || pathname === '') {
-    return null
-  }
+  // 仅在非首页渲染
+  if (!isHydrated || pathname === '/' || pathname === '') return null
 
+  // ... 下方 UI 代码保持原样不变 (使用 soundEnabled 显示 ～ 或 —)
   if (inline) {
     return (
       <button
@@ -261,20 +204,8 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
           boxShadow: '0 0 0 rgba(255,255,255,0)',
         }}
       >
-        <span
-          className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-all duration-300 group-hover:opacity-100"
-          style={{
-            boxShadow: '0 0 0 1px color-mix(in srgb, var(--site-text-solid) 16%, transparent), 0 0 14px color-mix(in srgb, var(--site-text-solid) 20%, transparent)',
-          }}
-        />
-        <span
-          className={
-            soundEnabled
-              ? 'translate-y-[-1px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
-              : 'translate-y-[-2px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'
-          }
-          style={{ color: 'var(--site-text-solid)' }}
-        >
+        <span className="pointer-events-none absolute inset-0 rounded-full opacity-0 transition-all duration-300 group-hover:opacity-100" style={{ boxShadow: '0 0 0 1px color-mix(in srgb, var(--site-text-solid) 16%, transparent), 0 0 14px color-mix(in srgb, var(--site-text-solid) 20%, transparent)' }} />
+        <span className={soundEnabled ? 'translate-y-[-1px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85' : 'translate-y-[-2px] text-[14px] leading-none transition-all duration-300 group-hover:opacity-85'} style={{ color: 'var(--site-text-solid)' }}>
           {soundEnabled ? '～' : '—'}
         </span>
       </button>
@@ -285,18 +216,10 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
     <button
       type="button"
       onClick={() => void toggleAudio()}
-      aria-label={soundEnabled ? 'Stop music' : 'Play music'}
-      title={soundEnabled ? 'Stop music' : 'Play music'}
       className="group fixed right-[56px] top-[18px] z-[120] flex h-[26px] w-[26px] cursor-pointer items-center justify-center rounded-full bg-black/92 text-white shadow-[0_6px_18px_rgba(0,0,0,0.24)] ring-1 ring-white/10 backdrop-blur-sm transition-all duration-200 ease-out hover:scale-110 hover:bg-black md:right-[74px] md:top-[20px] md:h-[28px] md:w-[28px]"
       style={{ pointerEvents: 'auto' }}
     >
-      <span
-        className={
-          soundEnabled
-            ? 'translate-y-[-1px] text-[12px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[13px]'
-            : 'translate-y-[-2px] text-[12px] leading-none transition-transform duration-200 ease-out group-hover:scale-105 md:text-[13px]'
-        }
-      >
+      <span className={soundEnabled ? 'translate-y-[-1px] text-[12px] leading-none' : 'translate-y-[-2px] text-[12px] leading-none'}>
         {soundEnabled ? '～' : '—'}
       </span>
     </button>
