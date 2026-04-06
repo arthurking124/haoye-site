@@ -202,26 +202,12 @@ export default function HomeIntroOverlay({
         }
 
         .enter {
-          border: none;
-          background: transparent;
-          color: rgba(255, 255, 255, 0.84);
-          font-size: 12px;
-          /* 修复不对齐：字间距和负右边距必须成对出现，抵消光学偏移 */
-          letter-spacing: 0.26em;
-          margin-right: -0.26em; 
-          text-transform: uppercase;
-          text-decoration: underline;
-          text-underline-offset: 6px;
-          text-decoration-thickness: 1px;
-          cursor: pointer;
-          padding: 0;
-          margin-bottom: 34px;
           animation: breathe 2.6s ease-in-out infinite;
           transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease;
         }
 
         .enter:hover {
-          color: #fff;
+          color: #fff !important;
           transform: translateY(-1px);
         }
 
@@ -231,50 +217,17 @@ export default function HomeIntroOverlay({
           pointer-events: none;
         }
 
-        .sound-label {
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          margin-right: -0.08em; /* 修复不对齐 */
-          color: rgba(255, 255, 255, 0.6);
-          white-space: nowrap;
-        }
-
         .sound-btn {
-          border: none;
-          background: transparent;
-          padding: 0;
-          margin: 0;
-          color: rgba(255, 255, 255, 0.34);
-          font-size: 11px;
-          letter-spacing: 0.04em;
-          margin-right: -0.04em; /* 修复不对齐 */
-          text-transform: lowercase;
-          cursor: pointer;
           transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
         }
 
         .sound-btn:hover {
-          color: rgba(255, 255, 255, 0.72);
+          color: rgba(255, 255, 255, 0.72) !important;
           transform: translateY(-1px);
         }
 
         .sound-btn.active {
-          color: rgba(255, 255, 255, 0.88);
-        }
-
-        .sound-sep {
-          color: rgba(255, 255, 255, 0.22);
-          font-size: 11px;
-          line-height: 1;
-        }
-
-        .site-mark {
-          margin-top: 14px;
-          font-size: 10px;
-          letter-spacing: 0.08em;
-          margin-right: -0.08em; /* 修复不对齐 */
-          color: rgba(255, 255, 255, 0.18);
-          white-space: nowrap;
+          color: rgba(255, 255, 255, 0.88) !important;
         }
 
         @keyframes breathe {
@@ -282,12 +235,13 @@ export default function HomeIntroOverlay({
           50% { opacity: 1; }
         }
 
+        /* 移动端适配，加上 !important 防止被内联样式覆盖 */
         @media (max-width: 768px) {
           .clock-core { width: 140px; height: 140px; transform: translateY(-36px); }
           .hour { height: 42px; }
           .minute { height: 62px; }
-          .enter { margin-bottom: 30px; font-size: 11px; }
-          .site-mark { margin-top: 12px; }
+          .enter { margin-bottom: 30px !important; font-size: 11px !important; }
+          .site-mark { margin-top: 12px !important; }
         }
       `}</style>
 
@@ -302,7 +256,6 @@ export default function HomeIntroOverlay({
         <div className="center-dot" />
       </div>
 
-      {/* 将关键布局属性写入内联 style，强制首屏直接渲染横向排版，解决竖排闪烁问题 */}
       <div 
         className="bottom-ui"
         style={{
@@ -317,10 +270,26 @@ export default function HomeIntroOverlay({
           textAlign: 'center',
         }}
       >
+        {/* 关键：排版属性强制内联，彻底告别闪烁和不对齐 */}
         <button
           className={phase === 'idle' ? 'enter' : 'enter hide'}
           type="button"
           onClick={handleEnter}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            color: 'rgba(255, 255, 255, 0.84)',
+            cursor: 'pointer',
+            padding: 0,
+            margin: '0 0 34px 0',
+            fontSize: '12px',
+            letterSpacing: '0.26em',
+            marginRight: '-0.26em', 
+            textTransform: 'uppercase',
+            textDecoration: 'underline',
+            textUnderlineOffset: '6px',
+            textDecorationThickness: '1px',
+          }}
         >
           Enter
         </button>
@@ -337,7 +306,18 @@ export default function HomeIntroOverlay({
             userSelect: 'none',
           }}
         >
-          <div className="sound-label">Sound</div>
+          <div 
+            className="sound-label"
+            style={{
+              color: 'rgba(255, 255, 255, 0.6)',
+              whiteSpace: 'nowrap',
+              fontSize: '11px',
+              letterSpacing: '0.08em',
+              marginRight: '-0.08em',
+            }}
+          >
+            Sound
+          </div>
           
           <div 
             className="sound-controls"
@@ -351,21 +331,66 @@ export default function HomeIntroOverlay({
               className={soundEnabled ? 'sound-btn active' : 'sound-btn'}
               type="button"
               onClick={() => setSoundEnabled(true)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                cursor: 'pointer',
+                color: 'rgba(255, 255, 255, 0.34)',
+                fontSize: '11px',
+                letterSpacing: '0.04em',
+                marginRight: '-0.04em',
+                textTransform: 'lowercase',
+              }}
             >
               on
             </button>
-            <span className="sound-sep">/</span>
+            <span 
+              className="sound-sep"
+              style={{
+                color: 'rgba(255, 255, 255, 0.22)',
+                fontSize: '11px',
+                lineHeight: 1,
+              }}
+            >
+              /
+            </span>
             <button
               className={!soundEnabled ? 'sound-btn active' : 'sound-btn'}
               type="button"
               onClick={() => setSoundEnabled(false)}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                margin: 0,
+                cursor: 'pointer',
+                color: 'rgba(255, 255, 255, 0.34)',
+                fontSize: '11px',
+                letterSpacing: '0.04em',
+                marginRight: '-0.04em',
+                textTransform: 'lowercase',
+              }}
             >
               off
             </button>
           </div>
         </div>
 
-        <div className="site-mark">©haoye.cyou</div>
+        <div 
+          className="site-mark"
+          style={{
+            marginTop: '14px',
+            color: 'rgba(255, 255, 255, 0.18)',
+            whiteSpace: 'nowrap',
+            fontSize: '10px',
+            letterSpacing: '0.08em',
+            marginRight: '-0.08em',
+          }}
+        >
+          ©haoye.cyou
+        </div>
       </div>
     </div>
   )
