@@ -12,7 +12,7 @@ type Phase = 'idle' | 'spinning' | 'fading' | 'flash'
 
 const SPIN_START_MS = 1500
 const FADE_MS = 800
-const FLASH_MS = 600 // 稍微延长，确保肉眼清晰捕捉到“穿越”瞬间
+const FLASH_MS = 600
 
 export default function HomeIntroOverlay({
   visible,
@@ -84,21 +84,18 @@ export default function HomeIntroOverlay({
     onEnter?.(soundEnabled)
     setPhase('spinning')
 
-    // 转完一圈，UI褪去
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('fading')
       }, SPIN_START_MS)
     )
 
-    // 触发闪烁
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('flash')
       }, SPIN_START_MS + FADE_MS)
     )
 
-    // 闪烁结束，进入主页
     timersRef.current.push(
       window.setTimeout(() => {
         onComplete?.()
@@ -127,7 +124,6 @@ export default function HomeIntroOverlay({
           transition: background 0.8s ease;
         }
 
-        /* UI 褪色控制 */
         .fading .clock-core,
         .fading .bottom-ui,
         .flash .clock-core,
@@ -136,7 +132,6 @@ export default function HomeIntroOverlay({
           pointer-events: none;
         }
 
-        /* --- 穿越光线基础样式 --- */
         .portal-line {
           position: absolute;
           left: 0;
@@ -146,40 +141,22 @@ export default function HomeIntroOverlay({
           background: #ffffff;
           transform: translateY(-50%) scaleX(0);
           opacity: 0;
-          z-index: 999; /* 强制最高层级 */
+          z-index: 999;
           box-shadow: 0 0 30px rgba(255, 255, 255, 1),
                       0 0 60px rgba(255, 255, 255, 0.8);
         }
 
-        /* --- 触发闪烁动画 --- */
         .portal-line.active {
           animation: portalJump 600ms cubic-bezier(0.8, 0, 0.1, 1) forwards;
         }
 
         @keyframes portalJump {
-          0% {
-            transform: translateY(-50%) scaleX(0);
-            opacity: 0;
-          }
-          20% {
-            /* 极速向两侧展开成一条线 */
-            transform: translateY(-50%) scaleX(1);
-            opacity: 1;
-            height: 2px;
-          }
-          50% {
-            /* 瞬间上下拉伸，形成爆亮 */
-            transform: translateY(-50%) scaleX(1) scaleY(40);
-            opacity: 1;
-          }
-          100% {
-            /* 坍缩并消失 */
-            transform: translateY(-50%) scaleX(1) scaleY(0);
-            opacity: 0;
-          }
+          0% { transform: translateY(-50%) scaleX(0); opacity: 0; }
+          20% { transform: translateY(-50%) scaleX(1); opacity: 1; height: 2px; }
+          50% { transform: translateY(-50%) scaleX(1) scaleY(40); opacity: 1; }
+          100% { transform: translateY(-50%) scaleX(1) scaleY(0); opacity: 0; }
         }
 
-        /* 原有样式保留 */
         .clock-core {
           position: relative;
           width: 180px;
@@ -221,15 +198,6 @@ export default function HomeIntroOverlay({
         }
 
         .bottom-ui {
-          position: absolute;
-          left: 50%;
-          bottom: 40px;
-          transform: translateX(-50%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          z-index: 20;
-          text-align: center;
           transition: opacity 0.6s ease;
         }
 
@@ -238,14 +206,16 @@ export default function HomeIntroOverlay({
           background: transparent;
           color: rgba(255, 255, 255, 0.84);
           font-size: 12px;
+          /* 修复不对齐：字间距和负右边距必须成对出现，抵消光学偏移 */
           letter-spacing: 0.26em;
+          margin-right: -0.26em; 
           text-transform: uppercase;
           text-decoration: underline;
           text-underline-offset: 6px;
           text-decoration-thickness: 1px;
           cursor: pointer;
           padding: 0;
-          margin: 0 0 34px 0;
+          margin-bottom: 34px;
           animation: breathe 2.6s ease-in-out infinite;
           transition: opacity 0.35s ease, transform 0.35s ease, color 0.35s ease;
         }
@@ -261,26 +231,12 @@ export default function HomeIntroOverlay({
           pointer-events: none;
         }
 
-        .sound-row {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 24px;
-          margin: 0;
-          user-select: none;
-        }
-
         .sound-label {
           font-size: 11px;
           letter-spacing: 0.08em;
+          margin-right: -0.08em; /* 修复不对齐 */
           color: rgba(255, 255, 255, 0.6);
           white-space: nowrap;
-        }
-
-        .sound-controls {
-          display: flex;
-          align-items: center;
-          gap: 8px;
         }
 
         .sound-btn {
@@ -291,6 +247,7 @@ export default function HomeIntroOverlay({
           color: rgba(255, 255, 255, 0.34);
           font-size: 11px;
           letter-spacing: 0.04em;
+          margin-right: -0.04em; /* 修复不对齐 */
           text-transform: lowercase;
           cursor: pointer;
           transition: color 0.25s ease, opacity 0.25s ease, transform 0.25s ease;
@@ -315,49 +272,25 @@ export default function HomeIntroOverlay({
           margin-top: 14px;
           font-size: 10px;
           letter-spacing: 0.08em;
+          margin-right: -0.08em; /* 修复不对齐 */
           color: rgba(255, 255, 255, 0.18);
           white-space: nowrap;
         }
 
         @keyframes breathe {
-          0%,
-          100% {
-            opacity: 0.55;
-          }
-          50% {
-            opacity: 1;
-          }
+          0%, 100% { opacity: 0.55; }
+          50% { opacity: 1; }
         }
 
         @media (max-width: 768px) {
-          .clock-core {
-            width: 140px;
-            height: 140px;
-            transform: translateY(-36px);
-          }
-          .hour {
-            height: 42px;
-          }
-          .minute {
-            height: 62px;
-          }
-          .bottom-ui {
-            bottom: 34px;
-          }
-          .enter {
-            margin-bottom: 30px;
-            font-size: 11px;
-          }
-          .sound-row {
-            gap: 18px;
-          }
-          .site-mark {
-            margin-top: 12px;
-          }
+          .clock-core { width: 140px; height: 140px; transform: translateY(-36px); }
+          .hour { height: 42px; }
+          .minute { height: 62px; }
+          .enter { margin-bottom: 30px; font-size: 11px; }
+          .site-mark { margin-top: 12px; }
         }
       `}</style>
 
-      {/* 注意这里：直接通过 class 控制动画触发 */}
       <div 
         className={phase === 'flash' ? 'portal-line active' : 'portal-line'} 
         aria-hidden="true" 
@@ -369,7 +302,21 @@ export default function HomeIntroOverlay({
         <div className="center-dot" />
       </div>
 
-      <div className="bottom-ui">
+      {/* 将关键布局属性写入内联 style，强制首屏直接渲染横向排版，解决竖排闪烁问题 */}
+      <div 
+        className="bottom-ui"
+        style={{
+          position: 'absolute',
+          left: '50%',
+          bottom: '40px',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          zIndex: 20,
+          textAlign: 'center',
+        }}
+      >
         <button
           className={phase === 'idle' ? 'enter' : 'enter hide'}
           type="button"
@@ -378,9 +325,28 @@ export default function HomeIntroOverlay({
           Enter
         </button>
 
-        <div className="sound-row" aria-label="sound toggle">
+        <div 
+          className="sound-row" 
+          aria-label="sound toggle"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '24px',
+            margin: 0,
+            userSelect: 'none',
+          }}
+        >
           <div className="sound-label">Sound</div>
-          <div className="sound-controls">
+          
+          <div 
+            className="sound-controls"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             <button
               className={soundEnabled ? 'sound-btn active' : 'sound-btn'}
               type="button"
