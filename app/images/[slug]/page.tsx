@@ -69,3 +69,103 @@ export async function generateMetadata({
     },
   }
 }
+
+export default async function ImageSeriesDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const item = await getImageSeries(slug)
+
+  if (!item) {
+    notFound()
+  }
+
+  const images = item.images ?? []
+
+  return (
+    <div className="min-h-[100svh] bg-[var(--site-bg)] text-[var(--site-text-solid)]">
+      <InnerRoom variant="archive">
+        <div className="mx-auto max-w-[1420px] px-6 pb-24 pt-28 md:px-10 md:pb-36 md:pt-36">
+          <header className="border-t border-[color:var(--site-border-soft)] pt-8 md:pt-10">
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+              <div>
+                <Link
+                  href="/images"
+                  className="site-nav text-[11px] tracking-[0.18em] text-[var(--site-dim)] transition-colors duration-300 hover:text-[var(--site-soft)]"
+                >
+                  回到影
+                </Link>
+
+                <p className="mt-5 text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+                  IMAGE SERIES
+                </p>
+              </div>
+
+              <div className="max-w-[860px]">
+                <h1 className="text-[34px] font-light leading-[1.3] text-[var(--site-text-solid)] md:text-[58px] md:leading-[1.2]">
+                  {item.title || '未命名影像'}
+                </h1>
+
+                {item.subtitle ? (
+                  <p className="mt-6 max-w-[620px] text-[14px] leading-[1.95] text-[var(--site-dim)] md:text-[15px]">
+                    {item.subtitle}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </header>
+
+          {images.length > 0 ? (
+            <section className="mt-16 md:mt-24">
+              <div className="space-y-12 md:space-y-16">
+                {images.map((img: any, index: number) => (
+                  <figure
+                    key={index}
+                    className="border-t border-[color:var(--site-line-soft)] pt-6 md:pt-8"
+                  >
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+                      <div className="flex items-start justify-between md:block">
+                        <p className="text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+                          {String(index + 1).padStart(2, '0')}
+                        </p>
+                      </div>
+
+                      <div className="overflow-hidden rounded-[20px] bg-[color:var(--site-border-soft)]">
+                        <img
+                          src={urlFor(img).width(1800).quality(90).url()}
+                          alt={`${item.title || 'image-series'}-${index + 1}`}
+                          className="motion-image w-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </figure>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {item.text ? (
+            <section className="mt-20 border-t border-[color:var(--site-border-soft)] pt-10 md:mt-24 md:pt-14">
+              <div className="grid grid-cols-1 gap-10 md:grid-cols-[120px_minmax(0,1fr)] md:gap-12">
+                <div>
+                  <p className="text-[11px] tracking-[0.18em] text-[var(--site-faint)]">
+                    TEXT
+                  </p>
+                  <p className="mt-4 text-[11px] tracking-[0.22em] text-[var(--site-dim)]">
+                    ARCHIVE NOTE
+                  </p>
+                </div>
+
+                <div className="reading-body max-w-[680px]">
+                  <PortableText value={item.text} />
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </div>
+      </InnerRoom>
+    </div>
+  )
+}
