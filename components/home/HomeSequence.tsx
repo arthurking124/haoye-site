@@ -54,9 +54,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
   const currentRef = useRef<ParallaxState>(INITIAL_PARALLAX)
   const velocityRef = useRef<ParallaxState>(INITIAL_PARALLAX)
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const volumeTimerRef = useRef<number | null>(null)
-
   const slides = useMemo(
     () => [
       {
@@ -84,13 +81,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     [settings]
   )
 
-  const homeAudioSrc =
-    settings?.homeAudioUrl ||
-    settings?.homeMusicUrl ||
-    settings?.bgmUrl ||
-    settings?.siteMusicUrl ||
-    '/audio/home.mp3'
-
   const getTransitionDuration = useCallback((from: number, to: number) => {
     if (from === 2 && to === 3) return 1260
     if (from !== 3 && to === 3) return 1160
@@ -115,58 +105,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
     },
     [current, getTransitionDuration, slides.length]
   )
-
-  const prepareAndPlayMusic = useCallback(() => {
-    if (typeof window === 'undefined') return
-    if (!homeAudioSrc) return
-
-    let audio = audioRef.current
-
-    if (!audio) {
-      audio = new Audio(homeAudioSrc)
-      audio.loop = true
-      audio.preload = 'auto'
-      audioRef.current = audio
-    }
-
-    if (audio.src !== new URL(homeAudioSrc, window.location.origin).toString()) {
-      audio.src = homeAudioSrc
-      audio.loop = true
-      audio.preload = 'auto'
-    }
-
-    audio.volume = 0.01
-    const playPromise = audio.play()
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch(() => {})
-    }
-  }, [homeAudioSrc])
-
-  const fadeMusicToTarget = useCallback((targetVolume = 0.62) => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    if (volumeTimerRef.current !== null) {
-      window.clearInterval(volumeTimerRef.current)
-      volumeTimerRef.current = null
-    }
-
-    const startVolume = Number.isFinite(audio.volume) ? audio.volume : 0.01
-    const steps = 18
-    const stepDuration = 70
-    let step = 0
-
-    volumeTimerRef.current = window.setInterval(() => {
-      step += 1
-      const progress = Math.min(step / steps, 1)
-      audio.volume = startVolume + (targetVolume - startVolume) * progress
-
-      if (progress >= 1 && volumeTimerRef.current !== null) {
-        window.clearInterval(volumeTimerRef.current)
-        volumeTimerRef.current = null
-      }
-    }, stepDuration)
-  }, [])
 
   const clearHomeLeavingFlag = useCallback(() => {
     if (typeof document !== 'undefined') {
@@ -211,14 +149,12 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       sessionStorage.removeItem('haoye-skip-intro-once')
       setCurrent(0)
       setIntroVisible(false)
-      prepareAndPlayMusic()
-      fadeMusicToTarget()
       return
     }
 
     setCurrent(0)
     setIntroVisible(true)
-  }, [clearHomeLeavingFlag, fadeMusicToTarget, prepareAndPlayMusic])
+  }, [clearHomeLeavingFlag])
 
   useEffect(() => {
     const onPortalEnter = () => {
@@ -286,17 +222,6 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       }
     }
   }, [isMobile])
-
-  useEffect(() => {
-    return () => {
-      if (volumeTimerRef.current !== null) {
-        window.clearInterval(volumeTimerRef.current)
-      }
-      if (audioRef.current) {
-        audioRef.current.pause()
-      }
-    }
-  }, [])
 
   const updateTargetFromPoint = useCallback(
     (clientX: number, clientY: number, pointerType: 'mouse' | 'touch') => {
@@ -526,14 +451,13 @@ export default function HomeSequence({ settings }: HomeSequenceProps) {
       <HomeIntroOverlay
         visible={introVisible}
         onEnter={(soundEnabled) => {
-          if (soundEnabled) {
-            prepareAndPlayMusic()
-          }
+          // 只负责保存用户的声音偏好到本地存储
+          window.localStorage.setItem('haoye-sound', soundEnabled ? 'on' : 'off');
         }}
         onComplete={() => {
           setCurrent(0)
           setIntroVisible(false)
-          fadeMusicToTarget()
+          // 完全移除了背景音乐处理的逻辑，交由 SoundToggle 接手
         }}
       />
 

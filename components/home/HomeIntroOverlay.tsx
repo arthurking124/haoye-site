@@ -90,9 +90,15 @@ export default function HomeIntroOverlay({
       }, SPIN_START_MS)
     )
 
+    // 在光束闪烁阶段播放穿越音效
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('flash')
+        if (soundEnabled) {
+          const portalSfx = new Audio('/audio/portal.mp3')
+          portalSfx.volume = 0.5
+          portalSfx.play().catch(() => {}) // 即使浏览器拦截也不报错
+        }
       }, SPIN_START_MS + FADE_MS)
     )
 
@@ -270,7 +276,6 @@ export default function HomeIntroOverlay({
           textAlign: 'center',
         }}
       >
-        {/* 关键：排版属性强制内联，彻底告别闪烁和不对齐 */}
         <button
           className={phase === 'idle' ? 'enter' : 'enter hide'}
           type="button"
