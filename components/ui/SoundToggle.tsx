@@ -91,8 +91,12 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
     })
   }, [fadeTo])
 
+  // 初始化音频时，读取本地主题来决定加载哪首曲子
   useEffect(() => {
-    const audio = new Audio('/audio/ryuichi.mp3')
+    const savedTheme = window.localStorage.getItem('haoye-theme')
+    const initialSrc = savedTheme === 'light' ? '/audio/ambre1.mp3' : '/audio/ryuichi.mp3'
+
+    const audio = new Audio(initialSrc)
     audio.loop = true
     audio.preload = 'auto'
     audio.volume = 0
@@ -181,6 +185,47 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
       window.removeEventListener('touchstart', onUserIntent)
     }
   }, [fadeTo, isPlaying, pathname, playAmbient, soundEnabled])
+
+  // 新增：监听主题切换，动态替换音乐并实现平滑过渡
+  useEffect(() => {
+    const handleThemeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<'dark' | 'light'>
+      const nextTheme = customEvent.detail
+      
+      const newSrc = nextTheme === 'light' ? '/audio/ambre1.mp3' : '/audio/ryuichi.mp3'
+      const audio = audioRef.current
+      
+      if (!audio) return
+      if (audio.src.includes(newSrc)) return
+
+      const swapAudioAndPlay = async () => {
+        audio.src = newSrc
+        if (isPlaying && soundEnabled) {
+          audio.volume = 0
+          try {
+            await audio.play()
+            fadeTo(currentTargetVolumeRef.current, 1200)
+          } catch (err) {
+            console.warn("浏览器自动播放策略限制:", err)
+          }
+        }
+      }
+
+      if (isPlaying && soundEnabled) {
+        fadeTo(0, 600, () => {
+          audio.pause()
+          void swapAudioAndPlay()
+        })
+      } else {
+        audio.src = newSrc
+      }
+    }
+
+    window.addEventListener('haoye-theme-change', handleThemeChange as EventListener)
+    return () => {
+      window.removeEventListener('haoye-theme-change', handleThemeChange as EventListener)
+    }
+  }, [fadeTo, isPlaying, soundEnabled])
 
   const toggleAudio = async () => {
     const next = !soundEnabled
