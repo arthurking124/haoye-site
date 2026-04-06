@@ -22,6 +22,11 @@ export default function HomeIntroOverlay({
   const [soundEnabled, setSoundEnabled] = useState(true)
   const timersRef = useRef<number[]>([])
 
+  // 新增：用于存放真实时间的角度，默认值保持你原版的 UI 角度
+  const [degrees, setDegrees] = useState({ hour: 310, minute: 40 })
+  // 新增：避免 Next.js SSR 水合报错
+  const [isClient, setIsClient] = useState(false)
+
   useEffect(() => {
     if (!visible) {
       setPhase('idle')
@@ -39,12 +44,48 @@ export default function HomeIntroOverlay({
     }
   }, [])
 
-  const minuteTransform = useMemo(() => {
-    if (phase === 'spinning') {
-      return 'translate(-50%, -100%) rotate(400deg)'
+  // 新增：实时同步现实时间逻辑
+  useEffect(() => {
+    setIsClient(true)
+    if (phase !== 'idle') return
+
+    const updateTime = () => {
+      const now = new Date()
+      const mins = now.getMinutes()
+      const hrs = now.getHours()
+      const secs = now.getSeconds()
+
+      // 计算时针和分针的精准角度
+      setDegrees({
+        hour: (hrs % 12) * 30 + mins * 0.5,
+        minute: mins * 6 + secs * 0.1,
+      })
     }
-    return 'translate(-50%, -100%) rotate(40deg)'
+
+    updateTime() // 初始化调用
+    const interval = setInterval(updateTime, 1000) // 每秒更新
+    return () => clearInterval(interval)
   }, [phase])
+
+  // 修改：时针的动态角度变换
+  const hourTransform = useMemo(() => {
+    if (!isClient) return 'translate(-50%, -100%) rotate(310deg)' // SSR 默认
+    if (phase === 'spinning') {
+      // 点击 Enter 后，时针随之拨动一小时 (30度)
+      return `translate(-50%, -100%) rotate(${degrees.hour + 30}deg)`
+    }
+    return `translate(-50%, -100%) rotate(${degrees.hour}deg)`
+  }, [phase, isClient, degrees.hour])
+
+  // 修改：分针的动态角度变换
+  const minuteTransform = useMemo(() => {
+    if (!isClient) return 'translate(-50%, -100%) rotate(40deg)' // SSR 默认
+    if (phase === 'spinning') {
+      // 点击 Enter 后，分针从当前真实时间开始，飞速拨动一整圈 (360度)
+      return `translate(-50%, -100%) rotate(${degrees.minute + 360}deg)`
+    }
+    return `translate(-50%, -100%) rotate(${degrees.minute}deg)`
+  }, [phase, isClient, degrees.minute])
 
   const handleEnter = () => {
     if (phase !== 'idle') return
@@ -317,7 +358,9 @@ export default function HomeIntroOverlay({
             borderRadius: 999,
             width: 2,
             height: 54,
-            transform: 'translate(-50%, -100%) rotate(310deg)',
+            transform: hourTransform, // 已修改为动态角度
+            // 新增 transform 动画，确保时针随分针一起平滑旋转
+            transition: 'transform 1.75s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.9s ease', 
           }}
         />
         <div
@@ -331,7 +374,7 @@ export default function HomeIntroOverlay({
             borderRadius: 999,
             width: 1.5,
             height: 78,
-            transform: minuteTransform,
+            transform: minuteTransform, // 已修改为动态角度
           }}
         />
         <div
