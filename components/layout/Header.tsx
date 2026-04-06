@@ -67,18 +67,23 @@ export default function Header() {
 
   const shellStyle = isLight
     ? {
-        background: scrolled ? 'rgba(248,245,238,0.68)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(14px)' : 'none',
+        background: scrolled ? 'rgba(251,248,243,0.74)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
+        boxShadow: scrolled
+          ? '0 1px 0 rgba(39,35,29,0.05), inset 0 1px 0 rgba(255,255,255,0.34)'
+          : 'none',
       }
     : {
         background: scrolled ? 'rgba(13,13,13,0.34)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
       }
 
   const lineStyle = isLight
     ? {
         background:
-          'linear-gradient(90deg, transparent 0%, rgba(56,47,37,0.04) 18%, rgba(56,47,37,0.08) 50%, rgba(56,47,37,0.04) 82%, transparent 100%)',
+          'linear-gradient(90deg, transparent 0%, rgba(39,35,29,0.03) 18%, rgba(39,35,29,0.07) 50%, rgba(39,35,29,0.03) 82%, transparent 100%)',
       }
     : {
         background:
@@ -88,25 +93,27 @@ export default function Header() {
   const brandStyle = isLight
     ? {
         color: 'var(--site-text-solid)',
-        opacity: 0.82,
-        letterSpacing: '0.22em',
-        transition: 'opacity 240ms ease, color 240ms ease, letter-spacing 240ms ease',
+        opacity: 0.84,
+        letterSpacing: '0.24em',
+        transition:
+          'opacity 240ms ease, color 240ms ease, letter-spacing 240ms ease, transform 240ms ease',
       }
     : {
         color: 'var(--site-text-solid)',
         opacity: 0.96,
         letterSpacing: '0.2em',
-        transition: 'opacity 240ms ease, color 240ms ease, letter-spacing 240ms ease',
+        transition:
+          'opacity 240ms ease, color 240ms ease, letter-spacing 240ms ease, transform 240ms ease',
       }
 
   const getNavStyle = (active: boolean) => {
     if (isLight) {
       return {
-        color: active ? 'var(--site-text-solid)' : 'var(--site-dim)',
-        opacity: active ? 0.88 : 0.66,
+        color: active ? 'var(--site-text-solid)' : 'var(--site-soft)',
+        opacity: active ? 0.94 : 0.72,
         letterSpacing: active ? '0.22em' : '0.18em',
         transition:
-          'opacity 220ms ease, color 220ms ease, letter-spacing 220ms ease, filter 220ms ease',
+          'opacity 220ms ease, color 220ms ease, letter-spacing 220ms ease, filter 220ms ease, transform 220ms ease',
       } as const
     }
 
@@ -115,25 +122,44 @@ export default function Header() {
       opacity: active ? 1 : 0.92,
       letterSpacing: '0.18em',
       transition:
-        'opacity 220ms ease, color 220ms ease, letter-spacing 220ms ease, filter 220ms ease',
+        'opacity 220ms ease, color 220ms ease, letter-spacing 220ms ease, filter 220ms ease, transform 220ms ease',
     } as const
   }
 
-  const getHoverTraceStyle = (active: boolean) => {
+  const getActiveTraceStyle = (active: boolean) => {
     if (isLight) {
       return {
-        width: active ? '100%' : '0%',
-        opacity: active ? 0.3 : 0,
+        width: active ? '72%' : '0%',
+        opacity: active ? 0.82 : 0,
         background:
-          'linear-gradient(90deg, transparent 0%, rgba(179,164,139,0.20) 24%, rgba(179,164,139,0.42) 50%, rgba(179,164,139,0.20) 76%, transparent 100%)',
+          'linear-gradient(90deg, rgba(181,155,121,0) 0%, rgba(181,155,121,0.32) 20%, rgba(181,155,121,0.78) 50%, rgba(181,155,121,0.32) 80%, rgba(181,155,121,0) 100%)',
       } as const
     }
 
     return {
-      width: active ? '100%' : '0%',
+      width: active ? '72%' : '0%',
       opacity: active ? 0.82 : 0,
       background: 'var(--site-text-solid)',
     } as const
+  }
+
+  const getHoverTraceStyle = () => {
+    if (isLight) {
+      return {
+        width: '72%',
+        background:
+          'linear-gradient(90deg, rgba(181,155,121,0) 0%, rgba(181,155,121,0.18) 22%, rgba(181,155,121,0.42) 50%, rgba(181,155,121,0.18) 78%, rgba(181,155,121,0) 100%)',
+      } as const
+    }
+
+    return {
+      width: '72%',
+      background: 'var(--site-text-solid)',
+    } as const
+  }
+
+  const isActivePath = (href: string) => {
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
 
   return (
@@ -148,16 +174,16 @@ export default function Header() {
           <Link
             href="/"
             onClick={skipIntroOnce}
-            className="site-nav text-[13px] hover:opacity-72 md:text-[14px]"
+            className="site-nav text-[13px] hover:opacity-90 md:text-[14px]"
             style={brandStyle}
           >
             皓野
           </Link>
 
-          <div className="flex items-center gap-8 md:gap-10">
-            <nav className="site-nav flex items-center gap-6 md:gap-8">
+          <div className="flex items-center gap-7 md:gap-10">
+            <nav className="site-nav flex items-center gap-5 md:gap-8">
               {navItems.map((item) => {
-                const active = pathname === item.href
+                const active = isActivePath(item.href)
 
                 return (
                   <Link
@@ -170,30 +196,19 @@ export default function Header() {
 
                     <span
                       className="pointer-events-none absolute bottom-[-7px] left-1/2 h-px -translate-x-1/2 transition-all duration-300"
-                      style={getHoverTraceStyle(active)}
+                      style={getActiveTraceStyle(active)}
                     />
 
                     <span
                       className="pointer-events-none absolute bottom-[-7px] left-1/2 h-px -translate-x-1/2 opacity-0 transition-all duration-300 group-hover/item:opacity-100"
-                      style={
-                        isLight
-                          ? {
-                              width: '100%',
-                              background:
-                                'linear-gradient(90deg, transparent 0%, rgba(179,164,139,0.14) 24%, rgba(179,164,139,0.30) 50%, rgba(179,164,139,0.14) 76%, transparent 100%)',
-                            }
-                          : {
-                              width: '100%',
-                              background: 'var(--site-text-solid)',
-                            }
-                      }
+                      style={getHoverTraceStyle()}
                     />
                   </Link>
                 )
               })}
             </nav>
 
-            <div className="flex translate-x-[6px] items-center gap-4 md:translate-x-[10px] md:gap-[18px]">
+            <div className="flex translate-x-[4px] items-center gap-4 md:translate-x-[8px] md:gap-[18px]">
               <SoundToggle inline />
               <ThemeToggle inline />
             </div>

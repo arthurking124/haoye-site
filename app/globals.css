@@ -33,7 +33,7 @@
   --site-reading-link: #ddd9d1;
   --site-reading-blockquote: #cfcac2;
 
-  /* compatibility aliases for your existing styles */
+  /* compatibility aliases */
   --color-bg: var(--site-bg);
   --color-text: var(--site-text-solid);
   --color-soft: var(--site-soft);
@@ -60,35 +60,33 @@
 html[data-theme='light'] {
   color-scheme: light;
 
-  /* 皓野：不是高亮白，而是有空气感的柔和白场 */
-  --site-bg: #f4f0e8;
-  --site-bg-rgb: 244, 240, 232;
-  --site-surface: #f8f5ee;
-  --site-surface-rgb: 248, 245, 238;
+  /* white theme / paper light */
+  --site-bg: #f7f3ec;
+  --site-bg-rgb: 247, 243, 236;
+  --site-surface: #fbf8f3;
+  --site-surface-rgb: 251, 248, 243;
 
-  /* 文字：不纯黑，轻、稳、舒服 */
-  --site-text: rgba(51, 46, 40, 0.90);
-  --site-text-solid: #332e28;
-  --site-soft: rgba(79, 72, 63, 0.82);
-  --site-muted: rgba(108, 101, 92, 0.68);
-  --site-dim: rgba(141, 132, 121, 0.58);
-  --site-faint: rgba(164, 154, 143, 0.78);
+  --site-text: rgba(39, 35, 29, 0.88);
+  --site-text-solid: #27231d;
+  --site-soft: rgba(65, 59, 50, 0.76);
+  --site-muted: rgba(97, 89, 79, 0.62);
+  --site-dim: rgba(126, 116, 103, 0.48);
+  --site-faint: rgba(150, 139, 124, 0.68);
 
-  /* 边界：弱化，不做明显 UI 线 */
-  --site-border: rgba(56, 47, 37, 0.10);
-  --site-border-soft: rgba(56, 47, 37, 0.05);
-  --site-line-soft: rgba(56, 47, 37, 0.028);
+  --site-border: rgba(39, 35, 29, 0.12);
+  --site-border-soft: rgba(39, 35, 29, 0.07);
+  --site-line-soft: rgba(39, 35, 29, 0.045);
 
-  --site-selection-bg: rgba(179, 164, 139, 0.16);
-  --site-selection-fg: #332e28;
+  --site-selection-bg: rgba(39, 35, 29, 0.08);
+  --site-selection-fg: #27231d;
 
-  --site-scroll-track: rgba(56, 47, 37, 0.028);
-  --site-scroll-thumb: rgba(56, 47, 37, 0.12);
-  --site-scroll-thumb-hover: rgba(56, 47, 37, 0.18);
+  --site-scroll-track: rgba(39, 35, 29, 0.03);
+  --site-scroll-thumb: rgba(39, 35, 29, 0.12);
+  --site-scroll-thumb-hover: rgba(39, 35, 29, 0.18);
 
-  --site-reading: rgba(63, 56, 49, 0.84);
-  --site-reading-link: rgba(51, 46, 40, 0.90);
-  --site-reading-blockquote: rgba(92, 84, 75, 0.70);
+  --site-reading: rgba(54, 48, 41, 0.84);
+  --site-reading-link: #433a31;
+  --site-reading-blockquote: rgba(75, 67, 58, 0.70);
 
   /* compatibility aliases */
   --color-bg: var(--site-bg);
@@ -99,7 +97,7 @@ html[data-theme='light'] {
   --bg: var(--site-bg);
   --fg: var(--site-text-solid);
   --muted: var(--site-soft);
-  --soft: rgba(79, 72, 63, 0.78);
+  --soft: rgba(65, 59, 50, 0.72);
   --dim: var(--site-dim);
   --faint: var(--site-faint);
   --line: var(--site-border-soft);
@@ -107,23 +105,24 @@ html[data-theme='light'] {
   --selection-bg: var(--site-selection-bg);
   --selection-fg: var(--site-selection-fg);
 
-  /* 首页先不接管，黑色首页保持原样 */
+  /* 首页继续保持黑色 */
   --home-text-solid: #f2f1ee;
   --home-soft: #c9c7c2;
   --home-muted: #8e8c88;
   --home-faint: #6f6d69;
   --home-line: rgba(255, 255, 255, 0.10);
 
-  /* 皓野主题补充 token */
-  --haoye-white-1: #f4f0e8;
-  --haoye-white-2: #f8f5ee;
-  --haoye-white-3: #fbf8f2;
-  --haoye-ink-1: #332e28;
-  --haoye-ink-2: #6c655c;
-  --haoye-ink-3: #9d9588;
-  --haoye-accent: #b3a48b;
-  --haoye-relief-light: rgba(255, 255, 255, 0.68);
-  --haoye-relief-shadow: rgba(56, 47, 37, 0.06);
+  --haoye-white-1: #f7f3ec;
+  --haoye-white-2: #fbf8f3;
+  --haoye-white-3: #fdfbf7;
+
+  --haoye-ink-1: #27231d;
+  --haoye-ink-2: #60574c;
+  --haoye-ink-3: #948878;
+
+  --haoye-accent: #b59b79;
+  --haoye-relief-light: rgba(255, 255, 255, 0.86);
+  --haoye-relief-shadow: rgba(39, 35, 29, 0.055);
 }
 
 html {
@@ -148,9 +147,9 @@ body {
 
 html[data-theme='light'] body {
   background:
-    radial-gradient(circle at 16% 14%, rgba(255, 255, 255, 0.48), transparent 28%),
-    radial-gradient(circle at 84% 70%, rgba(223, 214, 201, 0.16), transparent 24%),
-    linear-gradient(180deg, #fbf8f2 0%, #f4f0e8 100%);
+    radial-gradient(42% 58% at 82% 72%, rgba(208, 196, 180, 0.16) 0%, rgba(208, 196, 180, 0.06) 30%, rgba(208, 196, 180, 0) 68%),
+    radial-gradient(24% 34% at 20% 22%, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0) 75%),
+    linear-gradient(180deg, #fbf8f3 0%, #f7f3ec 100%);
   color: var(--site-text);
 }
 
@@ -173,7 +172,7 @@ body::before {
 html[data-theme='light'] body::before {
   background:
     radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.42), transparent 30%),
-    radial-gradient(circle at 82% 72%, rgba(179, 164, 139, 0.06), transparent 26%),
+    radial-gradient(circle at 82% 72%, rgba(181, 155, 121, 0.06), transparent 26%),
     linear-gradient(180deg, rgba(255,255,255,0.10), transparent 52%);
 }
 
@@ -272,7 +271,7 @@ select {
 }
 
 /* =========================
-   影页增强
+   Images / common
    ========================= */
 .image-cover {
   display: block;
@@ -297,7 +296,7 @@ html[data-theme='light'] .image-cover {
 }
 
 /* =========================
-   诗页增强
+   Poems / common
    ========================= */
 .poem-cover {
   display: block;
@@ -367,7 +366,7 @@ html[data-theme='light'] .poem-cover {
   opacity: 0.5;
 }
 
-/* 首页文字的过渡效果 */
+/* 首页文字过渡 */
 .text-container {
   transition: opacity 1s ease-in-out;
 }
@@ -452,7 +451,7 @@ html[data-theme='light'] .poem-cover {
   color: var(--site-reading-blockquote);
 }
 
-/* 皓野主题的阅读气息 */
+/* white reading rhythm */
 html[data-theme='light'] .reading-body {
   max-width: 72ch;
 }
@@ -487,7 +486,7 @@ html[data-theme='light'] .surface-soft {
     linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.12) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.62),
-    inset 0 -1px 0 rgba(56, 47, 37, 0.018);
+    inset 0 -1px 0 rgba(39, 35, 29, 0.018);
 }
 
 .edge-line {
@@ -533,7 +532,7 @@ html[data-theme='light'] .surface-soft {
   color: var(--site-soft);
 }
 
-/* ---------- spacing / screen polish ---------- */
+/* ---------- spacing / polish ---------- */
 .screen-balance {
   min-height: 100svh;
 }
@@ -617,10 +616,10 @@ html[data-home-leaving='1'] .home-sequence-root {
     width: min(170px, 48vw);
   }
 }
+
 /* =========================================
    HAOYE / Images page
-   White theme only / v2
-   只改变白色主题的版式关系，不碰黑色主题
+   White theme only
    ========================================= */
 html[data-theme='light'] .haoye-images-page {
   background:
@@ -645,7 +644,7 @@ html[data-theme='light'] .haoye-images-title {
 html[data-theme='light'] .haoye-images-intro {
   max-width: 30ch;
   line-height: 2.06;
-  color: rgba(108, 101, 92, 0.68);
+  color: rgba(97, 89, 79, 0.68);
 }
 
 html[data-theme='light'] .haoye-images-list {
@@ -653,7 +652,7 @@ html[data-theme='light'] .haoye-images-list {
 }
 
 html[data-theme='light'] .haoye-images-item {
-  border-top-color: rgba(56, 47, 37, 0.04);
+  border-top-color: rgba(39, 35, 29, 0.04);
   padding-top: 3.1rem;
   padding-bottom: 3.4rem;
 }
@@ -663,7 +662,7 @@ html[data-theme='light'] .haoye-images-item > div {
 }
 
 html[data-theme='light'] .haoye-images-index {
-  color: rgba(164, 154, 143, 0.84);
+  color: rgba(150, 139, 124, 0.84);
   letter-spacing: 0.22em;
 }
 
@@ -672,7 +671,7 @@ html[data-theme='light'] .haoye-images-media {
     linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.58),
-    inset 0 -1px 0 rgba(56,47,37,0.018),
+    inset 0 -1px 0 rgba(39,35,29,0.018),
     0 10px 26px rgba(88, 72, 56, 0.045);
   border-radius: 22px;
 }
@@ -696,10 +695,11 @@ html[data-theme='light'] .haoye-images-copy {
 
 html[data-theme='light'] .haoye-images-item-title {
   letter-spacing: 0.012em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-images-item-subtitle {
-  color: rgba(108, 101, 92, 0.70);
+  color: rgba(97, 89, 79, 0.70);
   line-height: 2.02;
 }
 
@@ -712,7 +712,7 @@ html[data-theme='light'] .haoye-images-enter:hover {
   color: var(--site-text-solid);
 }
 
-/* ---------- desktop layout rewrite: only white theme ---------- */
+/* desktop layout rewrite / white theme only */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-images-list {
     margin-top: 5.5rem;
@@ -728,7 +728,6 @@ html[data-theme='light'] .haoye-images-enter:hover {
     gap: 1.8rem;
   }
 
-  /* 第一组：图像主导，文字像在旁边被轻轻放出来 */
   html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-row {
     display: block;
   }
@@ -754,7 +753,6 @@ html[data-theme='light'] .haoye-images-enter:hover {
     margin-top: 2.9rem;
   }
 
-  /* 第二组：图像靠右，文字靠左，不是简单左右栏 */
   html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-row {
     display: block;
   }
@@ -781,7 +779,6 @@ html[data-theme='light'] .haoye-images-enter:hover {
     margin-top: 2.7rem;
   }
 
-  /* 第三组：回收一点，形成节奏，不再是模板重复 */
   html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-row {
     display: block;
   }
@@ -808,7 +805,6 @@ html[data-theme='light'] .haoye-images-enter:hover {
     margin-top: 2.5rem;
   }
 
-  /* 白色主题 hover：更清一点，不是发亮表演 */
   html[data-theme='light'] .haoye-images-item:hover .haoye-images-cover {
     transform: scale(1.01);
     filter: saturate(0.975) contrast(0.992) brightness(0.996);
@@ -819,10 +815,10 @@ html[data-theme='light'] .haoye-images-enter:hover {
     transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
+
 /* =========================================
    HAOYE / Poems
    White theme only
-   不改变黑色主题结构，只让白色主题拥有自己的气息
    ========================================= */
 html[data-theme='light'] .haoye-poems-page,
 html[data-theme='light'] .haoye-poem-detail-page {
@@ -843,12 +839,13 @@ html[data-theme='light'] .haoye-poems-kicker {
 
 html[data-theme='light'] .haoye-poems-title {
   letter-spacing: 0.015em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-poems-intro {
   max-width: 29ch;
   line-height: 2.04;
-  color: rgba(108, 101, 92, 0.70);
+  color: rgba(97, 89, 79, 0.70);
 }
 
 html[data-theme='light'] .haoye-poems-list {
@@ -856,21 +853,22 @@ html[data-theme='light'] .haoye-poems-list {
 }
 
 html[data-theme='light'] .haoye-poems-item {
-  border-top-color: rgba(56, 47, 37, 0.04);
+  border-top-color: rgba(39, 35, 29, 0.04);
   padding-top: 2.7rem;
 }
 
 html[data-theme='light'] .haoye-poems-index,
 html[data-theme='light'] .haoye-poems-date {
-  color: rgba(164, 154, 143, 0.84);
+  color: rgba(150, 139, 124, 0.84);
 }
 
 html[data-theme='light'] .haoye-poems-item-title {
   letter-spacing: 0.01em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-poems-item-intro {
-  color: rgba(108, 101, 92, 0.72);
+  color: rgba(97, 89, 79, 0.72);
   line-height: 2.04;
   max-width: 34ch;
 }
@@ -889,7 +887,7 @@ html[data-theme='light'] .haoye-poems-media {
     linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.58),
-    inset 0 -1px 0 rgba(56,47,37,0.018),
+    inset 0 -1px 0 rgba(39,35,29,0.018),
     0 10px 26px rgba(88, 72, 56, 0.045);
 }
 
@@ -902,7 +900,6 @@ html[data-theme='light'] .haoye-poems-overlay {
     linear-gradient(to top, rgba(255,255,255,0.015), rgba(255,255,255,0.004), rgba(255,255,255,0.012));
 }
 
-/* 白色主题下，让诗列表更像停顿的片段，不是普通条目 */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-poems-list {
     margin-top: 5.2rem;
@@ -962,14 +959,14 @@ html[data-theme='light'] .haoye-poems-overlay {
   }
 }
 
-/* ---------- poem detail / white theme ---------- */
+/* poem detail / white theme */
 html[data-theme='light'] .haoye-poem-header,
 html[data-theme='light'] .haoye-poem-text-section {
-  border-top-color: rgba(56, 47, 37, 0.042);
+  border-top-color: rgba(39, 35, 29, 0.042);
 }
 
 html[data-theme='light'] .haoye-poem-back {
-  color: rgba(108, 101, 92, 0.72);
+  color: rgba(97, 89, 79, 0.72);
 }
 
 html[data-theme='light'] .haoye-poem-back:hover {
@@ -979,17 +976,18 @@ html[data-theme='light'] .haoye-poem-back:hover {
 html[data-theme='light'] .haoye-poem-tag,
 html[data-theme='light'] .haoye-poem-date,
 html[data-theme='light'] .haoye-poem-text-meta p {
-  color: rgba(157, 149, 136, 0.84);
+  color: rgba(148, 136, 120, 0.84);
 }
 
 html[data-theme='light'] .haoye-poem-title {
   letter-spacing: 0.012em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-poem-intro {
   max-width: 31ch;
   line-height: 2.04;
-  color: rgba(108, 101, 92, 0.72);
+  color: rgba(97, 89, 79, 0.72);
 }
 
 html[data-theme='light'] .haoye-poem-cover-wrap {
@@ -997,7 +995,7 @@ html[data-theme='light'] .haoye-poem-cover-wrap {
     linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.08) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.58),
-    inset 0 -1px 0 rgba(56,47,37,0.018),
+    inset 0 -1px 0 rgba(39,35,29,0.018),
     0 10px 26px rgba(88, 72, 56, 0.045);
 }
 
@@ -1032,10 +1030,10 @@ html[data-theme='light'] .haoye-poem-text-body .poem-body p {
     margin-left: 6%;
   }
 }
+
 /* =========================================
    HAOYE / About
    White theme only
-   不改变黑色主题结构，只让白色主题更安静、更自由
    ========================================= */
 html[data-theme='light'] .haoye-about-page {
   background:
@@ -1054,22 +1052,39 @@ html[data-theme='light'] .haoye-about-kicker {
 }
 
 html[data-theme='light'] .haoye-about-title {
+  position: relative;
   letter-spacing: 0.014em;
+  color: var(--site-text-solid);
+}
+
+html[data-theme='light'] .haoye-about-title::before {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  left: -36px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.72) 0%, rgba(226, 216, 201, 0.18) 48%, rgba(226, 216, 201, 0) 72%);
+  filter: blur(10px);
+  pointer-events: none;
 }
 
 html[data-theme='light'] .haoye-about-subtitle {
   max-width: 31ch;
   line-height: 2.04;
-  color: rgba(108, 101, 92, 0.70);
+  color: rgba(97, 89, 79, 0.70);
 }
 
 html[data-theme='light'] .haoye-about-section {
-  border-top-color: rgba(56, 47, 37, 0.04);
+  border-top-color: rgba(39, 35, 29, 0.04);
 }
 
 html[data-theme='light'] .haoye-about-index,
 html[data-theme='light'] .haoye-about-tag {
-  color: rgba(164, 154, 143, 0.84);
+  color: rgba(150, 139, 124, 0.84);
 }
 
 html[data-theme='light'] .haoye-about-main {
@@ -1077,7 +1092,7 @@ html[data-theme='light'] .haoye-about-main {
 }
 
 html[data-theme='light'] .haoye-about-rich p {
-  color: rgba(63, 56, 49, 0.82);
+  color: rgba(54, 48, 41, 0.82);
 }
 
 html[data-theme='light'] .haoye-about-rich h2,
@@ -1087,7 +1102,7 @@ html[data-theme='light'] .haoye-about-rich h4 {
 }
 
 html[data-theme='light'] .haoye-about-rich a {
-  border-bottom-color: rgba(56, 47, 37, 0.05);
+  border-bottom-color: rgba(39, 35, 29, 0.08);
 }
 
 html[data-theme='light'] .haoye-about-rich a:hover {
@@ -1095,15 +1110,14 @@ html[data-theme='light'] .haoye-about-rich a:hover {
 }
 
 html[data-theme='light'] .haoye-about-empty {
-  color: rgba(108, 101, 92, 0.72);
+  color: rgba(97, 89, 79, 0.72);
 }
 
 html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
-  color: rgba(157, 149, 136, 0.78);
+  color: rgba(148, 136, 120, 0.78);
   opacity: 0.84;
 }
 
-/* 白色主题下，这页更像“存在的停留区”，不是介绍页 */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-about-section > div {
     grid-template-columns: 92px minmax(0, 1fr);
@@ -1127,10 +1141,19 @@ html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
     margin-top: 6.8rem;
   }
 }
+
+@media (max-width: 767px) {
+  html[data-theme='light'] .haoye-about-title::before {
+    width: 148px;
+    height: 148px;
+    left: -14px;
+    filter: blur(8px);
+  }
+}
+
 /* =========================================
    HAOYE / Notes
    White theme only
-   保留现有分组结构，只让皓野主题更像“回响场”
    ========================================= */
 html[data-theme='light'] .haoye-notes-page {
   background:
@@ -1150,12 +1173,13 @@ html[data-theme='light'] .haoye-notes-kicker {
 
 html[data-theme='light'] .haoye-notes-title {
   letter-spacing: 0.014em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-notes-intro {
   max-width: 30ch;
   line-height: 2.04;
-  color: rgba(108, 101, 92, 0.70);
+  color: rgba(97, 89, 79, 0.70);
 }
 
 html[data-theme='light'] .haoye-notes-groups {
@@ -1163,13 +1187,13 @@ html[data-theme='light'] .haoye-notes-groups {
 }
 
 html[data-theme='light'] .haoye-notes-group {
-  border-top-color: rgba(56, 47, 37, 0.038);
+  border-top-color: rgba(39, 35, 29, 0.038);
   padding-top: 2.9rem;
 }
 
 html[data-theme='light'] .haoye-notes-index,
 html[data-theme='light'] .haoye-notes-kind {
-  color: rgba(164, 154, 143, 0.84);
+  color: rgba(150, 139, 124, 0.84);
 }
 
 html[data-theme='light'] .haoye-notes-stack {
@@ -1181,15 +1205,16 @@ html[data-theme='light'] .haoye-notes-item {
 }
 
 html[data-theme='light'] .haoye-notes-trace {
-  background: rgba(56, 47, 37, 0.06);
+  background: rgba(39, 35, 29, 0.06);
 }
 
 html[data-theme='light'] .haoye-notes-item:hover .haoye-notes-trace {
-  background: rgba(56, 47, 37, 0.12);
+  background: rgba(39, 35, 29, 0.12);
 }
 
 html[data-theme='light'] .haoye-notes-item-title {
   letter-spacing: 0.01em;
+  color: var(--site-text-solid);
 }
 
 html[data-theme='light'] .haoye-notes-line {
@@ -1198,7 +1223,6 @@ html[data-theme='light'] .haoye-notes-line {
   line-height: 2.04;
 }
 
-/* 白色主题下，“与”不该像 notes 模板，要更像经过后的回响 */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-notes-groups {
     margin-top: 5.4rem;
