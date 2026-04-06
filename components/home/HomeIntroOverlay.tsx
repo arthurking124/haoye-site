@@ -8,12 +8,11 @@ type HomeIntroOverlayProps = {
   onComplete?: () => void
 }
 
-// 增加 flash 阶段
 type Phase = 'idle' | 'spinning' | 'fading' | 'flash'
 
 const SPIN_START_MS = 1500
 const FADE_MS = 800
-const FLASH_MS = 450
+const FLASH_MS = 600 // 稍微延长，确保肉眼清晰捕捉到“穿越”瞬间
 
 export default function HomeIntroOverlay({
   visible,
@@ -24,7 +23,6 @@ export default function HomeIntroOverlay({
   const [soundEnabled, setSoundEnabled] = useState(true)
   const timersRef = useRef<number[]>([])
 
-  // 记录真实的度数
   const [degrees, setDegrees] = useState({ hour: 310, minute: 40 })
   const [isClient, setIsClient] = useState(false)
 
@@ -44,7 +42,6 @@ export default function HomeIntroOverlay({
     }
   }, [])
 
-  // 核心逻辑：后台实时自动同步现实时间
   useEffect(() => {
     setIsClient(true)
     if (phase !== 'idle') return
@@ -66,7 +63,6 @@ export default function HomeIntroOverlay({
     return () => clearInterval(interval)
   }, [phase])
 
-  // 时针和分针的角度计算（点击后加速旋转）
   const hourTransform = useMemo(() => {
     if (!isClient) return 'translate(-50%, -100%) rotate(310deg)'
     const rot = phase === 'spinning' ? degrees.hour + 30 : degrees.hour
@@ -75,7 +71,6 @@ export default function HomeIntroOverlay({
 
   const minuteTransform = useMemo(() => {
     if (!isClient) return 'translate(-50%, -100%) rotate(40deg)'
-    // 点击Enter后，分针额外旋转360度
     const rot = phase === 'spinning' ? degrees.minute + 360 : degrees.minute
     return `translate(-50%, -100%) rotate(${rot}deg)`
   }, [phase, isClient, degrees.minute])
@@ -89,21 +84,21 @@ export default function HomeIntroOverlay({
     onEnter?.(soundEnabled)
     setPhase('spinning')
 
-    // 阶段1：转完一圈后，开始褪去UI（变黑）
+    // 转完一圈，UI褪去
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('fading')
       }, SPIN_START_MS)
     )
 
-    // 阶段2：全黑后，触发白线闪烁（穿越效果）
+    // 触发闪烁
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('flash')
       }, SPIN_START_MS + FADE_MS)
     )
 
-    // 阶段3：闪烁结束，彻底进入首页
+    // 闪烁结束，进入主页
     timersRef.current.push(
       window.setTimeout(() => {
         onComplete?.()
@@ -132,7 +127,7 @@ export default function HomeIntroOverlay({
           transition: background 0.8s ease;
         }
 
-        /* 控制褪色时的隐藏逻辑 */
+        /* UI 褪色控制 */
         .fading .clock-core,
         .fading .bottom-ui,
         .flash .clock-core,
@@ -141,7 +136,7 @@ export default function HomeIntroOverlay({
           pointer-events: none;
         }
 
-        /* 穿越闪烁的主线条 */
+        /* --- 穿越光线基础样式 --- */
         .portal-line {
           position: absolute;
           left: 0;
@@ -151,35 +146,40 @@ export default function HomeIntroOverlay({
           background: #ffffff;
           transform: translateY(-50%) scaleX(0);
           opacity: 0;
-          z-index: 150;
-          /* 核心光晕效果 */
-          box-shadow: 0 0 20px rgba(255, 255, 255, 0.9),
-                      0 0 40px rgba(255, 255, 255, 0.6);
+          z-index: 999; /* 强制最高层级 */
+          box-shadow: 0 0 30px rgba(255, 255, 255, 1),
+                      0 0 60px rgba(255, 255, 255, 0.8);
         }
 
-        /* 触发闪烁动画 */
-        .flash .portal-line {
-          animation: portal-jump ${FLASH_MS}ms cubic-bezier(0.8, 0, 0.1, 1) forwards;
+        /* --- 触发闪烁动画 --- */
+        .portal-line.active {
+          animation: portalJump 600ms cubic-bezier(0.8, 0, 0.1, 1) forwards;
         }
 
-        @keyframes portal-jump {
+        @keyframes portalJump {
           0% {
             transform: translateY(-50%) scaleX(0);
             opacity: 0;
           }
-          40% {
+          20% {
+            /* 极速向两侧展开成一条线 */
             transform: translateY(-50%) scaleX(1);
             opacity: 1;
             height: 2px;
           }
+          50% {
+            /* 瞬间上下拉伸，形成爆亮 */
+            transform: translateY(-50%) scaleX(1) scaleY(40);
+            opacity: 1;
+          }
           100% {
-            /* 瞬间上下拉升并消失 */
-            transform: translateY(-50%) scaleX(1) scaleY(20);
+            /* 坍缩并消失 */
+            transform: translateY(-50%) scaleX(1) scaleY(0);
             opacity: 0;
           }
         }
 
-        /* 以下为保留的原版 CSS */
+        /* 原有样式保留 */
         .clock-core {
           position: relative;
           width: 180px;
@@ -357,8 +357,11 @@ export default function HomeIntroOverlay({
         }
       `}</style>
 
-      {/* 核心穿越光效元素 */}
-      <div className="portal-line" aria-hidden="true" />
+      {/* 注意这里：直接通过 class 控制动画触发 */}
+      <div 
+        className={phase === 'flash' ? 'portal-line active' : 'portal-line'} 
+        aria-hidden="true" 
+      />
 
       <div className="clock-core" aria-hidden="true">
         <div className="hand hour" style={{ transform: hourTransform }} />
