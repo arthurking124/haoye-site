@@ -8,10 +8,12 @@ type HomeIntroOverlayProps = {
   onComplete?: () => void
 }
 
-type Phase = 'idle' | 'spinning' | 'fading'
+// 增加 flash 阶段
+type Phase = 'idle' | 'spinning' | 'fading' | 'flash'
 
 const SPIN_START_MS = 1500
-const COMPLETE_MS = 2350
+const FADE_MS = 800
+const FLASH_MS = 450
 
 export default function HomeIntroOverlay({
   visible,
@@ -22,9 +24,8 @@ export default function HomeIntroOverlay({
   const [soundEnabled, setSoundEnabled] = useState(true)
   const timersRef = useRef<number[]>([])
 
-  // 新增：用于存放真实时间的角度，默认值保持你原版的 UI 角度
+  // 记录真实的度数
   const [degrees, setDegrees] = useState({ hour: 310, minute: 40 })
-  // 新增：避免 Next.js SSR 水合报错
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -32,7 +33,6 @@ export default function HomeIntroOverlay({
       setPhase('idle')
       return
     }
-
     setPhase('idle')
     setSoundEnabled(true)
   }, [visible])
@@ -44,7 +44,7 @@ export default function HomeIntroOverlay({
     }
   }, [])
 
-  // 新增：实时同步现实时间逻辑
+  // 核心逻辑：后台实时自动同步现实时间
   useEffect(() => {
     setIsClient(true)
     if (phase !== 'idle') return
@@ -55,36 +55,29 @@ export default function HomeIntroOverlay({
       const hrs = now.getHours()
       const secs = now.getSeconds()
 
-      // 计算时针和分针的精准角度
       setDegrees({
         hour: (hrs % 12) * 30 + mins * 0.5,
         minute: mins * 6 + secs * 0.1,
       })
     }
 
-    updateTime() // 初始化调用
-    const interval = setInterval(updateTime, 1000) // 每秒更新
+    updateTime()
+    const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
   }, [phase])
 
-  // 修改：时针的动态角度变换
+  // 时针和分针的角度计算（点击后加速旋转）
   const hourTransform = useMemo(() => {
-    if (!isClient) return 'translate(-50%, -100%) rotate(310deg)' // SSR 默认
-    if (phase === 'spinning') {
-      // 点击 Enter 后，时针随之拨动一小时 (30度)
-      return `translate(-50%, -100%) rotate(${degrees.hour + 30}deg)`
-    }
-    return `translate(-50%, -100%) rotate(${degrees.hour}deg)`
+    if (!isClient) return 'translate(-50%, -100%) rotate(310deg)'
+    const rot = phase === 'spinning' ? degrees.hour + 30 : degrees.hour
+    return `translate(-50%, -100%) rotate(${rot}deg)`
   }, [phase, isClient, degrees.hour])
 
-  // 修改：分针的动态角度变换
   const minuteTransform = useMemo(() => {
-    if (!isClient) return 'translate(-50%, -100%) rotate(40deg)' // SSR 默认
-    if (phase === 'spinning') {
-      // 点击 Enter 后，分针从当前真实时间开始，飞速拨动一整圈 (360度)
-      return `translate(-50%, -100%) rotate(${degrees.minute + 360}deg)`
-    }
-    return `translate(-50%, -100%) rotate(${degrees.minute}deg)`
+    if (!isClient) return 'translate(-50%, -100%) rotate(40deg)'
+    // 点击Enter后，分针额外旋转360度
+    const rot = phase === 'spinning' ? degrees.minute + 360 : degrees.minute
+    return `translate(-50%, -100%) rotate(${rot}deg)`
   }, [phase, isClient, degrees.minute])
 
   const handleEnter = () => {
@@ -96,17 +89,25 @@ export default function HomeIntroOverlay({
     onEnter?.(soundEnabled)
     setPhase('spinning')
 
+    // 阶段1：转完一圈后，开始褪去UI（变黑）
     timersRef.current.push(
       window.setTimeout(() => {
         setPhase('fading')
       }, SPIN_START_MS)
     )
 
+    // 阶段2：全黑后，触发白线闪烁（穿越效果）
+    timersRef.current.push(
+      window.setTimeout(() => {
+        setPhase('flash')
+      }, SPIN_START_MS + FADE_MS)
+    )
+
+    // 阶段3：闪烁结束，彻底进入首页
     timersRef.current.push(
       window.setTimeout(() => {
         onComplete?.()
-        setPhase('idle')
-      }, COMPLETE_MS)
+      }, SPIN_START_MS + FADE_MS + FLASH_MS)
     )
   }
 
@@ -114,7 +115,7 @@ export default function HomeIntroOverlay({
 
   return (
     <div
-      className={phase === 'fading' ? 'intro fade-out' : 'intro'}
+      className={`intro ${phase}`}
       style={{
         zIndex: 120,
         position: 'absolute',
@@ -123,30 +124,68 @@ export default function HomeIntroOverlay({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
       <style jsx>{`
         .intro {
-          position: absolute;
-          inset: 0;
-          background: #000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 1;
-          transition: opacity 0.9s cubic-bezier(0.65, 0, 0.35, 1);
+          transition: background 0.8s ease;
         }
 
-        .intro.fade-out {
-          opacity: 0;
+        /* 控制褪色时的隐藏逻辑 */
+        .fading .clock-core,
+        .fading .bottom-ui,
+        .flash .clock-core,
+        .flash .bottom-ui {
+          opacity: 0 !important;
           pointer-events: none;
         }
 
+        /* 穿越闪烁的主线条 */
+        .portal-line {
+          position: absolute;
+          left: 0;
+          top: 50%;
+          width: 100%;
+          height: 2px;
+          background: #ffffff;
+          transform: translateY(-50%) scaleX(0);
+          opacity: 0;
+          z-index: 150;
+          /* 核心光晕效果 */
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.9),
+                      0 0 40px rgba(255, 255, 255, 0.6);
+        }
+
+        /* 触发闪烁动画 */
+        .flash .portal-line {
+          animation: portal-jump ${FLASH_MS}ms cubic-bezier(0.8, 0, 0.1, 1) forwards;
+        }
+
+        @keyframes portal-jump {
+          0% {
+            transform: translateY(-50%) scaleX(0);
+            opacity: 0;
+          }
+          40% {
+            transform: translateY(-50%) scaleX(1);
+            opacity: 1;
+            height: 2px;
+          }
+          100% {
+            /* 瞬间上下拉升并消失 */
+            transform: translateY(-50%) scaleX(1) scaleY(20);
+            opacity: 0;
+          }
+        }
+
+        /* 以下为保留的原版 CSS */
         .clock-core {
           position: relative;
           width: 180px;
           height: 180px;
           transform: translateY(-48px);
+          transition: opacity 0.8s ease;
         }
 
         .hand {
@@ -161,25 +200,13 @@ export default function HomeIntroOverlay({
         .hour {
           width: 2px;
           height: 54px;
-          transform: translate(-50%, -100%) rotate(310deg);
-          opacity: 0.92;
-          transition: opacity 0.9s ease;
+          transition: transform 1.75s cubic-bezier(0.65, 0, 0.35, 1);
         }
 
         .minute {
           width: 1.5px;
           height: 78px;
-          opacity: 1;
-          transition:
-            transform 1.75s cubic-bezier(0.65, 0, 0.35, 1),
-            opacity 0.9s ease;
-        }
-
-        .intro.fade-out .hour,
-        .intro.fade-out .minute,
-        .intro.fade-out .center-dot,
-        .intro.fade-out .bottom-ui {
-          opacity: 0;
+          transition: transform 1.75s cubic-bezier(0.65, 0, 0.35, 1);
         }
 
         .center-dot {
@@ -191,7 +218,6 @@ export default function HomeIntroOverlay({
           transform: translate(-50%, -50%);
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.96);
-          transition: opacity 0.9s ease;
         }
 
         .bottom-ui {
@@ -204,7 +230,7 @@ export default function HomeIntroOverlay({
           align-items: center;
           z-index: 20;
           text-align: center;
-          transition: opacity 0.45s ease;
+          transition: opacity 0.6s ease;
         }
 
         .enter {
@@ -309,218 +335,68 @@ export default function HomeIntroOverlay({
             height: 140px;
             transform: translateY(-36px);
           }
-
           .hour {
             height: 42px;
           }
-
           .minute {
             height: 62px;
           }
-
           .bottom-ui {
             bottom: 34px;
           }
-
           .enter {
             margin-bottom: 30px;
             font-size: 11px;
           }
-
           .sound-row {
             gap: 18px;
           }
-
           .site-mark {
             margin-top: 12px;
           }
         }
       `}</style>
 
-      <div
-        className="clock-core"
-        aria-hidden="true"
-        style={{
-          position: 'relative',
-          width: 180,
-          height: 180,
-          transform: 'translateY(-48px)',
-        }}
-      >
-        <div
-          className="hand hour"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transformOrigin: 'bottom center',
-            background: 'rgba(255, 255, 255, 0.96)',
-            borderRadius: 999,
-            width: 2,
-            height: 54,
-            transform: hourTransform, // 已修改为动态角度
-            // 新增 transform 动画，确保时针随分针一起平滑旋转
-            transition: 'transform 1.75s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.9s ease', 
-          }}
-        />
-        <div
-          className="hand minute"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            transformOrigin: 'bottom center',
-            background: 'rgba(255, 255, 255, 0.96)',
-            borderRadius: 999,
-            width: 1.5,
-            height: 78,
-            transform: minuteTransform, // 已修改为动态角度
-          }}
-        />
-        <div
-          className="center-dot"
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: 4,
-            height: 4,
-            transform: 'translate(-50%, -50%)',
-            borderRadius: '50%',
-            background: 'rgba(255, 255, 255, 0.96)',
-          }}
-        />
+      {/* 核心穿越光效元素 */}
+      <div className="portal-line" aria-hidden="true" />
+
+      <div className="clock-core" aria-hidden="true">
+        <div className="hand hour" style={{ transform: hourTransform }} />
+        <div className="hand minute" style={{ transform: minuteTransform }} />
+        <div className="center-dot" />
       </div>
 
-      <div
-        className="bottom-ui"
-        style={{
-          position: 'absolute',
-          left: '50%',
-          bottom: 40,
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          zIndex: 20,
-          textAlign: 'center',
-        }}
-      >
+      <div className="bottom-ui">
         <button
           className={phase === 'idle' ? 'enter' : 'enter hide'}
           type="button"
           onClick={handleEnter}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: 'rgba(255, 255, 255, 0.84)',
-            fontSize: 12,
-            letterSpacing: '0.26em',
-            textTransform: 'uppercase',
-            textDecoration: 'underline',
-            textUnderlineOffset: '6px',
-            textDecorationThickness: '1px',
-            cursor: 'pointer',
-            padding: 0,
-            margin: '0 0 34px 0',
-          }}
         >
           Enter
         </button>
 
-        <div
-          className="sound-row"
-          aria-label="sound toggle"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 24,
-            margin: 0,
-            userSelect: 'none',
-          }}
-        >
-          <div
-            className="sound-label"
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.08em',
-              color: 'rgba(255, 255, 255, 0.6)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Sound
-          </div>
-
-          <div
-            className="sound-controls"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
+        <div className="sound-row" aria-label="sound toggle">
+          <div className="sound-label">Sound</div>
+          <div className="sound-controls">
             <button
               className={soundEnabled ? 'sound-btn active' : 'sound-btn'}
               type="button"
               onClick={() => setSoundEnabled(true)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                margin: 0,
-                fontSize: 11,
-                letterSpacing: '0.04em',
-                textTransform: 'lowercase',
-                cursor: 'pointer',
-              }}
             >
               on
             </button>
-
-            <span
-              className="sound-sep"
-              style={{
-                color: 'rgba(255, 255, 255, 0.22)',
-                fontSize: 11,
-                lineHeight: 1,
-              }}
-            >
-              /
-            </span>
-
+            <span className="sound-sep">/</span>
             <button
               className={!soundEnabled ? 'sound-btn active' : 'sound-btn'}
               type="button"
               onClick={() => setSoundEnabled(false)}
-              style={{
-                border: 'none',
-                background: 'transparent',
-                padding: 0,
-                margin: 0,
-                fontSize: 11,
-                letterSpacing: '0.04em',
-                textTransform: 'lowercase',
-                cursor: 'pointer',
-              }}
             >
               off
             </button>
           </div>
         </div>
 
-        <div
-          className="site-mark"
-          style={{
-            marginTop: 14,
-            fontSize: 10,
-            letterSpacing: '0.08em',
-            color: 'rgba(255, 255, 255, 0.18)',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          ©haoye.cyou
-        </div>
+        <div className="site-mark">©haoye.cyou</div>
       </div>
     </div>
   )
