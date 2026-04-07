@@ -135,6 +135,7 @@ html {
 }
 
 body {
+  
   background: var(--site-bg);
   color: var(--site-text);
   letter-spacing: 0.01em;
@@ -144,7 +145,14 @@ body {
     background-color 260ms ease,
     color 260ms ease;
 }
-
+/* =========================
+   Hide Default Cursor (Desktop only)
+   ========================= */
+@media (hover: hover) and (pointer: fine) {
+  body, html, a, button {
+    cursor: none !important;
+  }
+}
 html[data-theme='light'] body {
   background:
     radial-gradient(42% 58% at 82% 72%, rgba(208, 196, 180, 0.16) 0%, rgba(208, 196, 180, 0.06) 30%, rgba(208, 196, 180, 0) 68%),

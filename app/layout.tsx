@@ -5,6 +5,8 @@ import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
+// 👉 1. 在这里引入我们刚刚写好的自定义光标组件
+import CustomCursor from '@/components/ui/CustomCursor'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -32,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
+        {/* 👉 2. 将光标组件放在 body 的最前面 */}
+        <CustomCursor />
+        
         <Header />
         <main>{children}</main>
         <Footer />
