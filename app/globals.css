@@ -1864,3 +1864,57 @@ html[data-theme='light'] .ink-word {
   filter: blur(calc(var(--bleed, 0) * 0.8px));
   transform: scale(calc(1 + (var(--bleed, 0) * 0.02)));
 }
+/* =========================
+   《诗》列表展厅：黑夜横向错落碑林 (白昼绝对隔离)
+   ========================= */
+
+/* 1. 强行锁死黑夜的外层高度，抹除多余留白 */
+html:not([data-theme='light']) .haoye-poems-showroom-wrapper {
+  padding: 0 !important;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 2. 打造横向滑动轨道 */
+html:not([data-theme='light']) .haoye-poems-showroom {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 30vw 0 10vw; /* 左右留出深邃的深渊空间 */
+  gap: 15vw; /* 石碑之间的间距 */
+  scrollbar-width: none;
+}
+html:not([data-theme='light']) .haoye-poems-showroom::-webkit-scrollbar { 
+  display: none; 
+}
+
+/* 3. 序言区重置（让它和石碑横向排在一起） */
+html:not([data-theme='light']) .haoye-poems-header {
+  flex-shrink: 0;
+  width: 80vw;
+  max-width: 400px;
+  margin: 0 !important;
+}
+
+/* 4. 单个石碑包装：抹除垂直间距，改为自适应宽度 */
+html:not([data-theme='light']) .haoye-poem-track-item {
+  flex-shrink: 0;
+  width: max-content;
+  margin: 0 !important;
+  transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+/* 5. 核心灵魂：一上一下错落法则！ */
+html:not([data-theme='light']) .haoye-poem-track-item:nth-child(odd) {
+  transform: translateY(-12vh);
+}
+html:not([data-theme='light']) .haoye-poem-track-item:nth-child(even) {
+  transform: translateY(12vh);
+}
+
+/* 释放内部卡片的高度锁定，防止错落时被裁剪 */
+html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
+  min-height: auto;
+}
