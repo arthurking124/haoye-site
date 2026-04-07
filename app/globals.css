@@ -1692,3 +1692,102 @@ html[data-theme='light'] .haoye-gallery-frame:hover {
   border: 1px solid rgba(181, 155, 121, 0.35);
   box-shadow: 0 24px 60px rgba(181, 155, 121, 0.16);
 }
+/* =========================
+   《诗》的终极维度：垂直深渊与散落手稿
+   ========================= */
+
+/* 🌑 黑色魔法 1：文字的光影微雕与呼吸 */
+@keyframes verticalBreathing {
+  /* 利用 letter-spacing 在竖排下等同于行距的物理特性，让文字在黑暗中“喘息” */
+  0% { letter-spacing: 0.05em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.2); }
+  50% { letter-spacing: 0.35em; text-shadow: 0 0 24px rgba(255, 255, 255, 0.7), 0 0 40px rgba(255, 255, 255, 0.3); }
+  100% { letter-spacing: 0.05em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.2); }
+}
+
+.haoye-poem-monolith {
+  /* 垂直深渊：强行扭转 Z 轴为竖向阅读 */
+  writing-mode: vertical-rl;
+  text-orientation: upright; /* 强制中文绝对竖立，如同碑文 */
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  /* 挂载你的 12秒呼吸脉冲 */
+  animation: verticalBreathing 12s ease-in-out infinite;
+  transition: color 0.8s ease;
+  white-space: nowrap;
+}
+
+.haoye-poem-monolith:hover {
+  color: #fff;
+  animation-play-state: paused; /* 悬停时：屏住呼吸，光晕炸开 */
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.9), 0 0 60px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 🌑 黑色魔法 2：绝对的中心感控制 */
+.haoye-poem-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh; /* 给竖排呼吸留下膨胀的空间，拒绝布局跳动 */
+}
+.haoye-poem-layout-shift {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: none; /* 黑色不散落，绝对肃穆 */
+  transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.haoye-poem-media, .haoye-poem-reading-content {
+  /* 黑色主题：强行抹杀除标题外的一切多余元素 */
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  visibility: hidden;
+}
+
+/* =========================
+   ☁️ 白色魔法：被重力打翻的手稿坐标系
+   ========================= */
+html[data-theme='light'] .haoye-poem-monolith {
+  /* 瞬间坍缩为水平阅读，剥夺光晕，变为极深的墨迹压印 */
+  writing-mode: horizontal-tb;
+  white-space: normal;
+  color: rgba(40, 38, 36, 0.95);
+  animation: none; 
+  letter-spacing: 0.05em !important;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8) !important;
+}
+
+html[data-theme='light'] .haoye-poem-monolith:hover {
+  color: rgba(10, 10, 10, 1);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.15) !important;
+  transform: scale(0.995); /* 实体受压 */
+}
+
+html[data-theme='light'] .haoye-poem-container {
+  min-height: auto;
+  display: block; /* 解除居中锁定 */
+}
+
+html[data-theme='light'] .haoye-poem-layout-shift {
+  /* 激活散落手稿：读取 React 传进来的随机倾斜与偏移量 */
+  transform: translateX(var(--scatter-x)) rotate(var(--scatter-rot));
+  display: block;
+  margin: 15vh auto;
+}
+
+html[data-theme='light'] .haoye-poem-media,
+html[data-theme='light'] .haoye-poem-reading-content {
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  visibility: visible;
+  transition: opacity 1.2s ease 0.4s;
+}
+
+/* ☁️ 白色专属：底部的复古剪报材质 */
+.haoye-poem-clipping {
+  mix-blend-mode: multiply; /* 让图片完美“溶”进和纸纤维里 */
+  filter: sepia(0.15) contrast(1.1) brightness(0.96);
+  box-shadow: 2px 8px 30px rgba(181, 155, 121, 0.25);
+  border-radius: 1px;
+}
