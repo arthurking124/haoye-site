@@ -166,22 +166,71 @@ html[data-theme='light'] body {
   color: var(--site-selection-fg);
 }
 
+/* =========================
+   1. 空间流动光影层 (光源位移，模拟车灯/月光扫过房间)
+   ========================= */
+@keyframes lightSweep {
+  /* 使用位移 + 极微小的旋转，产生光源在房间里“漫步”的真实物理错觉 */
+  0% { transform: translate(-2%, -2%) rotate(0deg); }
+  50% { transform: translate(2%, 3%) rotate(1deg); }
+  100% { transform: translate(-2%, -2%) rotate(0deg); }
+}
+
 body::before {
+  content: "";
+  position: fixed;
+  /* 故意把画布放大到 120%，这样光源移动时边缘才不会穿帮 */
+  inset: -10%; 
+  pointer-events: none;
+  z-index: 0; 
+  
+  /* 黑色主题的幽暗微光组合 */
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.035), transparent 50%),
+    radial-gradient(circle at 75% 70%, rgba(255, 255, 255, 0.02), transparent 50%);
+    
+  /* 激活真实的位移动画，18秒极慢周期 */
+  animation: lightSweep 18s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
+}
+
+html[data-theme='light'] body::before {
+  /* 白色主题的自然柔光组合 */
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.8), transparent 55%),
+    radial-gradient(circle at 80% 75%, rgba(210, 195, 175, 0.15), transparent 50%);
+}
+
+/* =========================
+   2. 物理材质纹理层 (静止的胶片/纸张，覆盖在移动的光源之上)
+   ========================= */
+body::after {
   content: "";
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 1; /* 盖在光影层之上 */
+
+  /* 黑色主题：老电影银盐胶片 
+     1. 算法改用 turbulence (高反差锐利颗粒) 
+     2. 频率降至 0.75 (完美契合 Retina 屏幕，拒绝糊成灰屏) */
   background:
-    radial-gradient(circle at 20% 20%, rgba(120, 128, 137, 0.07), transparent 28%),
-    radial-gradient(circle at 80% 75%, rgba(255, 255, 255, 0.03), transparent 24%);
-  z-index: 0;
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.75) 150%); /* 极深的电影暗角 */
+
+  opacity: 0.18;
+  mix-blend-mode: overlay;
 }
 
-html[data-theme='light'] body::before {
+html[data-theme='light'] body::after {
+  /* 白色主题：高档和纸/羊皮纸 
+     1. 算法改用 fractalNoise (云雾状、棉絮状)
+     2. 频率极度拉低至 0.4 (产生真正的粗长植物纤维感，而不是沙子) */
   background:
-    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.42), transparent 30%),
-    radial-gradient(circle at 82% 72%, rgba(181, 155, 121, 0.06), transparent 26%),
-    linear-gradient(180deg, rgba(255,255,255,0.10), transparent 52%);
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 50% 50%, transparent 50%, rgba(181, 155, 121, 0.15) 150%); /* 暖茶色暗角 */
+
+  opacity: 0.15;
+  mix-blend-mode: color-burn;
 }
 
 a {

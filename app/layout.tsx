@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-CN" suppressHydrationWarning>
+    <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
         {/* 👉 2. 将光标组件放在 body 的最前面 */}
         <CustomCursor />

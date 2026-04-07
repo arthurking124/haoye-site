@@ -40,19 +40,24 @@ export default function SoundToggle({ inline = false }: SoundToggleProps) {
       const startTime = performance.now()
 
       const tick = (now: number) => {
+        // 这三行非常重要，用来计算动画执行的进度，不能删！
         const elapsed = now - startTime
         const progress = Math.min(elapsed / duration, 1)
         const eased = 1 - Math.pow(1 - progress, 3)
 
-        audio.volume = startVolume + (target - startVolume) * eased
+        // ✅ 安全锁 1：限制过渡中的动态音量 (0 到 1 之间)
+        const nextVolume = startVolume + (target - startVolume) * eased
+        audio.volume = Math.max(0, Math.min(1, nextVolume))
 
         if (progress < 1) {
           fadeFrameRef.current = requestAnimationFrame(tick)
           return
         }
 
+        // ✅ 动画结束时的收尾工作
         fadeFrameRef.current = null
-        audio.volume = target
+        // ✅ 安全锁 2：限制最终目标音量 (0 到 1 之间)
+        audio.volume = Math.max(0, Math.min(1, target))
         onDone?.()
       }
       fadeFrameRef.current = requestAnimationFrame(tick)
