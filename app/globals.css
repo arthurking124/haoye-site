@@ -1918,11 +1918,3 @@ html:not([data-theme='light']) .haoye-poem-track-item:nth-child(even) {
 html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   min-height: auto;
 }
-/* =========================
-   《诗》内页配图：独立隔离层
-   ========================= */
-.haoye-reader-image-dark { display: block; }
-.haoye-reader-image-light { display: none; }
-
-html[data-theme='light'] .haoye-reader-image-dark { display: none; }
-html[data-theme='light'] .haoye-reader-image-light { display: block; }
