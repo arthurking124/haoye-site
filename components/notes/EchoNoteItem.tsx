@@ -8,6 +8,7 @@ type NoteItemProps = {
     _id?: string
     name?: string
     line?: string
+    kind?: string
   }
   noteIndex: number
   groupIndex: number
@@ -184,10 +185,23 @@ function LightNoteItem({ note, noteIndex, groupIndex, basePosition }: NoteItemPr
           dragElastic={0.4} 
           whileHover={{ zIndex: 50 }}
           whileDrag={{ scale: 1.05, zIndex: 100, cursor: 'grabbing' }}
-          className="haoye-light-note group"
+          className="haoye-light-note group relative" 
         >
-          <div className="haoye-echo-content">
-            <h2 className="haoye-echo-title text-[18px] md:text-[22px] font-light">
+          {/* 👈 上面的 className 加了 relative */}
+          
+          <div className="haoye-echo-content relative"> 
+            {/* 👈 这里的 className 加了 relative */}
+
+            {/* 👇 这一段是新增的标签代码 */}
+            {note.kind && (
+              <span className="absolute top-4 left-5 text-[11px] text-[#a3a3a3] font-light tracking-[0.2em] opacity-80 select-none">
+                {note.kind}
+              </span>
+            )}
+            {/* 👆 新增结束 */}
+
+            <h2 className="haoye-echo-title text-[18px] md:text-[22px] font-light mt-4"> 
+              {/* 👈 这里的 className 加了 mt-4，把标题稍微往下推一点，给标签留位置 */}
               {note.name || '未命名'}
             </h2>
             <p className="haoye-echo-line text-[14px] md:text-[15px] leading-[2.08]">

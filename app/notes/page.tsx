@@ -82,8 +82,8 @@ export default async function NotesPage() {
                   const baseRotate = (noteIndex * 7 + groupIndex * 13) % 12 - 6
                   
                   // 2. 核心：绝对散落坐标 (基于画布百分比)，并制造彼此轻微压到的重叠感
-                  const initialX = (noteIndex % 3) * 35 + ((noteIndex * 11 + groupIndex * 19) % 15 - 5) // X轴散落 0, 35, 70 百分比，加上微调
-                  const initialY = Math.floor(noteIndex / 3) * 120 + ((noteIndex * 8 + groupIndex * 17) % 20 - 10) // Y轴每行增加 30%，制造重叠
+                  const initialX = (noteIndex % 3) * 18 + ((noteIndex * 11 + groupIndex * 19) % 12 - 6) // X轴散落 0, 35, 70 百分比，加上微调
+                  const initialY = Math.floor(noteIndex / 3) * 65 + ((noteIndex * 8 + groupIndex * 17) % 16 - 8) // Y轴每行增加 30%，制造重叠
                   
                   // 3. 随机质量 (控制被风吹走的力度，mass越大越不容易吹走)
                   const mass = 0.6 + ((noteIndex * 23 + groupIndex * 17) % 50) / 100
