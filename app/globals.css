@@ -1791,3 +1791,76 @@ html[data-theme='light'] .haoye-poem-reading-content {
   box-shadow: 2px 8px 30px rgba(181, 155, 121, 0.25);
   border-radius: 1px;
 }
+/* =========================
+   《诗》内页：双轨物理阅读器 (The Dual-Physics Reader)
+   ========================= */
+
+/* 🌑 黑暗宇宙：深渊石碑与探照灯 */
+@keyframes steleBreathing {
+  0% { letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
+  50% { letter-spacing: 0.25em; text-shadow: 0 0 24px rgba(255, 255, 255, 0.5); }
+  100% { letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
+}
+
+.haoye-reader-container {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  height: 60vh; 
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 5vw; /* 移除之前极其夸张的 35vw，交由 auto 居中 */
+  /* 修复 1：探照灯遮罩必须是横向的 (to right)！ */
+  mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+  scrollbar-width: none; 
+}
+.haoye-reader-container::-webkit-scrollbar { display: none; }
+
+.haoye-reader-text {
+  /* 修复 2：绝对居中魔法！在竖排容器里，这会让石碑完美居中 */
+  margin: 0 auto; 
+  height: 100%;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 300;
+  animation: steleBreathing 12s ease-in-out infinite;
+}
+
+/* 竖排段落的间距 */
+.haoye-reader-text p {
+  margin-left: 2.5em; 
+}
+
+/* ☁️ 白昼宇宙：气流手稿与坐标感知渗墨 */
+html[data-theme='light'] .haoye-reader-container {
+  writing-mode: horizontal-tb; /* 坍缩为水平 */
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: visible;
+  padding: 10vh 0;
+  mask-image: none; /* 撤销遮罩 */
+}
+
+html[data-theme='light'] .haoye-reader-text {
+  color: rgba(40, 38, 36, 0.95);
+  animation: none;
+  letter-spacing: 0.05em !important;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
+  /* 接收 React 传来的气流物理变量 (阻尼旋转) */
+  transform: rotate(var(--airflow-rot, 0deg)) translateY(var(--airflow-y, 0px));
+  will-change: transform;
+}
+
+/* 核心魔法：液态渗墨的 CSS 变量响应 */
+/* 我们不使用 hover，而是通过 JS 计算距离传入 --bleed 变量 (0 到 1) */
+.ink-word {
+  display: inline-block;
+  transition: font-weight 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+}
+
+html[data-theme='light'] .ink-word {
+  /* 当距离越近，--bleed 越趋近 1。引发字重增加和轻微模糊膨胀 */
+  font-weight: calc(300 + (var(--bleed, 0) * 400)); 
+  filter: blur(calc(var(--bleed, 0) * 0.8px));
+  transform: scale(calc(1 + (var(--bleed, 0) * 0.02)));
+}
