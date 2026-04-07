@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from 'react'
 import { PortableText } from '@portabletext/react'
 import { motion, useScroll, useSpring, useTransform, useMotionTemplate } from 'framer-motion'
+import { urlFor } from '@/lib/sanity.image'
 
 // 自定义 PortableText 渲染器：将文本粉碎成独立的“墨迹细胞”
 const LiquidComponents = {
@@ -25,7 +26,7 @@ const LiquidComponents = {
   },
 }
 
-export default function LiquidTextReader({ body }: { body: any }) {
+export default function LiquidTextReader({ body, coverImage }: { body: any; coverImage?: any }) {
   const containerRef = useRef<HTMLDivElement>(null)
 
   // ==========================================
@@ -107,19 +108,48 @@ export default function LiquidTextReader({ body }: { body: any }) {
     return () => container.removeEventListener('wheel', handleWheel)
   }, [])
 
+
   return (
-    <motion.div 
-      ref={containerRef}
-      className="haoye-reader-container relative"
-      style={airflowStyle}
-      initial={{ opacity: 0, filter: 'blur(10px)' }}
-      animate={{ opacity: 1, filter: 'blur(0px)' }}
-      transition={{ duration: 1.8, delay: 0.2, ease: [0.19, 1, 0.22, 1] }}
-    >
-      <div className="haoye-reader-text text-[18px] md:text-[21px] cursor-crosshair">
-        {/* 将 Sanity 的数据交给我们的“文本粉碎渲染器” */}
-        <PortableText value={body} components={LiquidComponents} />
-      </div>
-    </motion.div>
+    // 外层包装：让图片和文字在这个舞台里独立摆放
+    <div className="relative w-full">
+
+      {/* ===== 独立的底层空间 (Z轴: 0) ===== */}
+      {coverImage && (
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          
+          {/* 🌑 黑色配图：放在左边。文字在它上面滚动，形成碾压感 */}
+          <div className="haoye-reader-image-dark absolute left-[5%] md:left-[10%] top-[15%] w-[40vw] max-w-[450px] opacity-30 grayscale">
+            <img src={urlFor(coverImage).width(1000).quality(85).url()} alt="cover" className="w-full h-auto rounded-[1px] object-cover" />
+          </div>
+
+          {/* ☁️ 白色配图：斜贴在右边。加入浮动动画，使用 mix-blend-multiply 溶入纸张 */}
+          <motion.div 
+            className="haoye-reader-image-light absolute right-[0%] md:right-[5%] top-[10%] w-[280px] md:w-[320px] opacity-40 grayscale mix-blend-multiply"
+            animate={{ y: [-8, 8, -8], rotate: [-4, -2, -4] }}
+            transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
+          >
+            <img src={urlFor(coverImage).width(1000).quality(85).url()} alt="cover" className="w-full h-auto rounded-[1px] shadow-md object-cover" />
+          </motion.div>
+
+        </div>
+      )}
+
+      {/* ===== 独立的顶层空间 (Z轴: 10) ===== */}
+      {/* 你的排版容器原封不动，加上 z-10 强行浮在图片上方 */}
+      <motion.div 
+        ref={containerRef}
+        className="haoye-reader-container relative z-10"
+        style={airflowStyle}
+        initial={{ opacity: 0, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, filter: 'blur(0px)' }}
+        transition={{ duration: 1.8, delay: 0.2, ease: [0.19, 1, 0.22, 1] }}
+      >
+        <div className="haoye-reader-text text-[18px] md:text-[21px] cursor-crosshair">
+          {/* 将 Sanity 的数据交给我们的“文本粉碎渲染器” */}
+          <PortableText value={body} components={LiquidComponents} />
+        </div>
+      </motion.div>
+
+    </div>
   )
 }
