@@ -1919,15 +1919,15 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   min-height: auto;
 }
 /* =========================================
-   HAOYE / Echo Notes (极致修正版)
+   HAOYE / Echo Notes (终极黑白隔离重构版)
    ========================================= */
 
-/* 🌑 黑色主题：数字回响 (Digital Echoes) */
+/* 🌑 黑色主题：恢复原状，绝对不干涉！ */
 .haoye-echo-note {
   position: relative;
-  /* 👉 宽度不再统一，应用 JS 算出的随机宽度，打破段落整齐感 */
   width: var(--random-w, 100%);
   max-width: 100%;
+  /* 修复了之前的错别字导致失效的 bug */
   margin-left: calc(var(--scatter-x, 0) * 2.5);
 }
 
@@ -1938,14 +1938,13 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   transition: transform 0.1s ease;
 }
 
-/* 扫描线微颤保持不变 */
 .haoye-echo-content::after {
   content: "";
   position: absolute;
   inset: -10px;
   background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.02) 2px, rgba(255,255,255,0.02) 4px);
   pointer-events: none;
-  opacity: calc(var(--text-opacity) - 0.6); /* 随透明度变化 */
+  opacity: calc(var(--text-opacity) - 0.6); 
   mix-blend-mode: overlay;
 }
 
@@ -1953,7 +1952,7 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   color: var(--site-text-solid);
   letter-spacing: 0.12em;
   opacity: var(--text-opacity, 0.6);
-  transition: opacity 0.2s ease; /* 提速，让响应更灵敏 */
+  transition: opacity 0.2s ease;
 }
 
 .haoye-echo-line {
@@ -1963,7 +1962,6 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   transition: opacity 0.2s ease;
 }
 
-/* 👉 核心修复：引力波爆破动画 (瞬间扩大再消失) */
 @keyframes gravityRipple {
   0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); opacity: 1; }
   100% { box-shadow: 0 0 0 250px rgba(255, 255, 255, 0); opacity: 0; }
@@ -1981,62 +1979,46 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   z-index: -1;
 }
 
-/* 当 JS 挂载 is-rippling class 时，触发爆破 */
 .haoye-echo-note.is-rippling .haoye-echo-wave {
   animation: gravityRipple 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
-
-/* ☁️ 白色主题：记忆丝线 (Threads of Memory) */
-html[data-theme='light'] .haoye-echo-note {
-  width: max-content; /* 恢复随内容撑开 */
+/* ☁️ 白色主题：独立新样式，不再覆盖黑色代码 */
+.haoye-light-note {
+  width: max-content; 
   max-width: 100%;
-  position: relative;
-  left: var(--scatter-x);
-  top: var(--scatter-y);
-  margin-left: 0;
   padding: 2.5rem 3.5rem;
-  background: rgba(247, 243, 236, 0.75);
+  background: rgba(247, 243, 236, 0.85);
   backdrop-filter: blur(8px);
   mix-blend-mode: multiply; 
   cursor: grab;
-  
-  /* 👉 核心修复：利用 border-image 配合 SVG 数据流，生成真实的纤维撕裂边缘 */
-  /* SVG 包含不规则锯齿，产生纸张撕烂的效果 */
   border: 12px solid transparent; 
   border-image-source: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 L20,3 L40,0 L60,4 L80,1 L100,0 L98,20 L100,40 L97,60 L100,80 L100,100 L80,98 L60,100 L40,97 L20,100 L0,100 L3,80 L0,60 L2,40 L0,20 Z' fill='none' stroke='rgba(181, 155, 121, 0.4)' stroke-width='3' /%3E%3C/svg%3E");
   border-image-slice: 15;
   border-image-repeat: stretch;
-
-  /* 移除之前的 clip-path 伪造 */
-  clip-path: none;
   box-shadow: 0 8px 30px rgba(181, 155, 121, 0.08);
 }
 
-html[data-theme='light'] .haoye-echo-note:active {
+.haoye-light-note:active {
   cursor: grabbing;
   mix-blend-mode: normal; 
   box-shadow: 0 25px 50px rgba(181, 155, 121, 0.2);
 }
 
-html[data-theme='light'] .haoye-echo-content {
-  padding: 0;
-  transform: none; 
-}
-
-html[data-theme='light'] .haoye-echo-content::after,
-html[data-theme='light'] .haoye-echo-wave {
-  display: none; 
-}
-
-html[data-theme='light'] .haoye-echo-title {
+.haoye-light-note .haoye-echo-title {
   color: rgba(51, 46, 40, 0.95);
-  opacity: 1; 
   letter-spacing: 0.02em;
 }
 
-html[data-theme='light'] .haoye-echo-line {
+.haoye-light-note .haoye-echo-line {
   color: rgba(95, 87, 77, 0.85);
-  opacity: 1;
   font-family: var(--font-cn), serif;
+  margin-top: 0.6rem;
 }
+
+/* 双主题容器显示控制 */
+.haoye-dark-only { display: block; }
+html[data-theme='light'] .haoye-dark-only { display: none !important; }
+
+.haoye-light-only { display: none; }
+html[data-theme='light'] .haoye-light-only { display: block !important; }
