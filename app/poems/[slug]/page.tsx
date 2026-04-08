@@ -1,11 +1,12 @@
 export const revalidate = 60
-
 import type { Metadata } from 'next'
+
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
 import InnerRoom from '@/components/layout/InnerRoom'
 import LiquidTextReader from '@/components/poems/LiquidTextReader'
+import DarkPoemInteractive from '@/components/poems/DarkPoemInteractive' // 👈 新增：引入深渊物理组件
 import { sanityClient } from '@/lib/sanity.client'
 import { poemBySlugQuery } from '@/lib/queries'
 import { urlFor } from '@/lib/sanity.image'
@@ -20,12 +21,10 @@ type PoemDetail = {
   body?: any
 }
 
-// 补回了这个被遗漏的 getPoem 函数！
 async function getPoem(slug: string) {
   return sanityClient.fetch<PoemDetail | null>(poemBySlugQuery, { slug })
 }
 
-// 补回了高级的 SEO 元数据生成
 export async function generateMetadata({
   params,
 }: {
@@ -86,36 +85,49 @@ export default async function PoemDetailPage({
 
   return (
     <div className="haoye-poem-detail-page min-h-[100svh] bg-[var(--site-bg)] text-[var(--site-text-solid)] overflow-hidden">
-      <InnerRoom variant="inner">
-        
-        <div className="relative mx-auto max-w-[1100px] px-6 pb-40 pt-28 md:px-12 md:pb-60 md:pt-40">
-          {/* 1. 序言与返回引导 */}
-          <header className="mb-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
-            <Link href="/poems" className="text-[10px] tracking-[0.3em] text-[var(--site-dim)] hover:text-[var(--site-text-solid)] transition-colors">
-              ← RETURN TO POETRY
-            </Link>
-            <h1 className="mt-12 text-[32px] font-light tracking-[0.1em] text-[var(--site-text-solid)] md:text-[48px]">
-              《{poem.title || '未命名'}》
-            </h1>
-            {poemDate && <p className="mt-6 text-[10px] tracking-[0.2em] text-[var(--site-faint)]">{poemDate}</p>}
-          </header>
+      
+      {/* =========================================
+          🌑 黑色主题：全屏引力瀑布特效
+          （脱离 InnerRoom，因为深渊是不需要边距的）
+          ========================================= */}
+      <div className="haoye-dark-only relative z-10">
+        <DarkPoemInteractive poem={poem} />
+      </div>
 
-          {/* 2. 核心：双轨液态物理引擎！ (黑昼探照碑文 / 白昼散落渗墨) */}
-          <LiquidTextReader body={poem.body} />
+      {/* =========================================
+          ☁️ 白色主题：保留 100% 原汁原味的布局和气流手稿
+          ========================================= */}
+      <div className="haoye-light-only relative z-10">
+        <InnerRoom variant="inner">
+          <div className="relative mx-auto max-w-[1100px] px-6 pb-40 pt-28 md:px-12 md:pb-60 md:pt-40">
+            {/* 1. 序言与返回引导 */}
+            <header className="mb-24 flex flex-col items-center text-center animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              <Link href="/poems" className="text-[10px] tracking-[0.3em] text-[var(--site-dim)] hover:text-[var(--site-text-solid)] transition-colors">
+                ← RETURN TO POETRY
+              </Link>
+              <h1 className="mt-12 text-[32px] font-light tracking-[0.1em] text-[var(--site-text-solid)] md:text-[48px]">
+                《{poem.title || '未命名'}》
+              </h1>
+              {poemDate && <p className="mt-6 text-[10px] tracking-[0.2em] text-[var(--site-faint)]">{poemDate}</p>}
+            </header>
 
-          {/* 3. 插画收尾 (如果有) */}
-          {poem.coverImage && (
-            <div className="mt-40 flex justify-center opacity-40 grayscale transition-all duration-1000 hover:opacity-100 hover:grayscale-0">
-              <img
-                src={urlFor(poem.coverImage).width(1000).quality(85).url()}
-                alt="cover"
-                className="max-w-full md:max-w-[600px] rounded-[1px] shadow-2xl"
-              />
-            </div>
-          )}
-        </div>
+            {/* 2. 核心：白昼散落渗墨 */}
+            <LiquidTextReader body={poem.body} />
 
-      </InnerRoom>
+            {/* 3. 插画收尾 (如果有) */}
+            {poem.coverImage && (
+              <div className="mt-40 flex justify-center opacity-40 grayscale transition-all duration-1000 hover:opacity-100 hover:grayscale-0">
+                <img
+                  src={urlFor(poem.coverImage).width(1000).quality(85).url()}
+                  alt="cover"
+                  className="max-w-full md:max-w-[600px] rounded-[1px] shadow-2xl"
+                />
+              </div>
+            )}
+          </div>
+        </InnerRoom>
+      </div>
+
     </div>
   )
 }
