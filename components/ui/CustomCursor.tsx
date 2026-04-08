@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-// 👉 修复点 1：引入 Variants 类型
 import { motion, Variants } from 'framer-motion'
 
 export default function CustomCursor() {
@@ -10,7 +9,7 @@ export default function CustomCursor() {
   const [isTouchDevice, setIsTouchDevice] = useState(true)
 
   useEffect(() => {
-    // 核心安全策略：如果是触摸设备(手机/平板)，彻底不渲染这个组件
+    // 触摸设备(手机/平板)不渲染自定义光标
     if (window.matchMedia('(pointer: coarse)').matches) {
       setIsTouchDevice(true)
       return
@@ -22,10 +21,11 @@ export default function CustomCursor() {
       setMousePosition({ x: e.clientX, y: e.clientY })
     }
 
-    // 全局事件代理：嗅探鼠标下方是什么元素
+    // 全局事件代理：嗅探鼠标下方元素并切换状态
     const mouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      // 如果鼠标放在了 button, a 标签，或者是它们的子元素上
+      
+      // 这里的逻辑保持您的初衷：按钮和链接触发中等 X 光圈，图片触发巨大 X 光圈
       if (
         target.tagName.toLowerCase() === 'button' ||
         target.closest('button') ||
@@ -34,11 +34,9 @@ export default function CustomCursor() {
       ) {
         setCursorVariant('button')
       } 
-      // 如果鼠标放在了图片上 (为你的《影》栏目准备)
       else if (target.tagName.toLowerCase() === 'img') {
         setCursorVariant('image')
       } 
-      // 其他普通状态
       else {
         setCursorVariant('default')
       }
@@ -53,13 +51,12 @@ export default function CustomCursor() {
     }
   }, [])
 
-  // 移动端不加载任何自定义光标
   if (isTouchDevice) return null
 
-  // 👉 修复点 2：明确告诉 TypeScript 这是一个 Variants 类型的对象
+  // 核心视觉配置：所有状态均采用 difference 混合模式实现 X 光效果
   const variants: Variants = {
     default: {
-      x: mousePosition.x - 6, // 12px 圆的中心点偏移
+      x: mousePosition.x - 6,
       y: mousePosition.y - 6,
       height: 12,
       width: 12,
@@ -68,7 +65,7 @@ export default function CustomCursor() {
       transition: { type: 'spring', stiffness: 600, damping: 30, mass: 0.5 },
     },
     button: {
-      x: mousePosition.x - 24, // 放大到 48px
+      x: mousePosition.x - 24,
       y: mousePosition.y - 24,
       height: 48,
       width: 48,
@@ -77,34 +74,21 @@ export default function CustomCursor() {
       transition: { type: 'spring', stiffness: 500, damping: 28, mass: 0.5 },
     },
     image: {
-      x: mousePosition.x - 40, // 放大到 80px 作为画廊放大镜
+      x: mousePosition.x - 40, // 80px 巨型 X 光圈
       y: mousePosition.y - 40,
       height: 80,
       width: 80,
-      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-      mixBlendMode: 'normal',
-      backdropFilter: 'blur(4px)',
+      backgroundColor: '#ffffff', // 纯白背景在 difference 模式下翻转效果最强
+      mixBlendMode: 'difference', // 贯彻 X 光质感
       transition: { type: 'spring', stiffness: 400, damping: 28, mass: 0.5 },
     },
   }
 
   return (
     <motion.div
-      className="pointer-events-none fixed left-0 top-0 z-[99999] flex items-center justify-center rounded-full"
+      className="pointer-events-none fixed left-0 top-0 z-[99999] rounded-full"
       variants={variants}
       animate={cursorVariant}
-    >
-      {/* 只有在悬停图片时，中央才会浮现 VIEW 探索字样 */}
-      {cursorVariant === 'image' && (
-        <motion.span 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.15 }}
-          className="text-[10px] font-medium tracking-widest text-black"
-        >
-          VIEW
-        </motion.span>
-      )}
-    </motion.div>
+    />
   )
 }
