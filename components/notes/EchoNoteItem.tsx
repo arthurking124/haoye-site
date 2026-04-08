@@ -30,10 +30,10 @@ export default function EchoNoteItem(props: NoteItemProps) {
 }
 
 /* =========================================
-   🌑 黑色主题：原汁原味，保持不变
+   🌑 黑色主题：原汁原味，增加靠近发光与橡皮筋回弹
    ========================================= */
 function DarkNoteItem({ note, noteIndex, groupIndex }: NoteItemProps) {
-  const itemRef = useRef<HTMLDivElement>(null)
+  const itemRef = useRef<HTMLElement>(null) 
   const [isRippling, setIsRippling] = useState(false)
   const isNear = useRef(false)
 
@@ -48,10 +48,17 @@ function DarkNoteItem({ note, noteIndex, groupIndex }: NoteItemProps) {
       const y = e.clientY - (rect.top + rect.height / 2)
       const distance = Math.sqrt(x * x + y * y)
 
-      if (distance < 200) {
-        const intensity = 1 - distance / 200
+      if (distance < 250) {
+        const intensity = 1 - distance / 250
         itemRef.current.style.setProperty('--text-opacity', `${0.6 + intensity * 0.4}`)
         itemRef.current.style.setProperty('--skew-deg', `${intensity * -3}deg`)
+        
+        // ✨ 核心修复：直接通过 JS 注入双层 textShadow，完美避开 CSS 变量解析失效的问题
+        // 内层光芒集中，外层光晕扩散，效果非常高级
+        const glowCore = `0px 0px ${intensity * 15}px rgba(255, 255, 255, ${intensity * 0.9})`
+        const glowOuter = `0px 0px ${intensity * 35}px rgba(255, 255, 255, ${intensity * 0.4})`
+        itemRef.current.style.textShadow = `${glowCore}, ${glowOuter}`
+
         if (!isNear.current) {
           isNear.current = true
           setIsRippling(true)
@@ -60,6 +67,9 @@ function DarkNoteItem({ note, noteIndex, groupIndex }: NoteItemProps) {
       } else {
         itemRef.current.style.setProperty('--text-opacity', '0.6')
         itemRef.current.style.setProperty('--skew-deg', '0deg')
+        
+        // ✨ 离开时彻底清空光效
+        itemRef.current.style.textShadow = 'none'
         isNear.current = false
       }
     }
@@ -73,8 +83,8 @@ function DarkNoteItem({ note, noteIndex, groupIndex }: NoteItemProps) {
   const randomWidth = 60 + ((noteIndex * 23 + groupIndex * 17) % 40)
 
   return (
-    <article
-      ref={itemRef}
+    <motion.article 
+      ref={itemRef as any} 
       className={`haoye-echo-note group ${isRippling ? 'is-rippling' : ''}`}
       style={{
         '--scatter-rot': `${rotate}deg`,
@@ -82,17 +92,30 @@ function DarkNoteItem({ note, noteIndex, groupIndex }: NoteItemProps) {
         '--scatter-y': `${offsetY}px`,
         '--random-w': `${randomWidth}%`,
       } as React.CSSProperties}
+      
+      drag
+      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragElastic={0.4} 
+      
+      // ✨ 双保险：当鼠标直接 Hover 到文字上时，给予最强的反馈
+      whileHover={{ 
+        scale: 1.05, 
+        zIndex: 100,
+        textShadow: "0px 0px 20px rgba(255, 255, 255, 1), 0px 0px 40px rgba(255, 255, 255, 0.6)"
+      }}
+      whileDrag={{ scale: 1.1, zIndex: 200, cursor: 'grabbing' }} 
     >
       <div className="haoye-echo-content">
         <div className="haoye-echo-wave"></div>
-        <h2 className="haoye-echo-title text-[18px] md:text-[22px] font-light">
+        {/* 加了 group-hover:text-white 确保发光时文字本体足够白，对比度更高 */}
+        <h2 className="haoye-echo-title text-[18px] md:text-[22px] font-light transition-colors duration-300 group-hover:text-white">
           {note.name || '未命名'}
         </h2>
-        <p className="haoye-echo-line text-[14px] md:text-[15px] leading-[2.08]">
+        <p className="haoye-echo-line text-[14px] md:text-[15px] leading-[2.08] transition-colors duration-300 group-hover:text-neutral-200">
           {note.line || ' '}
         </p>
       </div>
-    </article>
+    </motion.article>
   )
 }
 
