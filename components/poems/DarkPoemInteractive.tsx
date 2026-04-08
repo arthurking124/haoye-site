@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState, useMemo } from 'react'
+import Link from 'next/link'
 import { motion, useMotionValue, useSpring, useAnimationFrame, MotionValue } from 'framer-motion'
 
 // ==========================================
@@ -17,6 +18,7 @@ interface ParticleProps {
 
 interface PoemData {
   title?: string
+  intro?: string // 【新增】：加入引言的数据类型
   body?: Array<{
     _type: string
     children?: Array<{ text: string }>
@@ -24,7 +26,7 @@ interface PoemData {
 }
 
 // ==========================================
-// 🌌 核心单字粒子引擎：深渊星尘与瞬间重组
+// 🌌 核心单字粒子引擎：深渊星尘与瞬间重组 (一字未改，保持完美稳定)
 // ==========================================
 function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: ParticleProps) {
   // 1. 预计算随机散落点 (扩大到1.5倍屏幕范围，营造深渊感)
@@ -120,6 +122,8 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
 
   // 1. 数据清洗升级版
   const titleChars = useMemo(() => (poem.title || '无题').split(''), [poem.title])
+  // 【新增】：提取引言字符
+  const introChars = useMemo(() => (poem.intro || '').split(''), [poem.intro])
   
   const stanzas = useMemo(() => {
     return (poem.body || [])
@@ -172,15 +176,25 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
   if (!mounted) return <div className="min-h-screen" />
 
   let globalTitleIndex = 0
+  let globalIntroIndex = 0 // 【新增】：引言的独立动画延迟索引
   let globalBodyIndex = 0
 
   return (
     <div className="relative min-h-[100svh] w-full flex flex-col items-center py-32 overflow-y-auto overflow-x-hidden selection:bg-[var(--site-selection-bg)] selection:text-[var(--site-selection-fg)]">
       
+      {/* 【新增】：幽灵返回按钮 */}
+      <Link 
+        href="/poems" 
+        className="fixed top-8 left-6 md:top-12 md:left-12 z-50 p-2 text-[10px] tracking-[0.3em] text-[var(--site-text-solid)] opacity-10 transition-opacity duration-700 hover:opacity-80"
+      >
+        ← RETURN TO POETRY
+      </Link>
+
       <div className="z-10 w-full max-w-[700px] px-6 text-center mt-[10vh]">
         
         {/* ================= 标题区 ================= */}
-        <h1 className="mb-24 text-[26px] md:text-[34px] font-light tracking-[0.2em] text-[var(--site-text-solid)]">
+        {/* 修改：将 mb-24 缩减为 mb-8，为下方的引言留出紧凑的空间 */}
+        <h1 className="mb-8 text-[26px] md:text-[34px] font-light tracking-[0.2em] text-[var(--site-text-solid)]">
           {titleChars.map((char: string) => {
             const currentIdx = globalTitleIndex++
             return (
@@ -196,6 +210,27 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
             )
           })}
         </h1>
+
+        {/* ================= 【新增】引言区 ================= */}
+        {introChars.length > 0 && (
+          <p className="mb-24 max-w-[480px] mx-auto text-[12px] md:text-[13px] leading-[2.2] font-light tracking-[0.3em] text-[var(--site-dim)] opacity-70">
+            {introChars.map((char: string) => {
+              const currentIdx = globalIntroIndex++
+              return (
+                <PoemParticle
+                  key={`intro-${currentIdx}`}
+                  index={currentIdx}
+                  char={char === ' ' ? '\u00A0' : char}
+                  mouseX={mouseX}
+                  mouseY={mouseY}
+                  isCollapsed={isCollapsed}
+                  // 使用 isTitle=false，让它拥有和正文一样柔和的回弹和低亮度
+                  isTitle={false} 
+                />
+              )
+            })}
+          </p>
+        )}
 
         {/* ================= 正文区 (节 -> 行 -> 字) ================= */}
         <div className="flex flex-col items-center w-full">
