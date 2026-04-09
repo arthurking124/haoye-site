@@ -2,10 +2,10 @@ import './globals.css'
 
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import Header from '@/components/layout/Header'
-import Footer from '@/components/layout/Footer'
+// 👉 1. 移除原来的 Footer 引入，换成我们的智能拦截器
+import ConditionalFooter from '@/components/layout/ConditionalFooter'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
-// 👉 1. 在这里引入我们刚刚写好的自定义光标组件
 import CustomCursor from '@/components/ui/CustomCursor'
 
 const inter = Inter({
@@ -34,12 +34,14 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
-        {/* 👉 2. 将光标组件放在 body 的最前面 */}
         <CustomCursor />
         
         <Header />
         <main>{children}</main>
-        <Footer />
+        
+        {/* 👉 2. 在这里使用智能拦截器 */}
+        <ConditionalFooter />
+        
         <Analytics />
         <SpeedInsights />
       </body>
