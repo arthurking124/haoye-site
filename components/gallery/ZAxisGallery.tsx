@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence, PanInfo } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
 
 type ImageSeriesItem = {
@@ -17,6 +17,7 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const isThrottled = useRef(false)
 
+  // 1. 锁死全局物理滚动
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => {
@@ -24,58 +25,80 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
     }
   }, [])
 
-  const triggerNext = () => {
-    if (currentIndex < items.length - 1) {
-      isThrottled.current = true
-      setCurrentIndex((prev) => prev + 1)
-      setTimeout(() => { isThrottled.current = false }, 1200)
+  // 🏆 2. 全局接管所有手势与滚轮 (降维打击浏览器默认行为)
+  useEffect(() => {
+    let touchStartX = 0
+    let touchStartY = 0
+
+    const triggerNext = () => {
+      if (currentIndex < items.length - 1) {
+        isThrottled.current = true
+        setCurrentIndex((prev) => prev + 1)
+        setTimeout(() => { isThrottled.current = false }, 1200)
+      }
     }
-  }
 
-  const triggerPrev = () => {
-    if (currentIndex > 0) {
-      isThrottled.current = true
-      setCurrentIndex((prev) => prev - 1)
-      setTimeout(() => { isThrottled.current = false }, 1200)
+    const triggerPrev = () => {
+      if (currentIndex > 0) {
+        isThrottled.current = true
+        setCurrentIndex((prev) => prev - 1)
+        setTimeout(() => { isThrottled.current = false }, 1200)
+      }
     }
-  }
 
-  const handleWheel = (e: React.WheelEvent) => {
-    if (isThrottled.current) return
-    const threshold = 30
-    if (e.deltaY > threshold) triggerNext()
-    else if (e.deltaY < -threshold) triggerPrev()
-  }
-
-  // 🏆 核心修复：引入 Framer Motion 工业级手势物理引擎
-  const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (isThrottled.current) return
-    const { offset, velocity } = info
-    
-    // 触发阈值调低，并且结合 "滑动初速度 (velocity)"。
-    // 只要距离超过 30px，或者滑动速度大于 200 (轻轻一扫)，立刻翻页！
-    const swipeThreshold = 30
-    const velocityThreshold = 200
-
-    if (Math.abs(offset.x) > Math.abs(offset.y)) {
-      // 左右横滑判定
-      if (offset.x < -swipeThreshold || velocity.x < -velocityThreshold) triggerNext()
-      else if (offset.x > swipeThreshold || velocity.x > velocityThreshold) triggerPrev()
-    } else {
-      // 上下纵滑判定
-      if (offset.y < -swipeThreshold || velocity.y < -velocityThreshold) triggerNext()
-      else if (offset.y > swipeThreshold || velocity.y > velocityThreshold) triggerPrev()
+    // 桌面端：接管鼠标滚轮
+    const handleWheel = (e: WheelEvent) => {
+      if (isThrottled.current) return
+      const threshold = 30
+      if (e.deltaY > threshold) triggerNext()
+      else if (e.deltaY < -threshold) triggerPrev()
     }
-  }
+
+    // 移动端：记录手指按下坐标
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartX = e.touches[0].clientX
+      touchStartY = e.touches[0].clientY
+    }
+
+    // 移动端：记录手指抬起坐标并计算方向
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (isThrottled.current) return
+      
+      const touchEndX = e.changedTouches[0].clientX
+      const touchEndY = e.changedTouches[0].clientY
+      
+      const deltaX = touchStartX - touchEndX
+      const deltaY = touchStartY - touchEndY
+      const swipeThreshold = 40 // 滑动判定阈值
+
+      // 判断是横向滑动还是纵向滑动
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // 左右滑动
+        if (deltaX > swipeThreshold) triggerNext()
+        else if (deltaX < -swipeThreshold) triggerPrev()
+      } else {
+        // 上下滑动
+        if (deltaY > swipeThreshold) triggerNext()
+        else if (deltaY < -swipeThreshold) triggerPrev()
+      }
+    }
+
+    // 将事件绑定到最高层级的 window，确保 100% 捕获，不被任何 DOM 元素吃掉
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    window.addEventListener('touchstart', handleTouchStart, { passive: true })
+    window.addEventListener('touchend', handleTouchEnd, { passive: true })
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel)
+      window.removeEventListener('touchstart', handleTouchStart)
+      window.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [currentIndex, items.length]) // 依赖 currentIndex 保证闭包数据最新
 
   if (!items || items.length === 0) return null
 
   return (
-    <motion.div // 🔥 这里把 div 升级成了 motion.div 以接管物理手势
-      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none select-none"
-      onWheel={handleWheel}
-      onPanEnd={handlePanEnd} // 🔥 绑定滑动物理侦测
-    >
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none select-none">
       {items.map((item, index) => {
         const distance = index - currentIndex
         const isActive = distance === 0
@@ -118,7 +141,13 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
               ease: [0.19, 1, 0.22, 1], 
             }}
           >
-            <Link href={href} className="group block" draggable={false}>
+            {/* 👑 加入 Webkit 特有属性，彻底掐死手机端长按链接弹出的预览菜单 */}
+            <Link 
+              href={href} 
+              className="group block [-webkit-touch-callout:none] [-webkit-user-drag:none]"
+            
+              draggable={false}
+            >
               <div className="haoye-gallery-frame relative overflow-hidden rounded-[2px] transition-transform duration-[1.2s] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-[1.02]">
                 {cover ? (
                   <img
@@ -165,6 +194,6 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
           />
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
