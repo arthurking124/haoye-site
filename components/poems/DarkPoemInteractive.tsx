@@ -26,7 +26,7 @@ interface PoemData {
 }
 
 // ==========================================
-// 🌌 核心单字粒子引擎：深渊星尘与瞬间重组 (一字未改，保持完美稳定)
+// 🌌 核心单字粒子引擎：深渊星尘与瞬间重组 
 // ==========================================
 function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: ParticleProps) {
   // 1. 预计算随机散落点 (扩大到1.5倍屏幕范围，营造深渊感)
@@ -65,6 +65,7 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: Par
     const dist = Math.sqrt(dx * dx + dy * dy)
 
     if (dist < 250) {
+      // 鼠标靠近时：探照灯强光聚合效应
       const pull = (250 - dist) / 250
       x.set(scatterX + dx * pull * 0.35)
       y.set(scatterY + dy * pull * 0.35)
@@ -72,13 +73,21 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: Par
       scale.set(1 + pull * 0.2)
       textShadow.set(`0 0 ${pull * 20}px rgba(255,255,255,${pull * 0.8})`)
     } else {
+      // 鼠标远离时：深渊漫游与微光呼吸
       const driftX = Math.sin(time / 1500 + randomOffset) * 15
       const driftY = Math.cos(time / 1800 + randomOffset) * 15
       x.set(scatterX + driftX)
       y.set(scatterY + driftY)
-      opacity.set(0.08)
       scale.set(1)
-      textShadow.set("none")
+      
+      // 🌟 核心修改：呼吸微光引擎
+      // 利用 time 和每个字专属的 randomOffset 创造 0~1 的呼吸律动，避免所有字同频闪烁
+      const breath = (Math.sin(time / 1000 + randomOffset) + 1) / 2
+      
+      // 基础透明度提升，并加上呼吸起伏
+      opacity.set(0.15 + breath * 0.15) 
+      // 注入微弱的白光，光晕大小和透明度随呼吸平滑过渡
+      textShadow.set(`0 0 ${6 + breath * 8}px rgba(255, 255, 255, ${0.12 + breath * 0.15})`)
     }
   })
 
