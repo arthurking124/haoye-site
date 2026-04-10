@@ -25,7 +25,6 @@ type ThemeMode = 'dark' | 'light'
 export default function Header() {
   const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
   const [theme, setTheme] = useState<ThemeMode>('dark')
 
   useEffect(() => {
@@ -33,16 +32,6 @@ export default function Header() {
 
     const saved = window.localStorage.getItem(STORAGE_KEY)
     setTheme(saved === 'light' ? 'light' : 'dark')
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => {
-      setScrolled(window.scrollY > 18)
-    }
-
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
@@ -65,20 +54,13 @@ export default function Header() {
 
   const isLight = theme === 'light'
 
-  const shellStyle = isLight
-    ? {
-        background: scrolled ? 'rgba(251,248,243,0.74)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(18px) saturate(140%)' : 'none',
-        boxShadow: scrolled
-          ? '0 1px 0 rgba(39,35,29,0.05), inset 0 1px 0 rgba(255,255,255,0.34)'
-          : 'none',
-      }
-    : {
-        background: scrolled ? 'rgba(13,13,13,0.34)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(12px)' : 'none',
-      }
+  // 🚀 核心修复：彻底抛弃滚动变色逻辑，强制保持绝对透明，不再遮挡底层水流！
+  const shellStyle = {
+    background: 'transparent',
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
+    boxShadow: 'none',
+  }
 
   const lineStyle = isLight
     ? {
