@@ -18,7 +18,7 @@ interface ParticleProps {
 
 interface PoemData {
   title?: string
-  intro?: string // 【新增】：加入引言的数据类型
+  intro?: string
   body?: Array<{
     _type: string
     children?: Array<{ text: string }>
@@ -26,13 +26,16 @@ interface PoemData {
 }
 
 // ==========================================
-// 🌌 核心单字粒子引擎：深渊星尘与瞬间重组 
+// 🌌 核心单字粒子引擎：萤火虫与呼吸
 // ==========================================
 function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: ParticleProps) {
-  // 1. 预计算随机散落点 (扩大到1.5倍屏幕范围，营造深渊感)
+  // 1. 预计算随机散落点
   const scatterX = useMemo(() => (Math.random() - 0.5) * (typeof window !== 'undefined' ? window.innerWidth * 1.5 : 1000), [])
   const scatterY = useMemo(() => (Math.random() - 0.5) * (typeof window !== 'undefined' ? window.innerHeight * 1.5 : 1000), [])
   const randomOffset = useMemo(() => Math.random() * Math.PI * 2, [])
+  
+  // 用于让萤火虫闪烁频率略有不同，显得更自然
+  const twinkleSpeed = useMemo(() => 600 + Math.random() * 400, []) 
 
   const x = useMotionValue(scatterX)
   const y = useMotionValue(scatterY)
@@ -40,7 +43,10 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: Par
   const scale = useMotionValue(1)
   const textShadow = useMotionValue("none")
 
-  // 2. 橡皮筋阻尼弹簧：确保飞回时丝滑、稳定
+  // 标记当前字是否已经完成飞回并可以开始“整体呼吸”
+  const settled = useRef(false)
+
+  // 2. 橡皮筋阻尼弹簧
   const springConfig = isTitle 
     ? { stiffness: 80, damping: 15, mass: 1 } 
     : { stiffness: 60, damping: 15, mass: 1 }
@@ -49,9 +55,47 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: Par
 
   const ref = useRef<HTMLSpanElement>(null)
 
-  // 3. 高性能引力运算（探照灯与漂浮）
+  // 3. 飞回与爆光逻辑 (只管坐标弹簧和瞬间高光)
+  useEffect(() => {
+    if (isCollapsed) {
+      settled.current = false
+      const delay = index * (isTitle ? 15 : 6) 
+      
+      const t1 = setTimeout(() => {
+        x.set(0)
+        y.set(0)
+        scale.set(1)
+        // 瞬间爆亮（刚组合时的惊艳感）
+        opacity.set(1)
+        textShadow.set("0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,255,255,0.6)")
+      }, delay)
+
+      // 爆光 1.2 秒后，将渲染权交给平滑的“全诗呼吸引擎”
+      const t2 = setTimeout(() => {
+        settled.current = true
+      }, delay + 1200)
+
+      return () => { clearTimeout(t1); clearTimeout(t2) }
+    } else {
+      settled.current = false
+    }
+  }, [isCollapsed, index, x, y, opacity, scale, textShadow, isTitle])
+
+  // 4. 高性能光影引擎（处理萤火虫、鼠标靠近、以及成诗后的呼吸）
   useAnimationFrame((time) => {
-    if (isCollapsed) return // 坍缩后停止游离
+    // 【阶段三：全诗同频呼吸】
+    if (isCollapsed) {
+      if (settled.current) {
+        // 使用统一的 time 参数计算，不加 randomOffset！
+        // 这样全屏幕的所有字会像一个肺部一样，完美同步地明暗起伏
+        const poemBreath = (Math.sin(time / 1500) + 1) / 2 // 3秒一个呼吸周期
+        opacity.set(0.65 + poemBreath * 0.35) // 透明度在 0.65 到 1 之间柔和过渡
+        const spread = 8 + poemBreath * 12
+        const alpha = 0.15 + poemBreath * 0.3
+        textShadow.set(`0 0 ${spread}px rgba(255, 255, 255, ${alpha})`)
+      }
+      return // 如果已经成诗，跳过下面的散落逻辑
+    }
 
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
@@ -65,49 +109,28 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: Par
     const dist = Math.sqrt(dx * dx + dy * dy)
 
     if (dist < 250) {
-      // 鼠标靠近时：探照灯强光聚合效应
+      // 【阶段二：鼠标靠近时骤亮】
       const pull = (250 - dist) / 250
       x.set(scatterX + dx * pull * 0.35)
       y.set(scatterY + dy * pull * 0.35)
-      opacity.set(0.2 + pull * 0.8)
+      
+      opacity.set(0.4 + pull * 0.6) // 快速逼近 1
       scale.set(1 + pull * 0.2)
-      textShadow.set(`0 0 ${pull * 20}px rgba(255,255,255,${pull * 0.8})`)
+      textShadow.set(`0 0 ${pull * 25}px rgba(255, 255, 255, ${pull * 0.9})`)
     } else {
-      // 鼠标远离时：深渊漫游与微光呼吸
+      // 【阶段一：无人打扰时的萤火虫】
       const driftX = Math.sin(time / 1500 + randomOffset) * 15
       const driftY = Math.cos(time / 1800 + randomOffset) * 15
       x.set(scatterX + driftX)
       y.set(scatterY + driftY)
       scale.set(1)
-      
-      // 🌟 核心修改：呼吸微光引擎
-      // 利用 time 和每个字专属的 randomOffset 创造 0~1 的呼吸律动，避免所有字同频闪烁
-      const breath = (Math.sin(time / 1000 + randomOffset) + 1) / 2
-      
-      // 基础透明度提升，并加上呼吸起伏
-      opacity.set(0.15 + breath * 0.15) 
-      // 注入微弱的白光，光晕大小和透明度随呼吸平滑过渡
-      textShadow.set(`0 0 ${6 + breath * 8}px rgba(255, 255, 255, ${0.12 + breath * 0.15})`)
+
+      // 独立的闪烁：每个字根据自己的 randomOffset 和 twinkleSpeed 自由明暗
+      const twinkle = (Math.sin(time / twinkleSpeed + randomOffset) + 1) / 2
+      opacity.set(0.08 + twinkle * 0.42) // 基础亮度极低，亮起时明显
+      textShadow.set(`0 0 ${4 + twinkle * 10}px rgba(255, 255, 255, ${0.1 + twinkle * 0.5})`)
     }
   })
-
-  // 4. 坍缩归位
-  useEffect(() => {
-    if (isCollapsed) {
-      const delay = index * (isTitle ? 15 : 6) 
-      const t = setTimeout(() => {
-        x.set(0)
-        y.set(0)
-        opacity.set(0.9)
-        scale.set(1)
-        textShadow.set("0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.4)")
-        setTimeout(() => { 
-          textShadow.set(isTitle ? "0 0 15px rgba(255,255,255,0.2)" : "none") 
-        }, 800)
-      }, delay)
-      return () => clearTimeout(t)
-    }
-  }, [isCollapsed, index, x, y, opacity, scale, textShadow, isTitle])
 
   return (
     <motion.span
@@ -131,7 +154,6 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
 
   // 1. 数据清洗升级版
   const titleChars = useMemo(() => (poem.title || '无题').split(''), [poem.title])
-  // 【新增】：提取引言字符
   const introChars = useMemo(() => (poem.intro || '').split(''), [poem.intro])
   
   const stanzas = useMemo(() => {
@@ -185,13 +207,12 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
   if (!mounted) return <div className="min-h-screen" />
 
   let globalTitleIndex = 0
-  let globalIntroIndex = 0 // 【新增】：引言的独立动画延迟索引
+  let globalIntroIndex = 0 
   let globalBodyIndex = 0
 
   return (
     <div className="relative min-h-[100svh] w-full flex flex-col items-center py-32 overflow-y-auto overflow-x-hidden selection:bg-[var(--site-selection-bg)] selection:text-[var(--site-selection-fg)]">
       
-      {/* 【新增】：幽灵返回按钮 */}
       <Link 
         href="/poems" 
         className="fixed top-8 left-6 md:top-12 md:left-12 z-50 p-2 text-[10px] tracking-[0.3em] text-[var(--site-text-solid)] opacity-10 transition-opacity duration-700 hover:opacity-80"
@@ -202,7 +223,6 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
       <div className="z-10 w-full max-w-[700px] px-6 text-center mt-[10vh]">
         
         {/* ================= 标题区 ================= */}
-        {/* 修改：将 mb-24 缩减为 mb-8，为下方的引言留出紧凑的空间 */}
         <h1 className="mb-8 text-[26px] md:text-[34px] font-light tracking-[0.2em] text-[var(--site-text-solid)]">
           {titleChars.map((char: string) => {
             const currentIdx = globalTitleIndex++
@@ -220,7 +240,7 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
           })}
         </h1>
 
-        {/* ================= 【新增】引言区 ================= */}
+        {/* ================= 引言区 ================= */}
         {introChars.length > 0 && (
           <p className="mb-24 max-w-[480px] mx-auto text-[12px] md:text-[13px] leading-[2.2] font-light tracking-[0.3em] text-[var(--site-dim)] opacity-70">
             {introChars.map((char: string) => {
@@ -233,7 +253,6 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
                   mouseX={mouseX}
                   mouseY={mouseY}
                   isCollapsed={isCollapsed}
-                  // 使用 isTitle=false，让它拥有和正文一样柔和的回弹和低亮度
                   isTitle={false} 
                 />
               )
