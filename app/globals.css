@@ -6,7 +6,6 @@
 ::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
 html, body { -ms-overflow-style: none !important; scrollbar-width: none !important; }
 
-
 /* =========================
    Theme tokens
    ========================= */
@@ -142,16 +141,14 @@ html {
 }
 
 body {
-  
   background: var(--site-bg);
   color: var(--site-text);
   letter-spacing: 0.01em;
   font-family: var(--font-cn), serif;
   font-feature-settings: 'liga' 1, 'kern' 1;
-  transition:
-    background-color 260ms ease,
-    color 260ms ease;
+  transition: background-color 260ms ease, color 260ms ease;
 }
+
 /* =========================
    Hide Default Cursor (Desktop only)
    ========================= */
@@ -160,84 +157,10 @@ body {
     cursor: none !important;
   }
 }
-html[data-theme='light'] body {
-  background:
-    radial-gradient(42% 58% at 82% 72%, rgba(208, 196, 180, 0.16) 0%, rgba(208, 196, 180, 0.06) 30%, rgba(208, 196, 180, 0) 68%),
-    radial-gradient(24% 34% at 20% 22%, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0) 75%),
-    linear-gradient(180deg, #fbf8f3 0%, #f7f3ec 100%);
-  color: var(--site-text);
-}
 
 ::selection {
   background: var(--site-selection-bg);
   color: var(--site-selection-fg);
-}
-
-/* =========================
-   1. 空间流动光影层 (光源位移，模拟车灯/月光扫过房间)
-   ========================= */
-@keyframes lightSweep {
-  /* 使用位移 + 极微小的旋转，产生光源在房间里“漫步”的真实物理错觉 */
-  0% { transform: translate(-2%, -2%) rotate(0deg); }
-  50% { transform: translate(2%, 3%) rotate(1deg); }
-  100% { transform: translate(-2%, -2%) rotate(0deg); }
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  /* 故意把画布放大到 120%，这样光源移动时边缘才不会穿帮 */
-  inset: -10%; 
-  pointer-events: none;
-  z-index: 0; 
-  
-  /* 黑色主题的幽暗微光组合 */
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.035), transparent 50%),
-    radial-gradient(circle at 75% 70%, rgba(255, 255, 255, 0.02), transparent 50%);
-    
-  /* 激活真实的位移动画，18秒极慢周期 */
-  animation: lightSweep 18s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
-}
-
-html[data-theme='light'] body::before {
-  /* 白色主题的自然柔光组合 */
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.8), transparent 55%),
-    radial-gradient(circle at 80% 75%, rgba(210, 195, 175, 0.15), transparent 50%);
-}
-
-/* =========================
-   2. 物理材质纹理层 (静止的胶片/纸张，覆盖在移动的光源之上)
-   ========================= */
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1; /* 盖在光影层之上 */
-
-  /* 黑色主题：老电影银盐胶片 
-     1. 算法改用 turbulence (高反差锐利颗粒) 
-     2. 频率降至 0.75 (完美契合 Retina 屏幕，拒绝糊成灰屏) */
-  background:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
-    radial-gradient(circle at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.75) 150%); /* 极深的电影暗角 */
-
-  opacity: 0.18;
-  mix-blend-mode: overlay;
-}
-
-html[data-theme='light'] body::after {
-  /* 白色主题：高档和纸/羊皮纸 
-     1. 算法改用 fractalNoise (云雾状、棉絮状)
-     2. 频率极度拉低至 0.4 (产生真正的粗长植物纤维感，而不是沙子) */
-  background:
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.4' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"),
-    radial-gradient(circle at 50% 50%, transparent 50%, rgba(181, 155, 121, 0.15) 150%); /* 暖茶色暗角 */
-
-  opacity: 0.15;
-  mix-blend-mode: color-burn;
 }
 
 a {
@@ -683,15 +606,7 @@ html[data-home-leaving='1'] .home-sequence-root {
 
 /* =========================================
    HAOYE / Images page
-   White theme only
    ========================================= */
-html[data-theme='light'] .haoye-images-page {
-  background:
-    radial-gradient(circle at 16% 12%, rgba(255,255,255,0.28), transparent 24%),
-    radial-gradient(circle at 84% 76%, rgba(215, 206, 192, 0.12), transparent 22%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
 html[data-theme='light'] .haoye-images-header {
   max-width: 560px;
 }
@@ -776,7 +691,6 @@ html[data-theme='light'] .haoye-images-enter:hover {
   color: var(--site-text-solid);
 }
 
-/* desktop layout rewrite / white theme only */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-images-list {
     margin-top: 5.5rem;
@@ -792,82 +706,29 @@ html[data-theme='light'] .haoye-images-enter:hover {
     gap: 1.8rem;
   }
 
-  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-row {
-    display: block;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-media {
-    max-width: 60%;
-  }
-
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-row { display: block; }
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-media { max-width: 60%; }
   html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-copy {
-    max-width: 30ch;
-    margin-left: 66%;
-    margin-top: -12.5rem;
-    position: relative;
-    z-index: 2;
+    max-width: 30ch; margin-left: 66%; margin-top: -12.5rem; position: relative; z-index: 2;
   }
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-item-title { font-size: 40px; line-height: 1.24; }
+  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-enter { margin-top: 2.9rem; }
 
-  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-item-title {
-    font-size: 40px;
-    line-height: 1.24;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='0'] .haoye-images-enter {
-    margin-top: 2.9rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-row {
-    display: block;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-media {
-    max-width: 56%;
-    margin-left: auto;
-  }
-
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-row { display: block; }
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-media { max-width: 56%; margin-left: auto; }
   html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-copy {
-    max-width: 31ch;
-    margin-left: 6%;
-    margin-top: -11.5rem;
-    position: relative;
-    z-index: 2;
+    max-width: 31ch; margin-left: 6%; margin-top: -11.5rem; position: relative; z-index: 2;
   }
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-item-title { font-size: 38px; line-height: 1.25; }
+  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-enter { margin-top: 2.7rem; }
 
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-item-title {
-    font-size: 38px;
-    line-height: 1.25;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='1'] .haoye-images-enter {
-    margin-top: 2.7rem;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-row {
-    display: block;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-media {
-    max-width: 68%;
-    margin-left: 4%;
-  }
-
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-row { display: block; }
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-media { max-width: 68%; margin-left: 4%; }
   html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-copy {
-    max-width: 34ch;
-    margin-left: 17%;
-    margin-top: 2.4rem;
-    position: relative;
-    z-index: 2;
+    max-width: 34ch; margin-left: 17%; margin-top: 2.4rem; position: relative; z-index: 2;
   }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-item-title {
-    font-size: 36px;
-    line-height: 1.26;
-  }
-
-  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-enter {
-    margin-top: 2.5rem;
-  }
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-item-title { font-size: 36px; line-height: 1.26; }
+  html[data-theme='light'] .haoye-images-item[data-index='2'] .haoye-images-enter { margin-top: 2.5rem; }
 
   html[data-theme='light'] .haoye-images-item:hover .haoye-images-cover {
     transform: scale(1.01);
@@ -882,16 +743,7 @@ html[data-theme='light'] .haoye-images-enter:hover {
 
 /* =========================================
    HAOYE / Poems
-   White theme only
    ========================================= */
-html[data-theme='light'] .haoye-poems-page,
-html[data-theme='light'] .haoye-poem-detail-page {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.24), transparent 24%),
-    radial-gradient(circle at 86% 76%, rgba(214, 204, 190, 0.10), transparent 22%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
 html[data-theme='light'] .haoye-poems-header {
   max-width: 600px;
 }
@@ -1097,252 +949,7 @@ html[data-theme='light'] .haoye-poem-text-body .poem-body p {
 
 /* =========================================
    HAOYE / About
-   White theme only
    ========================================= */
-html[data-theme='light'] .haoye-about-page {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.22), transparent 24%),
-    radial-gradient(circle at 86% 76%, rgba(214, 204, 190, 0.08), transparent 22%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
-html[data-theme='light'] .haoye-about-header {
-  max-width: 620px;
-}
-
-html[data-theme='light'] .haoye-about-kicker {
-  opacity: 0.66;
-  letter-spacing: 0.28em;
-}
-
-html[data-theme='light'] .haoye-about-title {
-  position: relative;
-  letter-spacing: 0.014em;
-  color: var(--site-text-solid);
-}
-
-html[data-theme='light'] .haoye-about-title::before {
-  content: '';
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  left: -36px;
-  top: 50%;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle, rgba(255, 255, 255, 0.72) 0%, rgba(226, 216, 201, 0.18) 48%, rgba(226, 216, 201, 0) 72%);
-  filter: blur(10px);
-  pointer-events: none;
-}
-
-html[data-theme='light'] .haoye-about-subtitle {
-  max-width: 31ch;
-  line-height: 2.04;
-  color: rgba(97, 89, 79, 0.70);
-}
-
-html[data-theme='light'] .haoye-about-section {
-  border-top-color: rgba(39, 35, 29, 0.04);
-}
-
-html[data-theme='light'] .haoye-about-index,
-html[data-theme='light'] .haoye-about-tag {
-  color: rgba(150, 139, 124, 0.84);
-}
-
-html[data-theme='light'] .haoye-about-main {
-  max-width: 38em;
-}
-
-html[data-theme='light'] .haoye-about-rich p {
-  color: rgba(54, 48, 41, 0.82);
-}
-
-html[data-theme='light'] .haoye-about-rich h2,
-html[data-theme='light'] .haoye-about-rich h3,
-html[data-theme='light'] .haoye-about-rich h4 {
-  letter-spacing: 0.045em;
-}
-
-html[data-theme='light'] .haoye-about-rich a {
-  border-bottom-color: rgba(39, 35, 29, 0.08);
-}
-
-html[data-theme='light'] .haoye-about-rich a:hover {
-  color: var(--site-text-solid);
-}
-
-html[data-theme='light'] .haoye-about-empty {
-  color: rgba(97, 89, 79, 0.72);
-}
-
-html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
-  color: rgba(148, 136, 120, 0.78);
-  opacity: 0.84;
-}
-
-@media (min-width: 768px) {
-  html[data-theme='light'] .haoye-about-section > div {
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 2.2rem;
-  }
-
-  html[data-theme='light'] .haoye-about-rail {
-    padding-top: 0.35rem;
-  }
-
-  html[data-theme='light'] .haoye-about-main {
-    max-width: 39em;
-    margin-left: 4%;
-  }
-
-  html[data-theme='light'] .haoye-about-rich p {
-    line-height: 2.18;
-  }
-
-  html[data-theme='light'] .haoye-about-signature {
-    margin-top: 6.8rem;
-  }
-}
-
-@media (max-width: 767px) {
-  html[data-theme='light'] .haoye-about-title::before {
-    width: 148px;
-    height: 148px;
-    left: -14px;
-    filter: blur(8px);
-  }
-}
-
-/* =========================================
-   HAOYE / Notes
-   White theme only
-   ========================================= */
-html[data-theme='light'] .haoye-notes-page {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.20), transparent 24%),
-    radial-gradient(circle at 86% 78%, rgba(214, 204, 190, 0.08), transparent 22%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
-html[data-theme='light'] .haoye-notes-header {
-  max-width: 560px;
-}
-
-html[data-theme='light'] .haoye-notes-kicker {
-  opacity: 0.66;
-  letter-spacing: 0.28em;
-}
-
-html[data-theme='light'] .haoye-notes-title {
-  letter-spacing: 0.014em;
-  color: var(--site-text-solid);
-}
-
-html[data-theme='light'] .haoye-notes-intro {
-  max-width: 30ch;
-  line-height: 2.04;
-  color: rgba(97, 89, 79, 0.70);
-}
-
-html[data-theme='light'] .haoye-notes-groups {
-  margin-top: 4rem;
-}
-
-html[data-theme='light'] .haoye-notes-group {
-  border-top-color: rgba(39, 35, 29, 0.038);
-  padding-top: 2.9rem;
-}
-
-html[data-theme='light'] .haoye-notes-index,
-html[data-theme='light'] .haoye-notes-kind {
-  color: rgba(150, 139, 124, 0.84);
-}
-
-html[data-theme='light'] .haoye-notes-stack {
-  row-gap: 2.1rem;
-}
-
-html[data-theme='light'] .haoye-notes-item {
-  max-width: 760px;
-}
-
-html[data-theme='light'] .haoye-notes-trace {
-  background: rgba(39, 35, 29, 0.06);
-}
-
-html[data-theme='light'] .haoye-notes-item:hover .haoye-notes-trace {
-  background: rgba(39, 35, 29, 0.12);
-}
-
-html[data-theme='light'] .haoye-notes-item-title {
-  letter-spacing: 0.01em;
-  color: var(--site-text-solid);
-}
-
-html[data-theme='light'] .haoye-notes-line {
-  color: rgba(95, 87, 77, 0.74);
-  max-width: 40ch;
-  line-height: 2.04;
-}
-
-@media (min-width: 768px) {
-  html[data-theme='light'] .haoye-notes-groups {
-    margin-top: 5.4rem;
-  }
-
-  html[data-theme='light'] .haoye-notes-group {
-    padding-top: 3.3rem;
-  }
-
-  html[data-theme='light'] .haoye-notes-group > div {
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 2.2rem;
-  }
-
-  html[data-theme='light'] .haoye-notes-group[data-index='0'] .haoye-notes-stack {
-    margin-left: 1%;
-  }
-
-  html[data-theme='light'] .haoye-notes-group[data-index='1'] .haoye-notes-stack {
-    margin-left: 8%;
-  }
-
-  html[data-theme='light'] .haoye-notes-group[data-index='2'] .haoye-notes-stack {
-    margin-left: 4%;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-copy {
-    max-width: 34em;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-copy {
-    max-width: 30em;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-copy {
-    max-width: 36em;
-  }
-
-  html[data-theme='light'] .haoye-notes-item:hover .haoye-notes-item-row {
-    transform: translateY(-1px);
-    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
-}
-/* =========================================
-   HAOYE / About
-   White theme micro-tuning
-   只微调白色主题 About 页
-   ========================================= */
-
-html[data-theme='light'] .haoye-about-page {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.20), transparent 24%),
-    radial-gradient(circle at 88% 80%, rgba(214, 204, 190, 0.055), transparent 20%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
 html[data-theme='light'] .haoye-about-header {
   max-width: 620px;
 }
@@ -1405,12 +1012,22 @@ html[data-theme='light'] .haoye-about-rich p:first-child {
   color: rgba(51, 46, 40, 0.94);
 }
 
+html[data-theme='light'] .haoye-about-rich h2,
+html[data-theme='light'] .haoye-about-rich h3,
+html[data-theme='light'] .haoye-about-rich h4 {
+  letter-spacing: 0.045em;
+}
+
 html[data-theme='light'] .haoye-about-rich a {
   border-bottom-color: rgba(56, 47, 37, 0.08);
 }
 
 html[data-theme='light'] .haoye-about-rich a:hover {
   color: var(--site-text-solid);
+}
+
+html[data-theme='light'] .haoye-about-empty {
+  color: rgba(97, 89, 79, 0.72);
 }
 
 html[data-theme='light'] .haoye-about-signature {
@@ -1458,20 +1075,10 @@ html[data-theme='light'] .haoye-about-signature .signature-mark-wrap {
     margin-top: 5.4rem;
   }
 }
+
 /* =========================================
    HAOYE / Notes
-   White theme independent redesign
-   只作用于白色主题的“与”
-   不动黑色主题
    ========================================= */
-
-html[data-theme='light'] .haoye-notes-page {
-  background:
-    radial-gradient(circle at 14% 12%, rgba(255,255,255,0.18), transparent 24%),
-    radial-gradient(circle at 88% 80%, rgba(214, 204, 190, 0.055), transparent 20%),
-    linear-gradient(180deg, var(--haoye-white-2) 0%, var(--haoye-white-1) 100%);
-}
-
 html[data-theme='light'] .haoye-notes-header {
   max-width: 620px;
 }
@@ -1565,7 +1172,6 @@ html[data-theme='light'] .haoye-notes-line {
   line-height: 2.08;
 }
 
-/* ---------- 桌面端：让“与”更像回响页，而不是整齐列表 ---------- */
 @media (min-width: 768px) {
   html[data-theme='light'] .haoye-notes-groups {
     margin-top: 5.8rem;
@@ -1589,58 +1195,23 @@ html[data-theme='light'] .haoye-notes-line {
     row-gap: 2.8rem;
   }
 
-  /* 三组节奏轻微错开，避免像普通 notes 模板 */
-  html[data-theme='light'] .haoye-notes-group[data-index='0'] .haoye-notes-stack {
-    margin-left: 1%;
-  }
+  html[data-theme='light'] .haoye-notes-group[data-index='0'] .haoye-notes-stack { margin-left: 1%; }
+  html[data-theme='light'] .haoye-notes-group[data-index='1'] .haoye-notes-stack { margin-left: 7%; }
+  html[data-theme='light'] .haoye-notes-group[data-index='2'] .haoye-notes-stack { margin-left: 3.5%; }
 
-  html[data-theme='light'] .haoye-notes-group[data-index='1'] .haoye-notes-stack {
-    margin-left: 7%;
-  }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-copy { max-width: 40ch; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-copy { max-width: 31ch; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-copy { max-width: 36ch; }
 
-  html[data-theme='light'] .haoye-notes-group[data-index='2'] .haoye-notes-stack {
-    margin-left: 3.5%;
-  }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-item-title { font-size: 24px; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-item-title { font-size: 21px; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-item-title { font-size: 22px; }
 
-  /* 组内三条内容不要完全同宽，形成“回响”感 */
-  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-copy {
-    max-width: 40ch;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-copy {
-    max-width: 31ch;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-copy {
-    max-width: 36ch;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-item-title {
-    font-size: 24px;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-item-title {
-    font-size: 21px;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-item-title {
-    font-size: 22px;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-line {
-    max-width: 38ch;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-line {
-    max-width: 28ch;
-  }
-
-  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-line {
-    max-width: 34ch;
-  }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='0'] .haoye-notes-line { max-width: 38ch; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='1'] .haoye-notes-line { max-width: 28ch; }
+  html[data-theme='light'] .haoye-notes-item[data-note-index='2'] .haoye-notes-line { max-width: 34ch; }
 }
 
-/* ---------- 手机端：保持轻，但不能散 ---------- */
 @media (max-width: 767px) {
   html[data-theme='light'] .haoye-notes-groups {
     margin-top: 4rem;
@@ -1670,54 +1241,47 @@ html[data-theme='light'] .haoye-notes-line {
     line-height: 2.02;
   }
 }
+
 /* =========================
    横向画廊的物理材质 (The Gallery Frames)
    ========================= */
 .haoye-gallery-frame {
   transition: all 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-  /* 黑色主题 (Ryuichi) - 幽暗发光体 (Lightbox) */
   border: 1px solid rgba(255, 255, 255, 0.04);
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), 0 0 0 rgba(255, 255, 255, 0);
   background: rgba(255, 255, 255, 0.02);
 }
 
 .haoye-gallery-frame:hover {
-  /* 悬停时：亮度外溢，边框隐约可见 */
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 0 80px rgba(0, 0, 0, 0.9), 0 0 40px rgba(255, 255, 255, 0.06); 
 }
 
 html[data-theme='light'] .haoye-gallery-frame {
-  /* 白色主题 (Ambre1) - 美术馆实体相纸 (Physical Print) */
   border: 1px solid rgba(181, 155, 121, 0.15);
   box-shadow: 0 8px 30px rgba(181, 155, 121, 0.06);
   background: rgba(181, 155, 121, 0.02);
 }
 
 html[data-theme='light'] .haoye-gallery-frame:hover {
-  /* 悬停时：顺着 Z 轴微微浮起，投影加深变暖 */
   border: 1px solid rgba(181, 155, 121, 0.35);
   box-shadow: 0 24px 60px rgba(181, 155, 121, 0.16);
 }
+
 /* =========================
    《诗》的终极维度：垂直深渊与散落手稿
    ========================= */
-
-/* 🌑 黑色魔法 1：文字的光影微雕与呼吸 */
 @keyframes verticalBreathing {
-  /* 利用 letter-spacing 在竖排下等同于行距的物理特性，让文字在黑暗中“喘息” */
   0% { letter-spacing: 0.05em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.2); }
   50% { letter-spacing: 0.35em; text-shadow: 0 0 24px rgba(255, 255, 255, 0.7), 0 0 40px rgba(255, 255, 255, 0.3); }
   100% { letter-spacing: 0.05em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.2); }
 }
 
 .haoye-poem-monolith {
-  /* 垂直深渊：强行扭转 Z 轴为竖向阅读 */
   writing-mode: vertical-rl;
-  text-orientation: upright; /* 强制中文绝对竖立，如同碑文 */
+  text-orientation: upright;
   color: rgba(255, 255, 255, 0.85);
   font-weight: 300;
-  /* 挂载你的 12秒呼吸脉冲 */
   animation: verticalBreathing 12s ease-in-out infinite;
   transition: color 0.8s ease;
   white-space: nowrap;
@@ -1725,37 +1289,33 @@ html[data-theme='light'] .haoye-gallery-frame:hover {
 
 .haoye-poem-monolith:hover {
   color: #fff;
-  animation-play-state: paused; /* 悬停时：屏住呼吸，光晕炸开 */
+  animation-play-state: paused;
   text-shadow: 0 0 30px rgba(255, 255, 255, 0.9), 0 0 60px rgba(255, 255, 255, 0.4) !important;
 }
 
-/* 🌑 黑色魔法 2：绝对的中心感控制 */
 .haoye-poem-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 80vh; /* 给竖排呼吸留下膨胀的空间，拒绝布局跳动 */
+  min-height: 80vh;
 }
+
 .haoye-poem-layout-shift {
   display: flex;
   justify-content: center;
   align-items: center;
-  transform: none; /* 黑色不散落，绝对肃穆 */
+  transform: none;
   transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
+
 .haoye-poem-media, .haoye-poem-reading-content {
-  /* 黑色主题：强行抹杀除标题外的一切多余元素 */
   opacity: 0;
   pointer-events: none;
   position: absolute;
   visibility: hidden;
 }
 
-/* =========================
-   ☁️ 白色魔法：被重力打翻的手稿坐标系
-   ========================= */
 html[data-theme='light'] .haoye-poem-monolith {
-  /* 瞬间坍缩为水平阅读，剥夺光晕，变为极深的墨迹压印 */
   writing-mode: horizontal-tb;
   white-space: normal;
   color: rgba(40, 38, 36, 0.95);
@@ -1767,16 +1327,15 @@ html[data-theme='light'] .haoye-poem-monolith {
 html[data-theme='light'] .haoye-poem-monolith:hover {
   color: rgba(10, 10, 10, 1);
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.15) !important;
-  transform: scale(0.995); /* 实体受压 */
+  transform: scale(0.995);
 }
 
 html[data-theme='light'] .haoye-poem-container {
   min-height: auto;
-  display: block; /* 解除居中锁定 */
+  display: block;
 }
 
 html[data-theme='light'] .haoye-poem-layout-shift {
-  /* 激活散落手稿：读取 React 传进来的随机倾斜与偏移量 */
   transform: translateX(var(--scatter-x)) rotate(var(--scatter-rot));
   display: block;
   margin: 15vh auto;
@@ -1791,18 +1350,16 @@ html[data-theme='light'] .haoye-poem-reading-content {
   transition: opacity 1.2s ease 0.4s;
 }
 
-/* ☁️ 白色专属：底部的复古剪报材质 */
 .haoye-poem-clipping {
-  mix-blend-mode: multiply; /* 让图片完美“溶”进和纸纤维里 */
+  mix-blend-mode: multiply;
   filter: sepia(0.15) contrast(1.1) brightness(0.96);
   box-shadow: 2px 8px 30px rgba(181, 155, 121, 0.25);
   border-radius: 1px;
 }
-/* =========================
-   《诗》内页：双轨物理阅读器 (The Dual-Physics Reader)
-   ========================= */
 
-/* 🌑 黑暗宇宙：深渊石碑与探照灯 */
+/* =========================
+   《诗》内页：双轨物理阅读器
+   ========================= */
 @keyframes steleBreathing {
   0% { letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(255, 255, 255, 0.1); }
   50% { letter-spacing: 0.25em; text-shadow: 0 0 24px rgba(255, 255, 255, 0.5); }
@@ -1816,16 +1373,15 @@ html[data-theme='light'] .haoye-poem-reading-content {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 5vw; /* 移除之前极其夸张的 35vw，交由 auto 居中 */
-  /* 修复 1：探照灯遮罩必须是横向的 (to right)！ */
+  padding: 0 5vw;
   mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
   scrollbar-width: none; 
 }
+
 .haoye-reader-container::-webkit-scrollbar { display: none; }
 
 .haoye-reader-text {
-  /* 修复 2：绝对居中魔法！在竖排容器里，这会让石碑完美居中 */
   margin: 0 auto; 
   height: 100%;
   color: rgba(255, 255, 255, 0.85);
@@ -1833,19 +1389,17 @@ html[data-theme='light'] .haoye-poem-reading-content {
   animation: steleBreathing 12s ease-in-out infinite;
 }
 
-/* 竖排段落的间距 */
 .haoye-reader-text p {
   margin-left: 2.5em; 
 }
 
-/* ☁️ 白昼宇宙：气流手稿与坐标感知渗墨 */
 html[data-theme='light'] .haoye-reader-container {
-  writing-mode: horizontal-tb; /* 坍缩为水平 */
+  writing-mode: horizontal-tb;
   height: auto;
   overflow-x: hidden;
   overflow-y: visible;
   padding: 10vh 0;
-  mask-image: none; /* 撤销遮罩 */
+  mask-image: none;
 }
 
 html[data-theme='light'] .haoye-reader-text {
@@ -1853,51 +1407,43 @@ html[data-theme='light'] .haoye-reader-text {
   animation: none;
   letter-spacing: 0.05em !important;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.8);
-  /* 接收 React 传来的气流物理变量 (阻尼旋转) */
   transform: rotate(var(--airflow-rot, 0deg)) translateY(var(--airflow-y, 0px));
   will-change: transform;
 }
 
-/* 核心魔法：液态渗墨的 CSS 变量响应 */
-/* 我们不使用 hover，而是通过 JS 计算距离传入 --bleed 变量 (0 到 1) */
 .ink-word {
   display: inline-block;
   transition: font-weight 0.4s ease, filter 0.4s ease, transform 0.4s ease;
 }
 
 html[data-theme='light'] .ink-word {
-  /* 当距离越近，--bleed 越趋近 1。引发字重增加和轻微模糊膨胀 */
   font-weight: calc(300 + (var(--bleed, 0) * 400)); 
   filter: blur(calc(var(--bleed, 0) * 0.8px));
   transform: scale(calc(1 + (var(--bleed, 0) * 0.02)));
 }
-/* =========================
-   《诗》列表展厅：黑夜横向错落碑林 (白昼绝对隔离)
-   ========================= */
 
-/* 1. 强行锁死黑夜的外层高度，抹除多余留白 */
+/* =========================
+   《诗》列表展厅：黑夜横向错落碑林
+   ========================= */
 html:not([data-theme='light']) .haoye-poems-showroom-wrapper {
   padding: 0 !important;
   height: 100vh;
   overflow: hidden;
 }
 
-/* 2. 打造横向滑动轨道 */
 html:not([data-theme='light']) .haoye-poems-showroom {
   display: flex;
   align-items: center;
   height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 0 30vw 0 10vw; /* 左右留出深邃的深渊空间 */
-  gap: 15vw; /* 石碑之间的间距 */
+  padding: 0 30vw 0 10vw;
+  gap: 15vw;
   scrollbar-width: none;
 }
-html:not([data-theme='light']) .haoye-poems-showroom::-webkit-scrollbar { 
-  display: none; 
-}
 
-/* 3. 序言区重置（让它和石碑横向排在一起） */
+html:not([data-theme='light']) .haoye-poems-showroom::-webkit-scrollbar { display: none; }
+
 html:not([data-theme='light']) .haoye-poems-header {
   flex-shrink: 0;
   width: 80vw;
@@ -1905,7 +1451,6 @@ html:not([data-theme='light']) .haoye-poems-header {
   margin: 0 !important;
 }
 
-/* 4. 单个石碑包装：抹除垂直间距，改为自适应宽度 */
 html:not([data-theme='light']) .haoye-poem-track-item {
   flex-shrink: 0;
   width: max-content;
@@ -1913,28 +1458,25 @@ html:not([data-theme='light']) .haoye-poem-track-item {
   transition: transform 1.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-/* 5. 核心灵魂：一上一下错落法则！ */
 html:not([data-theme='light']) .haoye-poem-track-item:nth-child(odd) {
   transform: translateY(-12vh);
 }
+
 html:not([data-theme='light']) .haoye-poem-track-item:nth-child(even) {
   transform: translateY(12vh);
 }
 
-/* 释放内部卡片的高度锁定，防止错落时被裁剪 */
 html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   min-height: auto;
 }
-/* =========================================
-   HAOYE / Echo Notes (终极黑白隔离重构版)
-   ========================================= */
 
-/* 🌑 黑色主题：恢复原状，绝对不干涉！ */
+/* =========================================
+   HAOYE / Echo Notes
+   ========================================= */
 .haoye-echo-note {
   position: relative;
   width: var(--random-w, 100%);
   max-width: 100%;
-  /* 修复了之前的错别字导致失效的 bug */
   margin-left: calc(var(--scatter-x, 0) * 2.5);
 }
 
@@ -1990,7 +1532,6 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   animation: gravityRipple 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
-/* ☁️ 白色主题：独立新样式，不再覆盖黑色代码 */
 .haoye-light-note {
   width: max-content; 
   max-width: 100%;
@@ -2023,79 +1564,56 @@ html:not([data-theme='light']) .haoye-poems-showroom .haoye-poem-container {
   margin-top: 0.6rem;
 }
 
-/* 双主题容器显示控制 */
 .haoye-dark-only { display: block; }
 html[data-theme='light'] .haoye-dark-only { display: none !important; }
 
 .haoye-light-only { display: none; }
 html[data-theme='light'] .haoye-light-only { display: block !important; }
+
 /* ========================================================
-   ✨ THE DUAL FLUIDS: 准备层 (Step 1 注入)
+   ✨ THE DUAL FLUIDS: 终极底层穿透 (WebGL 托管背景)
    ======================================================== */
 
-/* 1. 彻底清除所有内页的死板渐变背景，把背景控制权移交给底层的 WebGL 流体画布 */
-html[data-theme='light'] .haoye-images-page,
-html[data-theme='light'] .haoye-poems-page,
-html[data-theme='light'] .haoye-poem-detail-page,
-html[data-theme='light'] .haoye-about-page,
-html[data-theme='light'] .haoye-notes-page {
-  background: transparent !important;
-}
-
-/* 2. 让浅色模式的 body 停止绘制强烈的底色，防止挡住水流的焦散光影 */
-html[data-theme='light'] body {
+/* 1. 确保 HTML 和 Body 永远不覆盖流体画布 */
+html, body {
   background-color: var(--site-bg) !important;
   background-image: none !important;
 }
 
-/* 3. Awwwards 级“毛玻璃力场” (The Glass Forcefield) 
-   作用：垫在核心文字区下方，让水流高光经过文字时自动失焦模糊，保证顶级阅读体验 */
-.glass-forcefield {
-  position: relative;
-  z-index: 10;
-  border-radius: 40px;
-  /* 扩大力场的覆盖范围，让文字周围有足够的呼吸空间 */
-  padding: 2rem;
-  margin: -2rem; 
-}
-
-/* 🌙 黑色主题：深渊里的极弱暗场（不需要模糊，只需要压暗高光） */
-html:not([data-theme='light']) .glass-forcefield {
-  background: radial-gradient(ellipse at center, rgba(13, 13, 13, 0.45) 0%, rgba(13, 13, 13, 0) 70%);
-  pointer-events: none; /* 让鼠标穿透，不影响你原本的交互 */
-}
-
-/* ☀️ 白色主题：宣纸水波上方的透镜毛玻璃（极其昂贵的光学质感） */
-html[data-theme='light'] .glass-forcefield {
-  /* 宣纸的底色微微泛起 */
-  background: radial-gradient(ellipse at center, rgba(247, 243, 236, 0.6) 0%, rgba(247, 243, 236, 0) 75%);
-  /* 物理级失焦模糊 */
-  backdrop-filter: blur(12px) saturate(110%);
-  -webkit-backdrop-filter: blur(12px) saturate(110%);
-  /* 使用 mask 平滑羽化边缘，绝对不能出现生硬的矩形边框！ */
-  mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
-  pointer-events: none;
-}
-
-/* 确保文字本身在力场中保持正常的点击层级 */
-.glass-forcefield > * {
-  pointer-events: auto;
-}
-/* ========================================================
-   ✨ THE DUAL FLUIDS: 终极破壁补丁 (强制透明化内页)
-   ======================================================== */
-
-/* 彻底扒掉所有内页的实心渐变背景，让底层的 WebGL 水流透出来！ */
-html[data-theme='light'] .haoye-images-page,
-html[data-theme='light'] .haoye-poems-page,
-html[data-theme='light'] .haoye-poem-detail-page,
-html[data-theme='light'] .haoye-about-page,
-html[data-theme='light'] .haoye-notes-page,
+/* 2. 强制剥离所有内页的容器底色，让 WebGL 透出来 */
+main,
 .haoye-images-page,
 .haoye-poems-page,
 .haoye-poem-detail-page,
 .haoye-about-page,
 .haoye-notes-page {
   background: transparent !important;
+  background-image: none !important;
+}
+
+/* 3. Awwwards 级“毛玻璃力场” (The Glass Forcefield) */
+.glass-forcefield {
+  position: relative;
+  z-index: 10;
+  border-radius: 40px;
+  padding: 2rem;
+  margin: -2rem; 
+}
+
+html:not([data-theme='light']) .glass-forcefield {
+  background: radial-gradient(ellipse at center, rgba(13, 13, 13, 0.45) 0%, rgba(13, 13, 13, 0) 70%);
+  pointer-events: none;
+}
+
+html[data-theme='light'] .glass-forcefield {
+  background: radial-gradient(ellipse at center, rgba(247, 243, 236, 0.6) 0%, rgba(247, 243, 236, 0) 75%);
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
+  pointer-events: none;
+}
+
+.glass-forcefield > * {
+  pointer-events: auto;
 }
