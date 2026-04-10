@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
 
 type ImageSeriesItem = {
@@ -16,6 +16,10 @@ type ImageSeriesItem = {
 export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const isThrottled = useRef(false)
+  
+  // 【新增】：同时记录 X 和 Y 的起始点
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -47,12 +51,42 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
     else if (e.deltaY < -threshold) triggerPrev()
   }
 
+  // 【核心修复】：支持全方位滑动（兼顾左右横滑与上下滑动）
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isThrottled.current) return
+    const touchEndX = e.changedTouches[0].clientX
+    const touchEndY = e.changedTouches[0].clientY
+    
+    // 计算 X 轴和 Y 轴的移动差值
+    const deltaX = touchStartX.current - touchEndX
+    const deltaY = touchStartY.current - touchEndY
+    const threshold = 40
+
+    // 判断用户是更偏向横向滑动还是纵向滑动
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // 左右滑动逻辑：左滑下一张，右滑上一张
+      if (deltaX > threshold) triggerNext()
+      else if (deltaX < -threshold) triggerPrev()
+    } else {
+      // 保持你原有的上下滑动逻辑
+      if (deltaY > threshold) triggerNext()
+      else if (deltaY < -threshold) triggerPrev()
+    }
+  }
+
   if (!items || items.length === 0) return null
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none select-none"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none"
       onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {items.map((item, index) => {
         const distance = index - currentIndex
@@ -82,54 +116,27 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
         return (
           <motion.div
             key={item._id ?? index}
-            // 👑 核心修复 1：增加 inset-0 和 h-full 铺满全屏，承接屏幕上任何位置的盲滑！
-            className="absolute inset-0 flex w-full h-full flex-col items-center justify-center will-change-transform"
+            className="absolute flex w-full flex-col items-center justify-center will-change-transform"
             style={{ zIndex }}
             initial={false}
             animate={{
               scale,
               opacity,
               filter: blur,
-              x: 0, // 强制拖拽后自动回弹归位
-              y: 0,
               pointerEvents: isActive ? 'auto' : 'none',
             }}
             transition={{
               duration: 1.4,
               ease: [0.19, 1, 0.22, 1], 
             }}
-            
-            // 🚀 核心修复 2：工业级手势物理引擎，降维打击所有原生冲突
-            drag={isActive ? true : false} // 仅在当前激活态下开启物理拖拽
-            dragConstraints={{ top: 0, bottom: 0, left: 0, right: 0 }} // 锁死边界
-            dragElastic={0.06} // 极佳的阻尼手感，滑动时照片会有轻微“拉扯感”
-            onDragEnd={(e, info) => {
-              if (!isActive || isThrottled.current) return
-              const { offset, velocity } = info
-              
-              const swipeThreshold = 30
-              const velocityThreshold = 200
-
-              // 智能判定：横向滑动为主还是纵向滑动为主
-              if (Math.abs(offset.x) > Math.abs(offset.y)) {
-                if (offset.x < -swipeThreshold || velocity.x < -velocityThreshold) triggerNext()
-                else if (offset.x > swipeThreshold || velocity.x > velocityThreshold) triggerPrev()
-              } else {
-                if (offset.y < -swipeThreshold || velocity.y < -velocityThreshold) triggerNext()
-                else if (offset.y > swipeThreshold || velocity.y > velocityThreshold) triggerPrev()
-              }
-            }}
           >
-            <Link 
-              href={href} 
-              className="group block [-webkit-touch-callout:none] [-webkit-user-drag:none]" 
-              draggable={false}
-            >
+            <Link href={href} className="group block">
               <div className="haoye-gallery-frame relative overflow-hidden rounded-[2px] transition-transform duration-[1.2s] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-[1.02]">
                 {cover ? (
                   <img
                     src={urlFor(cover).width(1600).quality(95).url()}
                     alt={item.title ?? `image-${index}`}
+                    // 【核心修复】：手机端采用 w-[85vw] 搭配 aspect-[4/3] 保持极佳构图，桌面端 md: 保持原有设定不动
                     className="w-[85vw] h-auto aspect-[4/3] max-w-[1000px] object-cover md:h-[65vh] md:w-[65vw] md:aspect-auto"
                     draggable={false} 
                   />
@@ -162,7 +169,7 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
         )
       })}
 
-      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 opacity-60 pointer-events-none">
+      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 opacity-60">
         <div className="h-[40px] w-[1px] overflow-hidden bg-[color:var(--site-border-soft)]">
           <motion.div
             className="w-full bg-[color:var(--site-text-solid)]"
