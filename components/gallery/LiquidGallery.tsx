@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber'; // 【引入 useThree】
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,6 +66,11 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   const mouse = useRef(new THREE.Vector2(0.5, 0.5));
   const velocity = useRef(0);
 
+  // 【核心修复】：动态获取视口宽度，为手机端计算安全缩放比例
+  const { viewport } = useThree();
+  // 12 是我们在 planeGeometry 里硬编码的宽。如果屏幕比 13 小，说明是移动端，我们要缩小它
+  const responsiveScale = viewport.width < 13 ? (viewport.width / 13) * 0.95 : 1;
+
   const material = useMemo(() => new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.clone(liquidShader.uniforms),
     vertexShader: liquidShader.vertexShader,
@@ -102,7 +107,8 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   }, [activeIndex, prevIndex]);
 
   return (
-    <mesh ref={meshRef}>
+    // 【应用缩放】：给 mesh 加上计算好的 responsiveScale
+    <mesh ref={meshRef} scale={responsiveScale}>
       <planeGeometry args={[12, 7.5, 32, 32]} />
       <primitive object={material} />
     </mesh>
