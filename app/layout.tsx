@@ -7,6 +7,8 @@ import ConditionalFooter from '@/components/layout/ConditionalFooter'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
 import CustomCursor from '@/components/ui/CustomCursor'
+// 👉 1. 引入我们刚写的双生流体组件
+import FluidBackground from '@/components/ui/FluidBackground'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -35,6 +37,9 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
         <CustomCursor />
+        
+        {/* 👉 2. 放置流体引擎，它会在内页自动生效 */}
+        <FluidBackground />
         
         <Header />
         <main>{children}</main>

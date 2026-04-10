@@ -2029,3 +2029,73 @@ html[data-theme='light'] .haoye-dark-only { display: none !important; }
 
 .haoye-light-only { display: none; }
 html[data-theme='light'] .haoye-light-only { display: block !important; }
+/* ========================================================
+   ✨ THE DUAL FLUIDS: 准备层 (Step 1 注入)
+   ======================================================== */
+
+/* 1. 彻底清除所有内页的死板渐变背景，把背景控制权移交给底层的 WebGL 流体画布 */
+html[data-theme='light'] .haoye-images-page,
+html[data-theme='light'] .haoye-poems-page,
+html[data-theme='light'] .haoye-poem-detail-page,
+html[data-theme='light'] .haoye-about-page,
+html[data-theme='light'] .haoye-notes-page {
+  background: transparent !important;
+}
+
+/* 2. 让浅色模式的 body 停止绘制强烈的底色，防止挡住水流的焦散光影 */
+html[data-theme='light'] body {
+  background-color: var(--site-bg) !important;
+  background-image: none !important;
+}
+
+/* 3. Awwwards 级“毛玻璃力场” (The Glass Forcefield) 
+   作用：垫在核心文字区下方，让水流高光经过文字时自动失焦模糊，保证顶级阅读体验 */
+.glass-forcefield {
+  position: relative;
+  z-index: 10;
+  border-radius: 40px;
+  /* 扩大力场的覆盖范围，让文字周围有足够的呼吸空间 */
+  padding: 2rem;
+  margin: -2rem; 
+}
+
+/* 🌙 黑色主题：深渊里的极弱暗场（不需要模糊，只需要压暗高光） */
+html:not([data-theme='light']) .glass-forcefield {
+  background: radial-gradient(ellipse at center, rgba(13, 13, 13, 0.45) 0%, rgba(13, 13, 13, 0) 70%);
+  pointer-events: none; /* 让鼠标穿透，不影响你原本的交互 */
+}
+
+/* ☀️ 白色主题：宣纸水波上方的透镜毛玻璃（极其昂贵的光学质感） */
+html[data-theme='light'] .glass-forcefield {
+  /* 宣纸的底色微微泛起 */
+  background: radial-gradient(ellipse at center, rgba(247, 243, 236, 0.6) 0%, rgba(247, 243, 236, 0) 75%);
+  /* 物理级失焦模糊 */
+  backdrop-filter: blur(12px) saturate(110%);
+  -webkit-backdrop-filter: blur(12px) saturate(110%);
+  /* 使用 mask 平滑羽化边缘，绝对不能出现生硬的矩形边框！ */
+  mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 45%, transparent 85%);
+  pointer-events: none;
+}
+
+/* 确保文字本身在力场中保持正常的点击层级 */
+.glass-forcefield > * {
+  pointer-events: auto;
+}
+/* ========================================================
+   ✨ THE DUAL FLUIDS: 终极破壁补丁 (强制透明化内页)
+   ======================================================== */
+
+/* 彻底扒掉所有内页的实心渐变背景，让底层的 WebGL 水流透出来！ */
+html[data-theme='light'] .haoye-images-page,
+html[data-theme='light'] .haoye-poems-page,
+html[data-theme='light'] .haoye-poem-detail-page,
+html[data-theme='light'] .haoye-about-page,
+html[data-theme='light'] .haoye-notes-page,
+.haoye-images-page,
+.haoye-poems-page,
+.haoye-poem-detail-page,
+.haoye-about-page,
+.haoye-notes-page {
+  background: transparent !important;
+}
