@@ -119,6 +119,10 @@ export default function LiquidGallery({ items }: { items: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const isThrottled = useRef(false);
 
+  // 新增：记录手指触摸 X 和 Y 的起始点
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
   const imageUrls = useMemo(() => {
     return items.map((item) => {
       const cover = item.images?.[0];
@@ -130,28 +134,71 @@ export default function LiquidGallery({ items }: { items: any[] }) {
     }).filter(Boolean);
   }, [items]);
 
+  // 提取出切换上一张/下一张的通用函数
+  const triggerNext = () => {
+    if (currentIndex < imageUrls.length - 1) {
+      isThrottled.current = true;
+      setCurrentIndex(prev => prev + 1);
+      setTimeout(() => isThrottled.current = false, 1200);
+    }
+  };
+
+  const triggerPrev = () => {
+    if (currentIndex > 0) {
+      isThrottled.current = true;
+      setCurrentIndex(prev => prev - 1);
+      setTimeout(() => isThrottled.current = false, 1200);
+    }
+  };
+
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (isThrottled.current) return;
       const threshold = 30;
-      if (e.deltaY > threshold && currentIndex < imageUrls.length - 1) {
-        isThrottled.current = true;
-        setCurrentIndex(prev => prev + 1);
-        setTimeout(() => isThrottled.current = false, 1200);
-      } else if (e.deltaY < -threshold && currentIndex > 0) {
-        isThrottled.current = true;
-        setCurrentIndex(prev => prev - 1);
-        setTimeout(() => isThrottled.current = false, 1200);
+      if (e.deltaY > threshold) {
+        triggerNext();
+      } else if (e.deltaY < -threshold) {
+        triggerPrev();
       }
     };
     window.addEventListener('wheel', handleWheel, { passive: false });
     return () => window.removeEventListener('wheel', handleWheel);
   }, [currentIndex, imageUrls.length]);
 
+  // 手机端触摸事件逻辑
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isThrottled.current) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
+    const threshold = 40;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // 左右滑动
+      if (deltaX > threshold) triggerNext();
+      else if (deltaX < -threshold) triggerPrev();
+    } else {
+      // 上下滑动
+      if (deltaY > threshold) triggerNext();
+      else if (deltaY < -threshold) triggerPrev();
+    }
+  };
+
   if (imageUrls.length === 0) return null;
 
   return (
-    <div className="relative w-full h-screen bg-transparent overflow-hidden select-none">
+    <div 
+      className="relative w-full h-screen bg-transparent overflow-hidden select-none touch-none"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
         <React.Suspense fallback={null}>
           <LiquidPlane imageUrls={imageUrls} activeIndex={currentIndex} />
