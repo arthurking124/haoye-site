@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, PanInfo } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
 
 type ImageSeriesItem = {
@@ -16,10 +16,6 @@ type ImageSeriesItem = {
 export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const isThrottled = useRef(false)
-  
-  // 【新增】：同时记录 X 和 Y 的起始点
-  const touchStartX = useRef(0)
-  const touchStartY = useRef(0)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -51,42 +47,34 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
     else if (e.deltaY < -threshold) triggerPrev()
   }
 
-  // 【核心修复】：支持全方位滑动（兼顾左右横滑与上下滑动）
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-  
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  // 🏆 核心修复：引入 Framer Motion 工业级手势物理引擎
+  const handlePanEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (isThrottled.current) return
-    const touchEndX = e.changedTouches[0].clientX
-    const touchEndY = e.changedTouches[0].clientY
+    const { offset, velocity } = info
     
-    // 计算 X 轴和 Y 轴的移动差值
-    const deltaX = touchStartX.current - touchEndX
-    const deltaY = touchStartY.current - touchEndY
-    const threshold = 40
+    // 触发阈值调低，并且结合 "滑动初速度 (velocity)"。
+    // 只要距离超过 30px，或者滑动速度大于 200 (轻轻一扫)，立刻翻页！
+    const swipeThreshold = 30
+    const velocityThreshold = 200
 
-    // 判断用户是更偏向横向滑动还是纵向滑动
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      // 左右滑动逻辑：左滑下一张，右滑上一张
-      if (deltaX > threshold) triggerNext()
-      else if (deltaX < -threshold) triggerPrev()
+    if (Math.abs(offset.x) > Math.abs(offset.y)) {
+      // 左右横滑判定
+      if (offset.x < -swipeThreshold || velocity.x < -velocityThreshold) triggerNext()
+      else if (offset.x > swipeThreshold || velocity.x > velocityThreshold) triggerPrev()
     } else {
-      // 保持你原有的上下滑动逻辑
-      if (deltaY > threshold) triggerNext()
-      else if (deltaY < -threshold) triggerPrev()
+      // 上下纵滑判定
+      if (offset.y < -swipeThreshold || velocity.y < -velocityThreshold) triggerNext()
+      else if (offset.y > swipeThreshold || velocity.y > velocityThreshold) triggerPrev()
     }
   }
 
   if (!items || items.length === 0) return null
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none"
+    <motion.div // 🔥 这里把 div 升级成了 motion.div 以接管物理手势
+      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent touch-none select-none"
       onWheel={handleWheel}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
+      onPanEnd={handlePanEnd} // 🔥 绑定滑动物理侦测
     >
       {items.map((item, index) => {
         const distance = index - currentIndex
@@ -130,13 +118,12 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
               ease: [0.19, 1, 0.22, 1], 
             }}
           >
-            <Link href={href} className="group block">
+            <Link href={href} className="group block" draggable={false}>
               <div className="haoye-gallery-frame relative overflow-hidden rounded-[2px] transition-transform duration-[1.2s] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-[1.02]">
                 {cover ? (
                   <img
                     src={urlFor(cover).width(1600).quality(95).url()}
                     alt={item.title ?? `image-${index}`}
-                    // 【核心修复】：手机端采用 w-[85vw] 搭配 aspect-[4/3] 保持极佳构图，桌面端 md: 保持原有设定不动
                     className="w-[85vw] h-auto aspect-[4/3] max-w-[1000px] object-cover md:h-[65vh] md:w-[65vw] md:aspect-auto"
                     draggable={false} 
                   />
@@ -169,7 +156,7 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
         )
       })}
 
-      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 opacity-60">
+      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3 opacity-60 pointer-events-none">
         <div className="h-[40px] w-[1px] overflow-hidden bg-[color:var(--site-border-soft)]">
           <motion.div
             className="w-full bg-[color:var(--site-text-solid)]"
@@ -178,6 +165,6 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
