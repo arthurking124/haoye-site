@@ -16,11 +16,11 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
   const [showIndex, setShowIndex] = useState(false);
   const [hoveredItemIndex, setHoveredItemIndex] = useState<number | null>(null);
   
-  // 【顶级手术】：双重精准设备检测
-  const [isPhone, setIsPhone] = useState(false);   // 专管排版：是否为小屏手机
-  const [canHover, setCanHover] = useState(true);  // 专管交互：硬件是否有真实的鼠标指针
+  // 双重精准设备检测
+  const [isPhone, setIsPhone] = useState(false);
+  const [canHover, setCanHover] = useState(true);
 
-  // 鼠标跟随系统的物理弹簧 (仅电脑端起效)
+  // 鼠标跟随系统的物理弹簧
   const mouseX = useMotionValue(-1000);
   const mouseY = useMotionValue(-1000);
   const springX = useSpring(mouseX, { stiffness: 150, damping: 20 });
@@ -28,16 +28,13 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
 
   useEffect(() => {
     setMounted(true);
-    // 屏幕小于 768px 认定为手机，开启分屏雷达
     setIsPhone(window.innerWidth < 768);
-    // 硬件级检测：是否支持真实悬停 (剥离 iPad 和手机的触摸残留)
     setCanHover(window.matchMedia("(hover: hover)").matches);
     
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = ''; };
   }, []);
 
-  // 监听桌面端与触控板的鼠标移动
   useEffect(() => {
     if (!showIndex || !canHover) return;
     const handleMouseMove = (e: MouseEvent) => {
@@ -48,7 +45,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [showIndex, canHover, mouseX, mouseY]);
 
-  // 打开 Index 时，自动预加载当前图片预览
   useEffect(() => {
     if (showIndex) {
       setHoveredItemIndex(currentIndex);
@@ -85,15 +81,15 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
     }
   };
 
-  if (!mounted) return <main className="relative w-full h-screen overflow-hidden bg-transparent" />;
+  if (!mounted) return <main className="relative w-full h-[100dvh] overflow-hidden bg-transparent" />;
 
-  // 获取需要预览的图片 URL
   const hoveredImgUrl = hoveredItemIndex !== null && items[hoveredItemIndex]?.images?.[0] 
     ? urlFor(items[hoveredItemIndex].images[0]).width(800).quality(85).url() 
     : null;
 
   return (
-    <main className="relative w-full h-screen overflow-hidden bg-transparent">
+    // 🚨 修复 1：使用 h-[100dvh] 完美适配手机浏览器动态高度
+    <main className="relative w-full h-[100dvh] overflow-hidden bg-transparent">
       
       {/* 1. 底层画廊渲染区 */}
       <AnimatePresence mode="wait">
@@ -134,7 +130,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
             transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
             className="fixed inset-0 z-[100] bg-black/60 flex flex-col items-center justify-center pointer-events-auto"
           >
-            {/* 关闭按钮点击层 */}
             <div className="absolute inset-0 z-0" onClick={() => setShowIndex(false)} />
             
             {/* ================================================= */}
@@ -169,7 +164,7 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
             {/* ================================================= */}
             <div 
               className={`relative z-10 w-full max-w-[1000px] px-6 md:px-12 overflow-y-auto overscroll-contain no-scrollbar 
-                ${isPhone ? 'h-[65vh] pt-8 pb-24' : 'h-[75vh] py-0'}`}
+                ${isPhone ? 'h-[65vh] pt-8' : 'h-[75vh] py-0'}`}
               onScroll={isPhone ? handleMobileScroll : undefined}
             >
               
@@ -186,7 +181,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
               <ul className="flex flex-col gap-2">
                 {items.map((item, i) => {
                   const isActive = i === currentIndex;
-                  // 手机端依赖 JS 雷达扫描产生高亮视觉
                   const isHoveredVisual = isPhone ? i === hoveredItemIndex : false; 
 
                   return (
@@ -198,7 +192,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
                         }}
                         onMouseEnter={() => canHover && setHoveredItemIndex(i)}
                         onMouseLeave={() => canHover && setHoveredItemIndex(null)}
-                        // 🚨 物理隔离：只在真鼠标设备上注入 hover CSS，彻底消灭触摸残留
                         className={`group w-full flex items-center gap-6 py-4 border-b border-white/5 transition-all duration-500
                           ${isActive ? 'opacity-100' : 'opacity-40'} 
                           ${isHoveredVisual ? 'opacity-100 bg-white/5 px-4' : ''} 
@@ -222,6 +215,10 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
                   );
                 })}
               </ul>
+              
+              {/* 🚨 修复 2：【幽灵跑道】为最后几项提供滑入雷达区所需的底部空间 */}
+              {isPhone && <div className="w-full h-[45vh] flex-shrink-0 pointer-events-none" aria-hidden="true" />}
+              
             </div>
 
             {/* ================================================= */}
