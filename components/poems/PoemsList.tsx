@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import { motion, useScroll, useTransform, useSpring, useAnimationFrame, useMotionValue, animate, MotionValue } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
 
+// 👈 核心新增：创建支持动画且具备预加载能力的 MotionLink
+const MotionLink = motion.create ? motion.create(Link) : (motion as any)(Link)
+
 type PoemItem = {
   _id?: string
   title?: string
@@ -212,7 +215,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
   const rotateX = useMotionValue(0)
   const rotateY = useMotionValue(0)
   
-  // 1. 放宽事件类型兼容 PointerEvent
   const handleMouseMove = (e: React.MouseEvent | React.PointerEvent) => {
     if (!isHovered) return
     const cx = window.innerWidth / 2
@@ -229,7 +231,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     rotateY.set(0)
   }
 
-  // 2. 将原生的 handleClick 替换为 handleTap 专治移动端
   const handleTap = () => {
     if (plungeProgress.get() > 0) return 
     
@@ -245,7 +246,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     <motion.div
       style={{ x, y, scale, opacity, filter: blur, zIndex }}
       className="absolute flex items-center justify-center will-change-transform"
-      // 3. 核心拦截：手机触屏绝对不允许触发 Hover 飞入动画
       onPointerEnter={(e) => {
         if (e.pointerType === 'mouse') setIsHovered(true)
       }}
@@ -256,11 +256,13 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
         if (e.pointerType === 'mouse') handleMouseLeave()
       }}
     >
-      {/* 4. 核心手术：升级为 motion.a 并且使用 onTap 代替 onClick */}
-      <motion.a 
+      {/* 👈 核心手术 2：这里使用我们封装好的 MotionLink */}
+      <MotionLink 
         href={poem.slug?.current ? `/poems/${poem.slug.current}` : '/poems'} 
         onTap={handleTap}
-        onClick={(e) => e.preventDefault()} // 阻止默认的生硬跳转，将权力移交给 onTap 里的动画逻辑
+        // onClick 这里调用 preventDefault 阻止原生的瞬时跳跃，让 Link 仅作后台静默预获取使用，
+        // 真正在前台产生跳转的指令则交由 onTap 里面那个 700ms 后的 router.push() 执行。
+        onClick={(e: React.MouseEvent) => e.preventDefault()} 
         className="group block outline-none"
       >
         <motion.div 
@@ -291,7 +293,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
           </h2>
           
         </motion.div>
-      </motion.a>
+      </MotionLink>
     </motion.div>
   )
 }
