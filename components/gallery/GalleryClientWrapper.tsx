@@ -11,7 +11,7 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
   // --- 全局状态中心 ---
   const [viewMode, setViewMode] = useState<'z-axis' | 'liquid'>('z-axis');
   const [mounted, setMounted] = useState(false);
-  const [currentIndex, setCurrentIndex] = useState(0); // 提取出来的核心指针
+  const [currentIndex, setCurrentIndex] = useState(0); 
   
   // --- 索引 (HUD Index) 状态 ---
   const [showIndex, setShowIndex] = useState(false);
@@ -40,9 +40,15 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [showIndex, mouseX, mouseY]);
 
+  // 核心修复2：无论通过什么方式关闭索引，都强制清除残留的 Hover 记忆
+  useEffect(() => {
+    if (!showIndex) {
+      setHoveredItemIndex(null);
+    }
+  }, [showIndex]);
+
   if (!mounted) return <main className="relative w-full h-screen overflow-hidden bg-transparent" />;
 
-  // 获取悬停的图片 URL
   const hoveredImgUrl = hoveredItemIndex !== null && items[hoveredItemIndex]?.images?.[0] 
     ? urlFor(items[hoveredItemIndex].images[0]).width(600).quality(80).url() 
     : null;
@@ -105,7 +111,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
             {/* 关闭按钮点击层 */}
             <div className="absolute inset-0 z-0" onClick={() => setShowIndex(false)} />
             
-            {/* 列表容器 */}
             <div className="relative z-10 w-full max-w-[1000px] h-[75vh] px-6 md:px-12 overflow-y-auto overscroll-contain no-scrollbar">
               
               <div className="flex justify-between items-end mb-16 border-b border-white/20 pb-6">
@@ -126,7 +131,8 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
                       <button
                         onClick={() => {
                           setCurrentIndex(i);
-                          setShowIndex(false); // 瞬间跃迁，并关闭索引
+                          setHoveredItemIndex(null); // 核心修复3：点击跳转时也主动清空
+                          setShowIndex(false);
                         }}
                         onMouseEnter={() => setHoveredItemIndex(i)}
                         onMouseLeave={() => setHoveredItemIndex(null)}
@@ -160,13 +166,13 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
               </ul>
             </div>
 
-            {/* 鼠标跟随：悬浮微缩图 (仅电脑端显示) */}
+            {/* 核心修复1：使用 hidden md:block 物理阻断大图在手机上渲染，并提高 z-index 防止被覆盖 */}
             {hoveredImgUrl && (
               <motion.img
                 src={hoveredImgUrl}
                 alt="preview"
                 style={{ x: springX, y: springY }}
-                className="fixed top-0 left-0 w-[260px] aspect-[4/3] object-cover pointer-events-none z-50 rounded-sm shadow-2xl opacity-0 md:opacity-100 origin-center -translate-x-1/2 -translate-y-1/2"
+                className="hidden md:block fixed top-0 left-0 w-[260px] aspect-[4/3] object-cover pointer-events-none z-[110] rounded-sm shadow-2xl origin-center -translate-x-1/2 -translate-y-1/2"
                 initial={{ scale: 0.9, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
