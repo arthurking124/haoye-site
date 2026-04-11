@@ -166,12 +166,19 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
       .filter((lines: string[]) => lines.join('').trim().length > 0)
   }, [poem])
 
-  // 2. 交互判定
+  // 2. 交互判定与错峰挂载 (🔥 解决移动端进入卡顿的核心手术 🔥)
   useEffect(() => {
-    setMounted(true)
-    if (typeof window !== 'undefined' && window.matchMedia("(pointer: coarse)").matches) {
-      setTimeout(() => setIsCollapsed(true), 800)
-    }
+    // 给予手机浏览器 150ms 的黑屏喘息时间，让 Next.js 完成路由切换和内存回收
+    const mountTimer = setTimeout(() => {
+      setMounted(true) // 150ms 后，才开始往 DOM 里挂载这几百个粒子
+      
+      // 粒子就位后，如果是手机端，再等 800ms 触发向中心聚拢的震撼吸入效果
+      if (typeof window !== 'undefined' && window.matchMedia("(pointer: coarse)").matches) {
+        setTimeout(() => setIsCollapsed(true), 800)
+      }
+    }, 150)
+
+    return () => clearTimeout(mountTimer)
   }, [])
 
   useEffect(() => {
