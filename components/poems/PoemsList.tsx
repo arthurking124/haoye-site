@@ -15,6 +15,7 @@ type PoemItem = {
   coverImage?: any
 }
 
+// 定义 OrbitTextItem 的 Props 接口
 interface OrbitTextItemProps {
   poem: PoemItem
   index: number
@@ -32,7 +33,7 @@ function formatPoemDate(date?: string) {
 }
 
 // ==========================================
-// ☁️ 白色主题：原汁原味的散落手稿
+// ☁️ 白色主题：原汁原味的散落手稿 (绝对结界保护，一字未改)
 // ==========================================
 const SCATTER_ROTATIONS = [-3.5, 2.8, -1.8, 4.2, -2.5, 1.5]
 const SCATTER_X_OFFSETS = ['-6%', '10%', '-14%', '8%', '-4%', '12%']
@@ -148,6 +149,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
 
   const titleChars = useMemo(() => (poem.title || '未命名').split(''), [poem.title])
   
+  // 预计算炸裂坐标
   const charScatters = useMemo(() => {
     return titleChars.map(() => ({
       x: (Math.random() - 0.5) * 150, 
@@ -160,7 +162,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     hoverProgress.set(isHovered ? 1 : 0)
   }, [isHovered, hoverProgress])
 
-  // 🔥 核心修改区：只修复从眼前划过消散的坠入特效
+  // 核心物理引擎：星空轨道 + 生物呼吸 + 跃迁坠入
   useAnimationFrame((time) => {
     const rVal = index - springCamera.get()
     const hVal = hoverProgress.get()
@@ -192,17 +194,17 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     let orbitBlur = `blur(${Math.max(0, rVal - 2) * 2}px)`
     if (rVal < 0) orbitBlur = `blur(${Math.abs(rVal) * 8}px)` 
 
-    // --- ⬇️ 坠入消散引擎优化开始 ⬇️ ---
+    // --- ⬇️ 唯一修改区：坠入消散引擎的移动端降频保护 ⬇️ ---
     const isMobileDevice = typeof window !== 'undefined' && window.matchMedia("(pointer: coarse)").matches
 
     const currentX = orbitX * (1 - hVal) + 0 * hVal
     const currentY = orbitY * (1 - hVal) + 0 * hVal
     
-    // 1. 动态缩放控制：手机端点击后只放大10倍，PC端保持震撼的30倍
+    // 1. 降低放大倍率：手机端只放大10倍，电脑端保持30倍
     const plungeScaleBoost = isMobileDevice ? 10 : 30
     const currentScale = orbitScale * (1 - hVal) + 1.2 * hVal + pVal * plungeScaleBoost
     
-    // 2. 透明度控制：手机端让文字消失得更快，掩盖没有高斯模糊的瑕疵
+    // 2. 透明度消散控制：手机端让文字消失得更快
     let plungeOpacity = 1
     const opacityThreshold = isMobileDevice ? 0.3 : 0.6
     const opacityMultiplier = isMobileDevice ? 3.5 : 2.5
@@ -215,7 +217,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     scale.set(currentScale)
     opacity.set(currentOpacity)
     
-    // 3. 动态模糊控制：手机端禁用动态 blur (最耗性能)，直接置 0；PC端保留 pVal * 15 模糊效果
+    // 3. 强制关闭动态高斯模糊：手机端坠入时置为 0px 保护 GPU，电脑端保持震撼的 15px
     let finalBlur = 'blur(0px)'
     if (!isMobileDevice) {
       finalBlur = pVal > 0 ? `blur(${pVal * 15}px)` : (hVal > 0.5 ? 'blur(0px)' : orbitBlur)
@@ -223,7 +225,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
       finalBlur = pVal > 0 ? 'blur(0px)' : (hVal > 0.5 ? 'blur(0px)' : orbitBlur)
     }
     blur.set(finalBlur)
-    // --- ⬆️ 坠入消散引擎优化结束 ⬆️ ---
+    // --- ⬆️ 修改区结束 ⬆️ ---
     
     zIndex.set(isHovered || pVal > 0 ? 100 : Math.round(20 - rVal))
   })
@@ -231,8 +233,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
   const rotateX = useMotionValue(0)
   const rotateY = useMotionValue(0)
   
-  // 1. 放宽事件类型兼容 PointerEvent
-  const handleMouseMove = (e: React.MouseEvent | React.PointerEvent) => {
+  const handleMouseMove = (e: React.MouseEvent) => {
     if (!isHovered) return
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
@@ -248,8 +249,8 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     rotateY.set(0)
   }
 
-  // 2. 将原生的 handleClick 替换为 handleTap 专治移动端
-  const handleTap = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
     if (plungeProgress.get() > 0) return 
     
     animate(plungeProgress, 1, { duration: 0.8, ease: "easeIn" })
@@ -264,24 +265,12 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     <motion.div
       style={{ x, y, scale, opacity, filter: blur, zIndex }}
       className="absolute flex items-center justify-center will-change-transform"
-      // 3. 核心拦截：手机触屏绝对不允许触发 Hover 飞入动画
-      onPointerEnter={(e) => {
-        if (e.pointerType === 'mouse') setIsHovered(true)
-      }}
-      onPointerMove={(e) => {
-        if (e.pointerType === 'mouse') handleMouseMove(e)
-      }}
-      onPointerLeave={(e) => {
-        if (e.pointerType === 'mouse') handleMouseLeave()
-      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
-      {/* 完全保留你的 motion.a 和 e.preventDefault()，没有任何 Link 预加载逻辑 */}
-      <motion.a 
-        href={poem.slug?.current ? `/poems/${poem.slug.current}` : '/poems'} 
-        onTap={handleTap}
-        onClick={(e) => e.preventDefault()} 
-        className="group block outline-none"
-      >
+      <a href={poem.slug?.current ? `/poems/${poem.slug.current}` : '/poems'} onClick={handleClick} className="group block outline-none">
+        
         <motion.div 
           style={{ rotateX, rotateY, transformPerspective: 1000 }}
           className="relative flex flex-col items-center justify-center p-12 text-center"
@@ -291,6 +280,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
           </p>
           
           <h2 className="text-[32px] md:text-[44px] font-light text-[rgba(255,255,255,0.65)] transition-all duration-700 group-hover:text-white group-hover:tracking-[0.25em] group-hover:text-shadow-glow flex justify-center whitespace-nowrap">
+            {/* 核心修正：标注 char: string 和 i: number 解决 TS7006 报错 */}
             {titleChars.map((char: string, i: number) => {
               const charX = useTransform(plungeProgress, [0, 1], [0, charScatters[i].x])
               const charY = useTransform(plungeProgress, [0, 1], [0, charScatters[i].y])
@@ -310,7 +300,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
           </h2>
           
         </motion.div>
-      </motion.a>
+      </a>
     </motion.div>
   )
 }
