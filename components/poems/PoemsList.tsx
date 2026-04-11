@@ -15,7 +15,6 @@ type PoemItem = {
   coverImage?: any
 }
 
-// 定义 OrbitTextItem 的 Props 接口
 interface OrbitTextItemProps {
   poem: PoemItem
   index: number
@@ -33,7 +32,7 @@ function formatPoemDate(date?: string) {
 }
 
 // ==========================================
-// ☁️ 白色主题：原汁原味的散落手稿 (绝对结界保护，一字未改)
+// ☁️ 白色主题：原汁原味的散落手稿
 // ==========================================
 const SCATTER_ROTATIONS = [-3.5, 2.8, -1.8, 4.2, -2.5, 1.5]
 const SCATTER_X_OFFSETS = ['-6%', '10%', '-14%', '8%', '-4%', '12%']
@@ -149,7 +148,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
 
   const titleChars = useMemo(() => (poem.title || '未命名').split(''), [poem.title])
   
-  // 预计算炸裂坐标
   const charScatters = useMemo(() => {
     return titleChars.map(() => ({
       x: (Math.random() - 0.5) * 150, 
@@ -162,7 +160,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     hoverProgress.set(isHovered ? 1 : 0)
   }, [isHovered, hoverProgress])
 
-  // 核心物理引擎：星空轨道 + 生物呼吸 + 跃迁坠入
   useAnimationFrame((time) => {
     const rVal = index - springCamera.get()
     const hVal = hoverProgress.get()
@@ -215,7 +212,8 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
   const rotateX = useMotionValue(0)
   const rotateY = useMotionValue(0)
   
-  const handleMouseMove = (e: React.MouseEvent) => {
+  // 1. 放宽事件类型兼容 PointerEvent
+  const handleMouseMove = (e: React.MouseEvent | React.PointerEvent) => {
     if (!isHovered) return
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
@@ -231,8 +229,8 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     rotateY.set(0)
   }
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault()
+  // 2. 将原生的 handleClick 替换为 handleTap 专治移动端
+  const handleTap = () => {
     if (plungeProgress.get() > 0) return 
     
     animate(plungeProgress, 1, { duration: 0.8, ease: "easeIn" })
@@ -247,12 +245,24 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
     <motion.div
       style={{ x, y, scale, opacity, filter: blur, zIndex }}
       className="absolute flex items-center justify-center will-change-transform"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      // 3. 核心拦截：手机触屏绝对不允许触发 Hover 飞入动画
+      onPointerEnter={(e) => {
+        if (e.pointerType === 'mouse') setIsHovered(true)
+      }}
+      onPointerMove={(e) => {
+        if (e.pointerType === 'mouse') handleMouseMove(e)
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType === 'mouse') handleMouseLeave()
+      }}
     >
-      <a href={poem.slug?.current ? `/poems/${poem.slug.current}` : '/poems'} onClick={handleClick} className="group block outline-none">
-        
+      {/* 4. 核心手术：升级为 motion.a 并且使用 onTap 代替 onClick */}
+      <motion.a 
+        href={poem.slug?.current ? `/poems/${poem.slug.current}` : '/poems'} 
+        onTap={handleTap}
+        onClick={(e) => e.preventDefault()} // 阻止默认的生硬跳转，将权力移交给 onTap 里的动画逻辑
+        className="group block outline-none"
+      >
         <motion.div 
           style={{ rotateX, rotateY, transformPerspective: 1000 }}
           className="relative flex flex-col items-center justify-center p-12 text-center"
@@ -262,7 +272,6 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
           </p>
           
           <h2 className="text-[32px] md:text-[44px] font-light text-[rgba(255,255,255,0.65)] transition-all duration-700 group-hover:text-white group-hover:tracking-[0.25em] group-hover:text-shadow-glow flex justify-center whitespace-nowrap">
-            {/* 核心修正：标注 char: string 和 i: number 解决 TS7006 报错 */}
             {titleChars.map((char: string, i: number) => {
               const charX = useTransform(plungeProgress, [0, 1], [0, charScatters[i].x])
               const charY = useTransform(plungeProgress, [0, 1], [0, charScatters[i].y])
@@ -282,7 +291,7 @@ function OrbitTextItem({ poem, index, totalPoems, springCamera }: OrbitTextItemP
           </h2>
           
         </motion.div>
-      </a>
+      </motion.a>
     </motion.div>
   )
 }
