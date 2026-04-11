@@ -14,7 +14,6 @@ interface ParticleProps {
   mouseY: MotionValue<number>
   isCollapsed: boolean
   isTitle: boolean
-  isMobile: boolean // 👈 核心新增：移动端标识
 }
 
 interface PoemData {
@@ -29,7 +28,7 @@ interface PoemData {
 // ==========================================
 // 🌌 核心单字粒子引擎：萤火虫与呼吸
 // ==========================================
-function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle, isMobile }: ParticleProps) {
+function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle }: ParticleProps) {
   // 1. 预计算随机散落点
   const scatterX = useMemo(() => (Math.random() - 0.5) * (typeof window !== 'undefined' ? window.innerWidth * 1.5 : 1000), [])
   const scatterY = useMemo(() => (Math.random() - 0.5) * (typeof window !== 'undefined' ? window.innerHeight * 1.5 : 1000), [])
@@ -98,21 +97,6 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle, isMob
       return // 如果已经成诗，跳过下面的散落逻辑
     }
 
-    // 🌟 【移动端专属高性能通道】绝对跳过 getBoundingClientRect，直接算数学飘动
-    if (isMobile) {
-      const driftX = Math.sin(time / 1500 + randomOffset) * 15
-      const driftY = Math.cos(time / 1800 + randomOffset) * 15
-      x.set(scatterX + driftX)
-      y.set(scatterY + driftY)
-      scale.set(1)
-
-      const twinkle = (Math.sin(time / twinkleSpeed + randomOffset) + 1) / 2
-      opacity.set(0.08 + twinkle * 0.42)
-      textShadow.set(`0 0 ${4 + twinkle * 10}px rgba(255, 255, 255, ${0.1 + twinkle * 0.5})`)
-      return // 手机端到此为止，保护 CPU
-    }
-
-    // 【阶段二 & 一：PC 端鼠标靠近探测与无人打扰时的萤火虫】
     if (!ref.current) return
     const rect = ref.current.getBoundingClientRect()
     const charX = rect.left + rect.width / 2
@@ -125,7 +109,7 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle, isMob
     const dist = Math.sqrt(dx * dx + dy * dy)
 
     if (dist < 250) {
-      // 阶段二：鼠标靠近时骤亮
+      // 【阶段二：鼠标靠近时骤亮】
       const pull = (250 - dist) / 250
       x.set(scatterX + dx * pull * 0.35)
       y.set(scatterY + dy * pull * 0.35)
@@ -134,15 +118,16 @@ function PoemParticle({ char, index, mouseX, mouseY, isCollapsed, isTitle, isMob
       scale.set(1 + pull * 0.2)
       textShadow.set(`0 0 ${pull * 25}px rgba(255, 255, 255, ${pull * 0.9})`)
     } else {
-      // 阶段一：无人打扰时的萤火虫
+      // 【阶段一：无人打扰时的萤火虫】
       const driftX = Math.sin(time / 1500 + randomOffset) * 15
       const driftY = Math.cos(time / 1800 + randomOffset) * 15
       x.set(scatterX + driftX)
       y.set(scatterY + driftY)
       scale.set(1)
 
+      // 独立的闪烁：每个字根据自己的 randomOffset 和 twinkleSpeed 自由明暗
       const twinkle = (Math.sin(time / twinkleSpeed + randomOffset) + 1) / 2
-      opacity.set(0.08 + twinkle * 0.42)
+      opacity.set(0.08 + twinkle * 0.42) // 基础亮度极低，亮起时明显
       textShadow.set(`0 0 ${4 + twinkle * 10}px rgba(255, 255, 255, ${0.1 + twinkle * 0.5})`)
     }
   })
@@ -181,23 +166,12 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
       .filter((lines: string[]) => lines.join('').trim().length > 0)
   }, [poem])
 
-  // 👈 核心新增：全局判断设备环境，并分发给所有粒子
-  const isMobile = useMemo(() => {
-    if (typeof window === 'undefined') return false
-    return window.matchMedia("(pointer: coarse)").matches
-  }, [])
-
-  // 2. 交互判定与错峰挂载
+  // 2. 交互判定
   useEffect(() => {
-    const mountTimer = setTimeout(() => {
-      setMounted(true) 
-      
-      if (typeof window !== 'undefined' && window.matchMedia("(pointer: coarse)").matches) {
-        setTimeout(() => setIsCollapsed(true), 800)
-      }
-    }, 150)
-
-    return () => clearTimeout(mountTimer)
+    setMounted(true)
+    if (typeof window !== 'undefined' && window.matchMedia("(pointer: coarse)").matches) {
+      setTimeout(() => setIsCollapsed(true), 800)
+    }
   }, [])
 
   useEffect(() => {
@@ -261,7 +235,6 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
                 mouseY={mouseY}
                 isCollapsed={isCollapsed}
                 isTitle={true}
-                isMobile={isMobile} // 👈 传递状态
               />
             )
           })}
@@ -281,14 +254,13 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
                   mouseY={mouseY}
                   isCollapsed={isCollapsed}
                   isTitle={false} 
-                  isMobile={isMobile} // 👈 传递状态
                 />
               )
             })}
           </p>
         )}
 
-        {/* ================= 正文区 ================= */}
+        {/* ================= 正文区 (节 -> 行 -> 字) ================= */}
         <div className="flex flex-col items-center w-full">
           {stanzas.map((lines: string[], sIdx: number) => (
             <div key={`stanza-${sIdx}`} className="mb-14 flex flex-col items-center w-full">
@@ -310,7 +282,6 @@ export default function DarkPoemInteractive({ poem }: { poem: PoemData }) {
                           mouseY={mouseY}
                           isCollapsed={isCollapsed}
                           isTitle={false}
-                          isMobile={isMobile} // 👈 传递状态
                         />
                       )
                     })
