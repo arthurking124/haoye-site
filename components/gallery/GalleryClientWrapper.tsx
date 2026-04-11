@@ -130,15 +130,28 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
                         }}
                         onMouseEnter={() => setHoveredItemIndex(i)}
                         onMouseLeave={() => setHoveredItemIndex(null)}
-                        className={`group w-full flex items-center gap-6 py-4 border-b border-white/5 transition-all duration-500 hover:px-4 hover:bg-white/5 ${isActive ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
+                        className={`group w-full flex items-center gap-3 md:gap-6 py-4 border-b border-white/5 transition-all duration-500 md:hover:px-4 hover:bg-white/5 ${isActive ? 'opacity-100' : 'opacity-40 hover:opacity-100'}`}
                       >
-                        <span className="text-[10px] md:text-xs font-mono tracking-widest w-8 text-left">
+                        <span className="text-[10px] md:text-xs font-mono tracking-widest w-6 md:w-8 text-left">
                           {String(i + 1).padStart(2, '0')}
                         </span>
-                        <span className="w-12 h-[1px] bg-white/20 group-hover:bg-white/60 transition-colors" />
-                        <h4 className="text-xl md:text-3xl font-light tracking-[0.2em] uppercase text-left flex-1">
+                        <span className="w-8 md:w-12 h-[1px] bg-white/20 group-hover:bg-white/60 transition-colors" />
+                        
+                        <h4 className="text-xl md:text-3xl font-light tracking-[0.2em] uppercase text-left flex-1 truncate">
                           {item.title ?? '未命名'}
                         </h4>
+
+                        {/* 移动端专属缩略图（仅在手机端 block，电脑端 hidden） */}
+                        <div className="block md:hidden w-16 h-10 ml-2 flex-shrink-0 overflow-hidden rounded-[2px] opacity-80">
+                          {item.images?.[0] && (
+                            <img 
+                              src={urlFor(item.images[0]).width(200).quality(80).url()} 
+                              alt={item.title ?? 'preview'}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
+
                         {isActive && <span className="text-[10px] font-mono tracking-widest hidden md:block">CURRENT</span>}
                       </button>
                     </li>
