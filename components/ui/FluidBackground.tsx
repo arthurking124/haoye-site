@@ -34,6 +34,8 @@ export default function FluidBackground() {
       uniform vec2 u_mouse;
       uniform float u_scrollVelocity;
       uniform float u_theme;
+      // 【新增】：接收设备状态
+      uniform float u_isMobile; 
 
       // --- 数学噪声引擎 ---
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
@@ -119,8 +121,9 @@ export default function FluidBackground() {
         float specular = pow(max(dot(normal, halfVector), 0.0), mix(80.0, 100.0, u_theme)); 
 
         // 🌙 深渊活水 
-        vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035); 
-        vec3 darkSkyReflection = vec3(0.12, 0.15, 0.18); 
+        // 【核心修改】：通过 u_isMobile 判断，在手机端将水底亮度提亮 0.025，天空反射提亮 0.06
+        vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035) + vec3(0.025 * u_isMobile); 
+        vec3 darkSkyReflection = vec3(0.12, 0.15, 0.18) + vec3(0.06 * u_isMobile); 
         vec3 finalDark = mix(darkWaterDepth, darkSkyReflection, fresnel) + (specular * 0.2);
 
         // ☀️ 晨曦清泉 
@@ -167,6 +170,8 @@ export default function FluidBackground() {
     const uMouse = gl.getUniformLocation(program, 'u_mouse')
     const uScrollVelocity = gl.getUniformLocation(program, 'u_scrollVelocity')
     const uTheme = gl.getUniformLocation(program, 'u_theme')
+    // 【新增】：绑定 u_isMobile 地址
+    const uIsMobile = gl.getUniformLocation(program, 'u_isMobile')
 
     let animationFrameId: number
     const startTime = Date.now()
@@ -222,6 +227,10 @@ export default function FluidBackground() {
       gl.uniform2f(uMouse, currentMouseX, currentMouseY)
       gl.uniform1f(uScrollVelocity, currentScrollVelocity)
       gl.uniform1f(uTheme, currentTheme)
+
+      // 【新增】：实时检测是否为移动端（以 768px 为界），1.0 为是，0.0 为否，传递给着色器补偿亮度
+      const isMobile = window.innerWidth < 768 ? 1.0 : 0.0;
+      gl.uniform1f(uIsMobile, isMobile);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
       animationFrameId = requestAnimationFrame(render)
