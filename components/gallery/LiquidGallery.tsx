@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber'; // 【引入 useThree】
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,11 +35,9 @@ const liquidShader = {
     void main() {
       vec2 uv = vUv;
       float d = distance(uv, uMouse);
-      // 计算水波纹
       float ripple = sin(d * 15.0 - uTime * 3.0) * (0.05 * uVelo);
       vec2 refractedUv = uv + ripple;
       
-      // 全彩 RGB 色散 (Chromatic Aberration)
       float r = texture2D(uTexture, refractedUv + ripple * 0.8).r;
       float g = texture2D(uTexture, refractedUv).g;
       float b = texture2D(uTexture, refractedUv - ripple * 0.8).b;
@@ -51,7 +49,6 @@ const liquidShader = {
       vec4 color1 = vec4(rP, gP, bP, 1.0);
 
       vec4 finalColor = mix(color1, color2, smoothstep(0.0, 1.0, uProgress));
-      // 光流照亮效果
       float light = smoothstep(0.4, 0.0, d) * 0.2 * uVelo;
       gl_FragColor = finalColor + vec4(vec3(light), 0.0);
     }
@@ -66,9 +63,7 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   const mouse = useRef(new THREE.Vector2(0.5, 0.5));
   const velocity = useRef(0);
 
-  // 【核心修复】：动态获取视口宽度，为手机端计算安全缩放比例
   const { viewport } = useThree();
-  // 12 是我们在 planeGeometry 里硬编码的宽。如果屏幕比 13 小，说明是移动端，我们要缩小它
   const responsiveScale = viewport.width < 13 ? (viewport.width / 13) * 0.95 : 1;
 
   const material = useMemo(() => new THREE.ShaderMaterial({
@@ -107,7 +102,6 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   }, [activeIndex, prevIndex]);
 
   return (
-    // 【应用缩放】：给 mesh 加上计算好的 responsiveScale
     <mesh ref={meshRef} scale={responsiveScale}>
       <planeGeometry args={[12, 7.5, 32, 32]} />
       <primitive object={material} />
@@ -115,11 +109,16 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   );
 }
 
-export default function LiquidGallery({ items }: { items: any[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const isThrottled = useRef(false);
+// 接收父组件(GalleryClientWrapper)下发的状态和触发事件
+interface Props {
+  items: any[];
+  currentIndex: number;
+  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
+  onOpenIndex: () => void;
+}
 
-  // 新增：记录手指触摸 X 和 Y 的起始点
+export default function LiquidGallery({ items, currentIndex, setCurrentIndex, onOpenIndex }: Props) {
+  const isThrottled = useRef(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
@@ -134,7 +133,6 @@ export default function LiquidGallery({ items }: { items: any[] }) {
     }).filter(Boolean);
   }, [items]);
 
-  // 提取出切换上一张/下一张的通用函数
   const triggerNext = () => {
     if (currentIndex < imageUrls.length - 1) {
       isThrottled.current = true;
@@ -165,7 +163,6 @@ export default function LiquidGallery({ items }: { items: any[] }) {
     return () => window.removeEventListener('wheel', handleWheel);
   }, [currentIndex, imageUrls.length]);
 
-  // 手机端触摸事件逻辑
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
@@ -175,17 +172,14 @@ export default function LiquidGallery({ items }: { items: any[] }) {
     if (isThrottled.current) return;
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
-    
     const deltaX = touchStartX.current - touchEndX;
     const deltaY = touchStartY.current - touchEndY;
     const threshold = 40;
 
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      // 左右滑动
       if (deltaX > threshold) triggerNext();
       else if (deltaX < -threshold) triggerPrev();
     } else {
-      // 上下滑动
       if (deltaY > threshold) triggerNext();
       else if (deltaY < -threshold) triggerPrev();
     }
@@ -214,9 +208,15 @@ export default function LiquidGallery({ items }: { items: any[] }) {
             transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
             className="text-center"
           >
-            <p className="text-[10px] tracking-[0.5em] text-[var(--site-faint)] mb-4 font-mono">
-              {String(currentIndex + 1).padStart(2, '0')} / {String(imageUrls.length).padStart(2, '0')}
-            </p>
+            {/* 优雅的 INDEX 触发器 */}
+            <button 
+              onClick={onOpenIndex}
+              className="pointer-events-auto text-[10px] tracking-[0.5em] text-[var(--site-faint)] mb-4 font-mono hover:text-white transition-colors cursor-pointer outline-none group/idx flex items-center justify-center gap-3 w-full"
+            >
+              <span className="opacity-50 group-hover/idx:opacity-100 transition-opacity">[ INDEX ]</span>
+              <span>{String(currentIndex + 1).padStart(2, '0')} / {String(imageUrls.length).padStart(2, '0')}</span>
+            </button>
+
             <h2 className="text-3xl font-light tracking-[0.2em] text-[var(--site-text-solid)] uppercase drop-shadow-xl">
               {items[currentIndex]?.title}
             </h2>

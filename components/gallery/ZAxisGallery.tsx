@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
 
 type ImageSeriesItem = {
@@ -13,19 +13,22 @@ type ImageSeriesItem = {
   images?: any[]
 }
 
-export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
-  const [currentIndex, setCurrentIndex] = useState(0)
+// 接收父组件(GalleryClientWrapper)下发的状态和触发事件
+interface Props {
+  items: ImageSeriesItem[];
+  currentIndex: number;
+  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
+  onOpenIndex: () => void;
+}
+
+export default function ZAxisGallery({ items, currentIndex, setCurrentIndex, onOpenIndex }: Props) {
   const isThrottled = useRef(false)
-  
-  // 【新增】：同时记录 X 和 Y 的起始点
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
+    return () => { document.body.style.overflow = '' }
   }, [])
 
   const triggerNext = () => {
@@ -51,7 +54,6 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
     else if (e.deltaY < -threshold) triggerPrev()
   }
 
-  // 【核心修复】：支持全方位滑动（兼顾左右横滑与上下滑动）
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchStartY.current = e.touches[0].clientY
@@ -61,19 +63,14 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
     if (isThrottled.current) return
     const touchEndX = e.changedTouches[0].clientX
     const touchEndY = e.changedTouches[0].clientY
-    
-    // 计算 X 轴和 Y 轴的移动差值
     const deltaX = touchStartX.current - touchEndX
     const deltaY = touchStartY.current - touchEndY
     const threshold = 40
 
-    // 判断用户是更偏向横向滑动还是纵向滑动
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      // 左右滑动逻辑：左滑下一张，右滑上一张
       if (deltaX > threshold) triggerNext()
       else if (deltaX < -threshold) triggerPrev()
     } else {
-      // 保持你原有的上下滑动逻辑
       if (deltaY > threshold) triggerNext()
       else if (deltaY < -threshold) triggerPrev()
     }
@@ -125,10 +122,7 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
               filter: blur,
               pointerEvents: isActive ? 'auto' : 'none',
             }}
-            transition={{
-              duration: 1.4,
-              ease: [0.19, 1, 0.22, 1], 
-            }}
+            transition={{ duration: 1.4, ease: [0.19, 1, 0.22, 1] }}
           >
             <Link href={href} className="group block">
               <div className="haoye-gallery-frame relative overflow-hidden rounded-[2px] transition-transform duration-[1.2s] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover:scale-[1.02]">
@@ -136,7 +130,6 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
                   <img
                     src={urlFor(cover).width(1600).quality(95).url()}
                     alt={item.title ?? `image-${index}`}
-                    // 【核心修复】：手机端采用 w-[85vw] 搭配 aspect-[4/3] 保持极佳构图，桌面端 md: 保持原有设定不动
                     className="w-[85vw] h-auto aspect-[4/3] max-w-[1000px] object-cover md:h-[65vh] md:w-[65vw] md:aspect-auto"
                     draggable={false} 
                   />
@@ -153,9 +146,15 @@ export default function ZAxisGallery({ items }: { items: ImageSeriesItem[] }) {
               animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 20 }}
               transition={{ duration: 0.8, delay: isActive ? 0.15 : 0 }}
             >
-              <p className="text-[10px] tracking-[0.3em] text-[var(--site-faint)]">
-                {String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}
-              </p>
+              {/* 优雅的 INDEX 触发器 */}
+              <button 
+                onClick={onOpenIndex}
+                className="text-[10px] tracking-[0.3em] text-[var(--site-faint)] hover:text-white transition-colors outline-none cursor-pointer group/idx flex items-center gap-3"
+              >
+                <span className="opacity-50 group-hover/idx:opacity-100 transition-opacity">[ INDEX ]</span>
+                <span>{String(index + 1).padStart(2, '0')} / {String(items.length).padStart(2, '0')}</span>
+              </button>
+              
               <h2 className="mt-5 text-[22px] font-light tracking-widest text-[var(--site-text-solid)] md:text-[32px]">
                 {item.title ?? '未命名'}
               </h2>
