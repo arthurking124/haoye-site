@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring, useAnimationFrame, useVelocity } from 'framer-motion'
+import { PortableText } from '@portabletext/react'
 
 // =========================================================
 // 🌑 黑色主题：Z 轴深海沉底瀑布流
@@ -72,7 +73,7 @@ function DarkAbyssNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
 
 
 // =========================================================
-// ☁️ 白色主题：包含“墨水凝结”与动态物理结界的水世界
+// ☁️ 白色主题：包含“墨水凝结”与精准碰撞箱的水世界
 // =========================================================
 function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constraintsRef, isMobile }: any) {
   const isDragging = useRef(false)
@@ -105,6 +106,7 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
   const repelVy = useRef(0)
 
   const isHovered = hoveredId === note._id
+
   const rippleScale = useSpring(0, { stiffness: 50, damping: 15, mass: 1 })
 
   const pokeWater = () => {
@@ -153,7 +155,7 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       onMouseLeave={() => !isMobile && setHoveredId(null)}
       onPointerDown={() => isMobile && setHoveredId(note._id)}
       
-      // 🚀 核心修复：如果 constraintsRef 为 false，解除限制以防止强制吸附
+      // 🚀 接收动态边界：如果水箱不就绪(false)，解除限制以防止强制吸附归零
       dragConstraints={constraintsRef} 
       dragElastic={0.2} 
       dragTransition={{ power: 0.3, timeConstant: 300 }}
@@ -216,24 +218,21 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
   const gyroForce = useRef({ x: 0, y: 0 })
   const tankRef = useRef<HTMLDivElement>(null)
   
-  // 状态：水箱是否完全就绪（可见且有尺寸）
+  // 🚀 新增：水箱体积传感器
   const [tankReady, setTankReady] = useState(false)
 
   useEffect(() => {
     if (!tankRef.current) return
-    
-    const checkSize = () => {
-      if (tankRef.current && tankRef.current.offsetWidth > 0) {
+    // 监听水箱的真实尺寸
+    const observer = new ResizeObserver(([entry]) => {
+      // 只有当宽度大于 0 时（也就是没有被 display:none 隐藏时），才宣告水箱准备就绪
+      if (entry.contentRect.width > 0) {
         setTankReady(true)
       } else {
         setTankReady(false)
       }
-    }
-
-    const observer = new ResizeObserver(checkSize)
+    })
     observer.observe(tankRef.current)
-    checkSize() // 初始检查
-    
     return () => observer.disconnect()
   }, [])
 
@@ -252,14 +251,12 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
     <div ref={tankRef} className="haoye-light-only fixed inset-0 w-full h-[100svh] overflow-hidden bg-transparent touch-none z-10">
       {notes.map((note, index) => (
         <GlassShard 
-          // 🚀 核心修复：在这里加入一个包含 tankReady 的 key
-          // 这样当主题切换、tankReady 改变时，卡片会强制卸载重载，消除之前的物理残留
-          key={`light-shard-${note._id}-${tankReady}`} 
+          key={`light-${note._id}`} 
           note={note} index={index} 
           hoveredId={hoveredId} 
           setHoveredId={setHoveredId}
           gyroForce={gyroForce}
-          // 只有当 Ready 时才传入约束，否则传入 false 彻底释放边界
+          // 🚀 核心修复：如果水箱处于隐藏状态(false)，解除边界绑定，防止卡片互相吸附
           constraintsRef={tankReady ? tankRef : false} 
           isMobile={isMobile}
         />
@@ -284,9 +281,8 @@ export default function NotesInteractive({ notes }: { notes: any[] }) {
 
   return (
     <>
-      {/* 这里的布局 key 能够确保在主题切换时，React 能够清晰区分两个不同的渲染树 */}
-      <div key="dark-abyss-container"><DarkAbyssNotes notes={notes} isMobile={isMobile} /></div>
-      <div key="light-tank-container"><LightTankNotes notes={notes} isMobile={isMobile} /></div>
+      <DarkAbyssNotes notes={notes} isMobile={isMobile} />
+      <LightTankNotes notes={notes} isMobile={isMobile} />
     </>
   )
 }
