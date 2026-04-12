@@ -272,7 +272,7 @@ function LightPaper({ about }: { about: any }) {
   const glareBackground = useMotionTemplate`radial-gradient(circle at ${glareX}px ${glareY}px, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 50%)`
 
   useAnimationFrame(() => {
-    if (shatterState === 'idle') shakeAccumulator.current *= 0.8 
+    if (shatterState === 'idle') shakeAccumulator.current *= 0.96
   })
 
   const triggerShatterSequence = async () => {
@@ -339,7 +339,7 @@ function LightPaper({ about }: { about: any }) {
         onPointerLeave={() => { if(!isMobile) { setIsHovered(false); shakeAccumulator.current = 0; } }}
         onClick={() => {
           if (isMobile && shatterState === 'idle') {
-            shakeAccumulator.current += 180; // 连点 3 次即可积攒到 500 引爆彩蛋！
+            shakeAccumulator.current += 260; // 连点 3 次即可积攒到 500 引爆彩蛋！
             if (shakeAccumulator.current > 500) triggerShatterSequence();
           }
         }}
