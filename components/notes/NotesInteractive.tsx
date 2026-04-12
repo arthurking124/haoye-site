@@ -13,7 +13,11 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
   const pseudo3 = ((index + 1) * 21.3) % 1
 
   const depth = pseudo1 * 0.8 + 0.1 
-  const randomLeft = 20 + pseudo2 * 60; 
+  
+  // 🚀 核心修复：手机端自适应边界收缩
+  // 电脑端在 20%~80% 之间大幅度散落；手机端强制收拢到中心，仅允许 ±5% 的微小错落避免死板，绝不切边！
+  const randomLeft = isMobile ? (50 + (pseudo2 - 0.5) * 10) : (20 + pseudo2 * 60); 
+  
   const absoluteTop = `${index * 45 + 15}vh`; 
 
   const baseScale = 1 - depth * 0.4
@@ -35,7 +39,8 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
   return (
     <motion.div
       style={{ position: 'absolute', top: absoluteTop, left: `${randomLeft}%`, x: '-50%', y: parallaxOffset, zIndex: isHovered ? 100 : Math.floor((1 - depth) * 20) }}
-      className="w-[90vw] md:w-full max-w-[420px] will-change-transform"
+      // 🚀 手机端宽度从 90vw 收紧到 85vw，留出绝对安全的左右呼吸边距
+      className="w-[85vw] md:w-full max-w-[420px] will-change-transform"
     >
       <motion.div animate={{ y: [-10, 10, -10], rotateZ: [-1, 1, -1] }} transition={{ repeat: Infinity, duration: 6 + depth * 5, ease: "easeInOut", delay: pseudo3 * 3 }}>
         <motion.div
@@ -73,7 +78,7 @@ function DarkAbyssNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
 
 
 // =========================================================
-// ☁️ 白色主题：包含“墨水凝结”文本物理引擎的自由水箱
+// ☁️ 白色主题：绝对自由、永不停息的活水箱 (原封不动保持完美)
 // =========================================================
 function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constraintsRef, isMobile }: any) {
   const isDragging = useRef(false)
@@ -107,16 +112,11 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
 
   const isHovered = hoveredId === note._id
 
-  // 🚀 核心：水波扭曲的物理弹簧 (Ripple Scale)
-  // 当数值为 0 时，文字完美清晰。数值越大，扭曲越严重。
   const rippleScale = useSpring(0, { stiffness: 50, damping: 15, mass: 1 })
 
-  // 模拟“手指拨动水面”的物理冲击
   const pokeWater = () => {
-    if (isMobile) return // 手机端由于触摸逻辑不同，保持轻微体验
-    // 瞬间跳跃到一个高强度的扭曲值（冲击水面）
+    if (isMobile) return 
     rippleScale.jump(35) 
-    // 然后利用弹簧物理，平滑、缓慢地凝结回 0（恢复平静）
     rippleScale.set(0)
   }
 
@@ -143,7 +143,6 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
     }
   })
 
-  // 为每个碎片生成独一无二的滤镜 ID，防止全局污染
   const filterId = `ink-ripple-${note._id}`
 
   return (
@@ -151,8 +150,6 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       drag
       onDragStart={() => { isDragging.current = true; setHoveredId(note._id); pokeWater(); }}
       onDragEnd={() => { isDragging.current = false; if (isMobile) setHoveredId(null); }}
-      
-      // 🚀 当鼠标切入时，触发“水面被刺破”的荡漾反馈
       onMouseEnter={() => {
         if (!isMobile) {
           setHoveredId(note._id);
@@ -175,16 +172,13 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       }}
       className="w-[260px] md:w-[320px] will-change-transform cursor-grab active:cursor-grabbing"
     >
-      {/* 🚀 隐藏的 SVG 滤镜定义：专为此卡片提供的水波纹引擎 */}
       <svg className="hidden absolute pointer-events-none w-0 h-0">
         <filter id={filterId} colorInterpolationFilters="sRGB">
-          {/* baseFrequency=0.015 确保了是昂贵的大面积水波，而不是廉价的雪花噪点 */}
           <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
-          {/* 将 Framer Motion 的物理弹簧直接挂载到滤镜的 scale 属性上 */}
           <motion.feDisplacementMap 
             in="SourceGraphic" 
             in2="noise" 
-            scale={rippleScale as any} // 魔法发生的地方：动态控制形变强度
+            scale={rippleScale as any} 
             xChannelSelector="R" 
             yChannelSelector="G" 
           />
@@ -210,7 +204,6 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
             <span className="font-mono text-[10px] tracking-[0.2em] uppercase">{note.kind || '念'} {note.name ? `// ${note.name}` : ''}</span>
           </div>
           
-          {/* 🚀 重点：把 SVG 水波滤镜应用到文字容器上 */}
           <div 
             style={{ filter: `url(#${filterId})` }}
             className="opacity-90 text-[14px] leading-[2.4] tracking-wide text-black/80 pointer-events-none whitespace-pre-wrap"
