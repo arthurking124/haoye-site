@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSpring, useAnimationFrame, useVelocity } from 'framer-motion'
-import { PortableText } from '@portabletext/react'
 
 // =========================================================
 // 🌑 黑色主题：Z 轴深海沉底瀑布流
@@ -13,11 +12,7 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
   const pseudo3 = ((index + 1) * 21.3) % 1
 
   const depth = pseudo1 * 0.8 + 0.1 
-  
-  // 🚀 核心修复：手机端自适应边界收缩
-  // 电脑端在 20%~80% 之间大幅度散落；手机端强制收拢到中心，仅允许 ±5% 的微小错落避免死板，绝不切边！
-  const randomLeft = isMobile ? (50 + (pseudo2 - 0.5) * 10) : (20 + pseudo2 * 60); 
-  
+  const randomLeft = 20 + pseudo2 * 60; 
   const absoluteTop = `${index * 45 + 15}vh`; 
 
   const baseScale = 1 - depth * 0.4
@@ -39,8 +34,7 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
   return (
     <motion.div
       style={{ position: 'absolute', top: absoluteTop, left: `${randomLeft}%`, x: '-50%', y: parallaxOffset, zIndex: isHovered ? 100 : Math.floor((1 - depth) * 20) }}
-      // 🚀 手机端宽度从 90vw 收紧到 85vw，留出绝对安全的左右呼吸边距
-      className="w-[85vw] md:w-full max-w-[420px] will-change-transform"
+      className="w-[90vw] md:w-full max-w-[420px] will-change-transform"
     >
       <motion.div animate={{ y: [-10, 10, -10], rotateZ: [-1, 1, -1] }} transition={{ repeat: Infinity, duration: 6 + depth * 5, ease: "easeInOut", delay: pseudo3 * 3 }}>
         <motion.div
@@ -78,7 +72,7 @@ function DarkAbyssNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
 
 
 // =========================================================
-// ☁️ 白色主题：绝对自由、永不停息的活水箱 (原封不动保持完美)
+// ☁️ 白色主题：包含“墨水凝结”与动态物理结界的水世界
 // =========================================================
 function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constraintsRef, isMobile }: any) {
   const isDragging = useRef(false)
@@ -111,7 +105,6 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
   const repelVy = useRef(0)
 
   const isHovered = hoveredId === note._id
-
   const rippleScale = useSpring(0, { stiffness: 50, damping: 15, mass: 1 })
 
   const pokeWater = () => {
@@ -150,6 +143,7 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       drag
       onDragStart={() => { isDragging.current = true; setHoveredId(note._id); pokeWater(); }}
       onDragEnd={() => { isDragging.current = false; if (isMobile) setHoveredId(null); }}
+      
       onMouseEnter={() => {
         if (!isMobile) {
           setHoveredId(note._id);
@@ -159,6 +153,7 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       onMouseLeave={() => !isMobile && setHoveredId(null)}
       onPointerDown={() => isMobile && setHoveredId(note._id)}
       
+      // 🚀 核心修复：如果 constraintsRef 为 false，解除限制以防止强制吸附
       dragConstraints={constraintsRef} 
       dragElastic={0.2} 
       dragTransition={{ power: 0.3, timeConstant: 300 }}
@@ -220,6 +215,27 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const gyroForce = useRef({ x: 0, y: 0 })
   const tankRef = useRef<HTMLDivElement>(null)
+  
+  // 状态：水箱是否完全就绪（可见且有尺寸）
+  const [tankReady, setTankReady] = useState(false)
+
+  useEffect(() => {
+    if (!tankRef.current) return
+    
+    const checkSize = () => {
+      if (tankRef.current && tankRef.current.offsetWidth > 0) {
+        setTankReady(true)
+      } else {
+        setTankReady(false)
+      }
+    }
+
+    const observer = new ResizeObserver(checkSize)
+    observer.observe(tankRef.current)
+    checkSize() // 初始检查
+    
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (!isMobile) return
@@ -236,12 +252,15 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
     <div ref={tankRef} className="haoye-light-only fixed inset-0 w-full h-[100svh] overflow-hidden bg-transparent touch-none z-10">
       {notes.map((note, index) => (
         <GlassShard 
-          key={`light-${note._id}`} 
+          // 🚀 核心修复：在这里加入一个包含 tankReady 的 key
+          // 这样当主题切换、tankReady 改变时，卡片会强制卸载重载，消除之前的物理残留
+          key={`light-shard-${note._id}-${tankReady}`} 
           note={note} index={index} 
           hoveredId={hoveredId} 
           setHoveredId={setHoveredId}
           gyroForce={gyroForce}
-          constraintsRef={tankRef} 
+          // 只有当 Ready 时才传入约束，否则传入 false 彻底释放边界
+          constraintsRef={tankReady ? tankRef : false} 
           isMobile={isMobile}
         />
       ))}
@@ -265,8 +284,9 @@ export default function NotesInteractive({ notes }: { notes: any[] }) {
 
   return (
     <>
-      <DarkAbyssNotes notes={notes} isMobile={isMobile} />
-      <LightTankNotes notes={notes} isMobile={isMobile} />
+      {/* 这里的布局 key 能够确保在主题切换时，React 能够清晰区分两个不同的渲染树 */}
+      <div key="dark-abyss-container"><DarkAbyssNotes notes={notes} isMobile={isMobile} /></div>
+      <div key="light-tank-container"><LightTankNotes notes={notes} isMobile={isMobile} /></div>
     </>
   )
 }
