@@ -13,7 +13,11 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
   const pseudo3 = ((index + 1) * 21.3) % 1
 
   const depth = pseudo1 * 0.8 + 0.1 
-  const randomLeft = 20 + pseudo2 * 60; 
+  
+  // 🚀 核心修复：精准解决手机端跑到屏幕左侧外的问题！
+  // 电脑端保持 20%~80% 极度散落；手机端（由于卡片宽90vw）收紧散落范围为 45%~55%，绝对防止溢出！
+  const randomLeft = isMobile ? (45 + pseudo2 * 10) : (20 + pseudo2 * 60); 
+  
   const absoluteTop = `${index * 45 + 15}vh`; 
 
   const baseScale = 1 - depth * 0.4
@@ -155,7 +159,6 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
       onMouseLeave={() => !isMobile && setHoveredId(null)}
       onPointerDown={() => isMobile && setHoveredId(note._id)}
       
-      // 🚀 接收动态边界：如果水箱不就绪(false)，解除限制以防止强制吸附归零
       dragConstraints={constraintsRef} 
       dragElastic={0.2} 
       dragTransition={{ power: 0.3, timeConstant: 300 }}
@@ -218,14 +221,11 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
   const gyroForce = useRef({ x: 0, y: 0 })
   const tankRef = useRef<HTMLDivElement>(null)
   
-  // 🚀 新增：水箱体积传感器
   const [tankReady, setTankReady] = useState(false)
 
   useEffect(() => {
     if (!tankRef.current) return
-    // 监听水箱的真实尺寸
     const observer = new ResizeObserver(([entry]) => {
-      // 只有当宽度大于 0 时（也就是没有被 display:none 隐藏时），才宣告水箱准备就绪
       if (entry.contentRect.width > 0) {
         setTankReady(true)
       } else {
@@ -251,12 +251,11 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
     <div ref={tankRef} className="haoye-light-only fixed inset-0 w-full h-[100svh] overflow-hidden bg-transparent touch-none z-10">
       {notes.map((note, index) => (
         <GlassShard 
-          key={`light-${note._id}`} 
+          key={`light-shard-${note._id}-${tankReady}`} 
           note={note} index={index} 
           hoveredId={hoveredId} 
           setHoveredId={setHoveredId}
           gyroForce={gyroForce}
-          // 🚀 核心修复：如果水箱处于隐藏状态(false)，解除边界绑定，防止卡片互相吸附
           constraintsRef={tankReady ? tankRef : false} 
           isMobile={isMobile}
         />
@@ -281,8 +280,8 @@ export default function NotesInteractive({ notes }: { notes: any[] }) {
 
   return (
     <>
-      <DarkAbyssNotes notes={notes} isMobile={isMobile} />
-      <LightTankNotes notes={notes} isMobile={isMobile} />
+      <div key="dark-container"><DarkAbyssNotes notes={notes} isMobile={isMobile} /></div>
+      <div key="light-container"><LightTankNotes notes={notes} isMobile={isMobile} /></div>
     </>
   )
 }
