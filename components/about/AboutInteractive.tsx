@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState, useMemo } from 'react'
-import { motion, useMotionValue, useSpring, useAnimationFrame, useTransform, useMotionTemplate, AnimatePresence, animate } from 'framer-motion'
+import { motion, useMotionValue, useSpring, useAnimationFrame, useTransform, useMotionTemplate, AnimatePresence, animate, useInView } from 'framer-motion'
 import { PortableText } from '@portabletext/react'
 import SignatureMark from '@/components/ui/SignatureMark'
 
@@ -23,7 +23,8 @@ function DarkAbyss({ about }: { about: any }) {
     mouseY.set(window.innerHeight / 2)
   }, [mouseX, mouseY])
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  // 兼容手机和电脑的触摸滑动
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     mouseX.set(e.clientX - rect.left)
@@ -43,8 +44,9 @@ function DarkAbyss({ about }: { about: any }) {
   return (
     <div 
       ref={containerRef}
-      onMouseMove={handleMouseMove}
+      onPointerMove={handlePointerMove}
       className="relative min-h-[100svh] w-full flex flex-col items-center justify-center overflow-hidden cursor-crosshair px-6"
+      style={{ touchAction: 'none' }}
     >
       <div className="relative z-10 w-full max-w-[640px] text-center">
         <div className="opacity-[0.04] pointer-events-none">
@@ -70,7 +72,6 @@ function DarkAbyss({ about }: { about: any }) {
 
 // =========================================================
 // 🕳️ 原生 WebGL 深渊裂口着色器 (The Abyss Rift Shader)
-// 彻底移除了突兀的紫色边缘色散，保持极致深邃和高级黑
 // =========================================================
 function AbyssRiftCanvas({ progress }: { progress: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -112,7 +113,6 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
       }
 
       void main() {
-        // 安全锁：如果进度为 0，绝对不渲染任何像素，防止水下漏出光晕
         if(u_progress < 0.001) {
            gl_FragColor = vec4(0.0);
            return;
@@ -124,7 +124,6 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
         vec2 center = vec2(0.5) * aspect;
         float time = u_time * 0.5;
 
-        // 动态裂缝形态
         vec2 delta = p - center;
         float riftDist = length(vec2(delta.x, delta.y * (1.5 + sin(u_progress*3.14)*1.5))); 
         
@@ -133,7 +132,6 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
         
         float riftEdgeAlpha = smoothstep(riftRadius, riftRadius - 0.1, riftDist + edgeNoise);
 
-        // 1:1 复刻 FluidBackground.tsx 的流体演化与光学
         vec2 q = vec2(fbm(p + time * 0.8), fbm(p + vec2(1.0) + time * 0.5));
         vec2 r = vec2(fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time), fbm(p + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time));
         float surfaceHeight = fbm(p + r);
@@ -150,12 +148,10 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
         vec3 halfVector = normalize(lightDir + viewDir);
         float specular = pow(max(dot(normal, halfVector), 0.0), 90.0); 
 
-        // 极致纯粹的黑水配方
         vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035); 
         vec3 darkSkyReflection = vec3(0.12, 0.15, 0.18); 
         vec3 fluidColor = mix(darkWaterDepth, darkSkyReflection, fresnel) + (specular * 0.25);
 
-        // 越靠近裂缝中心，颜色越纯粹的黑暗
         float depthDarkness = smoothstep(riftRadius - 0.3, 0.0, riftDist);
         vec3 finalColor = mix(fluidColor, vec3(0.0), depthDarkness * 0.85);
 
@@ -239,6 +235,8 @@ const CardContent = ({ about }: { about: any }) => (
 function LightPaper({ about }: { about: any }) {
   const containerRef = useRef<HTMLDivElement>(null)
   
+  // 🚀 新增：识别手机端
+  const [isMobile, setIsMobile] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [shatterState, setShatterState] = useState<'idle' | 'tearing' | 'imploding' | 'consuming' | 'recovering' | 'kintsugi'>('idle')
   
@@ -252,7 +250,17 @@ function LightPaper({ about }: { about: any }) {
   const timeouts = useRef<NodeJS.Timeout[]>([])
   const riftProgress = useMotionValue(0)
 
-  useEffect(() => { return () => timeouts.current.forEach(clearTimeout) }, [])
+  // 🚀 新增：手机端滚动进入视野检测
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(triggerRef, { margin: "-25% 0px -25% 0px" })
+
+  useEffect(() => { 
+    setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768)
+    return () => timeouts.current.forEach(clearTimeout) 
+  }, [])
+
+  // 🚀 核心状态控制：撕裂中永远激活；手机端看视野；电脑端看悬停
+  const isActive = shatterState !== 'idle' || (isMobile ? isInView : isHovered)
 
   const rotateX = useTransform(mouseY, [-400, 400], [12, -12])
   const rotateY = useTransform(mouseX, [-400, 400], [-12, 12])
@@ -275,15 +283,15 @@ function LightPaper({ about }: { about: any }) {
     timeouts.current.push(
       setTimeout(() => {
         setShatterState('imploding') 
-        animate(riftProgress, 0.2, { duration: 0.8, ease: "easeOut" }) // 裂口张开！
+        animate(riftProgress, 0.2, { duration: 0.8, ease: "easeOut" }) 
       }, 700),
       setTimeout(() => {
         setShatterState('consuming') 
-        animate(riftProgress, 1.0, { duration: 1.8, ease: [0.25, 1, 0.5, 1] }) // 黑水涌出
+        animate(riftProgress, 1.0, { duration: 1.8, ease: [0.25, 1, 0.5, 1] }) 
       }, 1500),
       setTimeout(() => {
         setShatterState('recovering') 
-        animate(riftProgress, 0.0, { duration: 1.5, ease: "easeInOut" }) // 裂口闭合褪去
+        animate(riftProgress, 0.0, { duration: 1.5, ease: "easeInOut" }) 
       }, 4300),
       setTimeout(() => setShatterState('kintsugi'), 5800), 
       setTimeout(() => {
@@ -293,13 +301,15 @@ function LightPaper({ about }: { about: any }) {
     )
   }
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  // 🚀 兼容手机滑动和电脑摇晃
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     mouseX.set(e.clientX - (rect.left + rect.width / 2))
     mouseY.set(e.clientY - (rect.top + rect.height / 2))
 
-    if (isHovered && shatterState === 'idle') {
+    // 只有电脑端才检测摇晃撕裂
+    if (isActive && shatterState === 'idle' && !isMobile) {
       const now = performance.now()
       const dt = now - lastMouse.current.time
       if (dt > 0 && dt < 60) { 
@@ -316,15 +326,23 @@ function LightPaper({ about }: { about: any }) {
   return (
     <div 
       ref={containerRef}
-      onMouseMove={handleMouseMove}
+      onPointerMove={handlePointerMove}
       className="relative min-h-[100svh] w-full flex items-center justify-center py-32 px-6 overflow-hidden pointer-events-auto"
       style={{ perspective: '2000px' }} 
     >
       <AbyssRiftCanvas progress={riftProgress} />
 
+      {/* 🚀 依然是严格与卡片绑定的精准触发器，增加了 onClick 连击判定 */}
       <div
-        onPointerEnter={() => setIsHovered(true)}
-        onPointerLeave={() => { setIsHovered(false); shakeAccumulator.current = 0 }}
+        ref={triggerRef}
+        onPointerEnter={() => !isMobile && setIsHovered(true)}
+        onPointerLeave={() => { if(!isMobile) { setIsHovered(false); shakeAccumulator.current = 0; } }}
+        onClick={() => {
+          if (isMobile && shatterState === 'idle') {
+            shakeAccumulator.current += 180; // 连点 3 次即可积攒到 500 引爆彩蛋！
+            if (shakeAccumulator.current > 500) triggerShatterSequence();
+          }
+        }}
         className="absolute inset-0 z-[100] cursor-pointer"
       />
 
@@ -334,14 +352,14 @@ function LightPaper({ about }: { about: any }) {
       >
         <motion.div
           animate={{
-            z: (isHovered || shatterState !== 'idle') ? 0 : -100,
-            y: (isHovered || shatterState !== 'idle') ? 0 : [0, 15, 0],
-            scale: (isHovered || shatterState !== 'idle') ? 1 : 0.9,
-            filter: (isHovered || shatterState !== 'idle') ? 'blur(0px)' : 'blur(5px) brightness(0.9) sepia(0.2) hue-rotate(180deg)'
+            z: isActive ? 0 : -100,
+            y: isActive ? 0 : [0, 15, 0],
+            scale: isActive ? 1 : 0.9,
+            filter: isActive ? 'blur(0px)' : 'blur(5px) brightness(0.9) sepia(0.2) hue-rotate(180deg)'
           }}
           transition={{
             z: { duration: 0.6, ease: "easeOut" },
-            y: (isHovered || shatterState !== 'idle') ? { duration: 0.4, ease: 'easeOut' } : { repeat: Infinity, duration: 4, ease: 'easeInOut' },
+            y: isActive ? { duration: 0.4, ease: 'easeOut' } : { repeat: Infinity, duration: 4, ease: 'easeInOut' },
             scale: { duration: 0.6, ease: [0.19, 1, 0.22, 1] },
             filter: { duration: 0.6 }
           }}
@@ -355,13 +373,13 @@ function LightPaper({ about }: { about: any }) {
             transition={{ duration: 0 }} 
             className={`${CARD_BASE_STYLE} shadow-[0_40px_80px_rgba(0,0,0,0.1)]`}
           >
-            <motion.div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#bae6fd]/40" animate={{ opacity: isHovered ? 0 : 1 }} transition={{ duration: 0.6 }} />
-            <motion.div style={{ background: glareBackground, opacity: isHovered && shatterState === 'idle' ? 1 : 0 }} className="absolute inset-0 z-20 mix-blend-overlay transition-opacity duration-500" />
+            <motion.div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#bae6fd]/40" animate={{ opacity: isActive && !isMobile ? 0 : 1 }} transition={{ duration: 0.6 }} />
+            <motion.div style={{ background: glareBackground, opacity: isActive && shatterState === 'idle' && !isMobile ? 1 : 0 }} className="absolute inset-0 z-20 mix-blend-overlay transition-opacity duration-500" />
             <CardContent about={about} />
           </motion.div>
 
           {/* ================================================= */}
-          {/* 💥 纸张撕裂 (彻底移除了扭曲滤镜，保证文字 100% 锐利清晰！) */}
+          {/* 💥 纸张撕裂：完全无扭曲，100% 像素级对齐！ */}
           {/* ================================================= */}
           {shatterState !== 'idle' && PAPER_TEARS.map((polygon, index) => {
             const phys = TEAR_PHYSICS[index]
