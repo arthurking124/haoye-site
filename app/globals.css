@@ -1617,3 +1617,33 @@ html[data-theme='light'] .glass-forcefield {
 .glass-forcefield > * {
   pointer-events: auto;
 }
+/* ========================================================
+   ✨ LIGHT THEME POEM V2: THE LIQUID VOID (液态墨水与时空裂口)
+   ======================================================== */
+
+/* 墨水粒子的粘连滤镜 (Gooey Effect) */
+.ink-gooey-container {
+  filter: url('#ink-goo');
+  transform: translateZ(0);
+}
+
+/* 裂口闭合时的空间冲击波 */
+@keyframes rift-shockwave {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); opacity: 1; transform: scale(1) translate(-50%, -50%); filter: blur(0px); }
+  50% { filter: blur(12px) brightness(1.3); }
+  100% { box-shadow: 0 0 0 80vw rgba(255, 255, 255, 0); opacity: 0; transform: scale(1.1) translate(-50%, -50%); filter: blur(0px); }
+}
+
+.shockwave-ripple {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: rift-shockwave 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  background: radial-gradient(circle at center, transparent 30%, rgba(255,255,255,0.6) 40%, transparent 50%);
+  z-index: 9999;
+  pointer-events: none;
+}
