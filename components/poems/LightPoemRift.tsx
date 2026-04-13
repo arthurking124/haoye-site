@@ -168,21 +168,20 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         <div className="w-full min-h-[100vh] flex justify-center py-[40vh]">
           
           <motion.div 
-            className={`relative w-full max-w-[800px] cursor-auto transition-opacity duration-1000 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}
+            // 核心修复：手机端变为 w-[85%]，两边让出黑水空间；电脑端保持 md:w-full
+            className={`relative w-[85%] md:w-full max-w-[800px] cursor-auto transition-opacity duration-1000 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}
             onClick={(e) => e.stopPropagation()} 
             animate={isOpen && !isClosing ? { y: [-6, 6, -6], rotateZ: [-0.5, 0.5, -0.5] } : {}}
             transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
           >
-            <div className="w-full bg-[#E6E1D3] rounded-[1px] shadow-[inset_0_0_100px_rgba(100,80,60,0.15),0_15px_40px_rgba(0,0,0,0.6)] px-8 md:px-24 py-32 text-[#2A2622]">
-              
-              {/* 删除了原有的外置 header，将全部参数传递给 LiquidTextReader */}
+            {/* 核心修复：手机端 padding 收紧为 px-6 py-16；电脑端保持 px-24 py-32 */}
+            <div className="w-full bg-[#E6E1D3] rounded-[1px] shadow-[inset_0_0_100px_rgba(100,80,60,0.15),0_15px_40px_rgba(0,0,0,0.6)] px-6 py-16 md:px-24 md:py-32 text-[#2A2622]">
               <LiquidTextReader 
                 title={poem.title} 
                 intro={poem.intro} 
                 body={poem.body} 
                 scrollY={scrollY} 
               />
-              
             </div>
           </motion.div>
 
