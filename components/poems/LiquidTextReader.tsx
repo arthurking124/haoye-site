@@ -7,9 +7,14 @@ import { motion, useVelocity, useSpring, useTransform, MotionValue } from 'frame
 export default function LiquidTextReader({ title, intro, body, scrollY }: { title?: string, intro?: string, body: any, scrollY: MotionValue<number> }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [filterId, setFilterId] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
   
   useEffect(() => {
     setFilterId(`poem-ripple-${Math.random().toString(36).substring(2, 11)}`)
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   const scrollVelocity = useVelocity(scrollY) 
@@ -35,7 +40,9 @@ export default function LiquidTextReader({ title, intro, body, scrollY }: { titl
 
   return (
     <div className="relative">
-      {filterId && (
+      
+      {/* 如果是手机端，禁用消耗 GPU 的 SVG 滤镜 */}
+      {filterId && !isMobile && (
         <svg className="hidden absolute pointer-events-none w-0 h-0">
           <filter id={filterId} colorInterpolationFilters="sRGB">
             <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
@@ -50,19 +57,20 @@ export default function LiquidTextReader({ title, intro, body, scrollY }: { titl
         </svg>
       )}
 
+      {/* 手机端取消阻尼拉扯，保持极其清爽流畅的阅读体验 */}
       <motion.div 
         ref={containerRef}
         style={{ 
-          filter: filterId ? `url(#${filterId})` : 'none',
-          y: yDrag, 
-          skewY: skewDeform 
+          filter: (filterId && !isMobile) ? `url(#${filterId})` : 'none',
+          y: isMobile ? 0 : yDrag, 
+          skewY: isMobile ? 0 : skewDeform 
         }}
         className="relative origin-center flex flex-col items-center will-change-transform"
       >
         <header className="mb-16 md:mb-24 flex flex-col items-center text-center w-full">
           <p className="text-[10px] tracking-[0.4em] text-[rgba(42,38,34,0.3)] mb-8 md:mb-12">THE LIVING MANUSCRIPT</p>
           
-          <h1 className="text-[24px] md:text-[44px] font-medium tracking-[0.12em] mb-6 md:mb-8">
+          <h1 className="text-[22px] md:text-[44px] font-medium tracking-[0.12em] mb-6 md:mb-8">
             《{title || '未命名'}》
           </h1>
           

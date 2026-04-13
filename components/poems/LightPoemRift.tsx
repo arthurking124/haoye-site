@@ -16,15 +16,14 @@ export default function LightPoemRift({ poem }: { poem: any }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
 
-  // ===============================================
-  // 核心修复 1：删除了 document.body 锁定，释放全站的滚动权！
-  // ===============================================
   useEffect(() => {
     animate(progress, 1, {
       duration: 1.8,
       ease: [0.19, 1, 0.22, 1],
       onComplete: () => setIsOpen(true)
     })
+    // ⚠️ 核心修复：彻底删除了坑人的 document.body.style.overflow = 'hidden' 
+    // 现在全局滚动权还给了黑色主题！
   }, [progress])
 
   const handleClose = () => {
@@ -157,10 +156,6 @@ export default function LightPoemRift({ poem }: { poem: any }) {
     <div className="fixed inset-0 z-50 w-full h-full bg-transparent pointer-events-none">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
       
-      {/* ===============================================
-          核心修复 2：加入 overscroll-none
-          用它来防止滚动穿透，替代了暴力的 document.body 锁死！
-          =============================================== */}
       <div 
         ref={scrollContainerRef}
         className="absolute inset-0 z-20 overflow-y-auto overflow-x-hidden scrollbar-hide pointer-events-auto cursor-crosshair overscroll-none"
@@ -173,12 +168,14 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         <div className="w-full min-h-[100vh] flex justify-center py-[40vh]">
           
           <motion.div 
-            className={`relative w-[85%] md:w-full max-w-[800px] cursor-auto transition-opacity duration-1000 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}
+            // 手机端宽度控制在 w-[74%] 完美流出黑水边界
+            className={`relative w-[74%] md:w-full max-w-[800px] cursor-auto transition-opacity duration-1000 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}
             onClick={(e) => e.stopPropagation()} 
             animate={isOpen && !isClosing ? { y: [-6, 6, -6], rotateZ: [-0.5, 0.5, -0.5] } : {}}
             transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
           >
-            <div className="w-full bg-[#E6E1D3] rounded-[1px] shadow-[inset_0_0_100px_rgba(100,80,60,0.15),0_15px_40px_rgba(0,0,0,0.6)] px-6 py-16 md:px-24 md:py-32 text-[#2A2622]">
+            {/* 手机端 padding 收缩，排版更加精致 */}
+            <div className="w-full bg-[#E6E1D3] rounded-[1px] shadow-[inset_0_0_100px_rgba(100,80,60,0.15),0_15px_40px_rgba(0,0,0,0.6)] px-5 py-14 md:px-24 md:py-32 text-[#2A2622]">
               <LiquidTextReader 
                 title={poem.title} 
                 intro={poem.intro} 
