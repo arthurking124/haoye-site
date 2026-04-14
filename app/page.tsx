@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, useMotionValue, animate, AnimatePresence, useSpring } from 'framer-motion'
 
 // =========================================================
-// 🕳️ WebGL 引擎：极致锋利刀锋版 (矢量场活水 + 1:1材质 + 纯净S线)
+// 🕳️ WebGL 引擎：大一统顺时针坍缩版 (引力与流向完美统一)
 // =========================================================
 function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -58,41 +58,44 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
         float mouseDist = length(mouseDelta);
         float rippleFalloff = exp(-mouseDist * 12.0);
         float rippleWave = sin(mouseDist * 50.0 - u_time * 10.0);
-        vec2 rippleDisplacement = (mouseDelta / max(mouseDist, 0.001)) * rippleFalloff * rippleWave * 0.03;
-        p += rippleDisplacement;
+        p += (mouseDelta / max(mouseDist, 0.001)) * rippleFalloff * rippleWave * 0.03;
 
         // ==========================================
-        // 1. S 型交界线 (👑 极致锋利刀锋版)
+        // 💥 大一统引擎：宏观扭曲空间 (绝对顺时针)
+        // ==========================================
+        float distToCenter = length(p);
+        float twist = -u_vortex * 25.0 * exp(-distToCenter * 2.5); // 负号驱动顺时针
+        mat2 twistRot = mat2(cos(twist), -sin(twist), sin(twist), cos(twist));
+        vec2 twistedP = twistRot * p;
+        
+        // 漩涡引力：把所有东西向中心吸入
+        twistedP *= (1.0 + u_vortex * 1.5);
+
+        // ==========================================
+        // 1. S 型交界线 (建立在顺时针扭曲空间上)
         // ==========================================
         float R = 0.6; 
-        float targetX = sign(p.y) * sqrt(max(0.0, R*R - pow(abs(p.y) - R, 2.0)));
-        float s_curve = p.x - targetX;
+        float targetX = sign(twistedP.y) * sqrt(max(0.0, R*R - pow(abs(twistedP.y) - R, 2.0)));
+        float s_curve = twistedP.x - targetX;
         
-        // 收紧水波扰动幅度 (0.015)，让锋利的线绷得更紧，充满张力
-        float edgeWiggle = (fbm(vec2(p.x, p.y * 3.0 - u_time * 0.2)) - 0.5) * 0.015;
+        // 锋利的线绷紧张力
+        float edgeWiggle = (fbm(vec2(twistedP.x, twistedP.y * 3.0 - u_time * 0.2)) - 0.5) * 0.015;
         float boundary = s_curve + edgeWiggle;
         
-        boundary += u_vortex * 4.0;
-        
-        // 💥 极致锋利：只保留 0.001 的微观抗锯齿区，宏观上就是一刀切的绝对清晰！
+        // 极致锋利
         float baseMix = smoothstep(-0.001, 0.001, boundary);
         float mixRatio = 1.0 - baseMix;
 
         // ==========================================
-        // 2. 灵魂流场：矢量对流 (保持材质大小 1:1 稳定)
+        // 2. 👑 大一统引擎：微观水流场 (恢复纯正顺时针)
         // ==========================================
-        vec2 flow = vec2(p.y, -p.x);
-        vec2 fluidP = p - flow * u_time * 0.055; 
-
-        // 奇点吞噬扭曲逻辑
-        float distToCenter = length(p);
-        float twist = u_vortex * 18.0 * exp(-distToCenter * 2.5);
-        mat2 twistRot = mat2(cos(twist), -sin(twist), sin(twist), cos(twist));
-        fluidP = twistRot * fluidP;
-        fluidP *= (1.0 + u_vortex * 2.0);
+        // 之前这里被我搞反了！现在恢复 vec2(y, -x) 的顺时针矢量！
+        // 它将与宏观漩涡完美咬合，不再打架！
+        vec2 flow = vec2(twistedP.y, -twistedP.x); 
+        vec2 fluidP = twistedP - flow * u_time * 0.055; 
 
         // ==========================================
-        // 3. 表面材质 (1:1 像素级同步内页)
+        // 3. 表面材质 (1:1 像素级同步)
         // ==========================================
         float time = u_time * 0.018;
         vec2 q = vec2(fbm(fluidP + time * 0.8), fbm(fluidP + vec2(1.0) + time * 0.5));
@@ -117,14 +120,17 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
         vec3 lightColor = vec3(0.96, 0.94, 0.91) + (smoothstep(0.4, 0.6, h) * 0.12) + (specL * 0.3);
 
         // ==========================================
-        // 4. 渲染混合
+        // 4. 同化引擎 (Assimilation)
         // ==========================================
-        vec3 color = mix(abyssColor, lightColor, mixRatio);
+        float assimilation = smoothstep(0.1, 0.8, u_vortex); 
+        vec3 assimilatedLightColor = mix(lightColor, abyssColor, assimilation);
+
+        vec3 color = mix(abyssColor, assimilatedLightColor, mixRatio);
         
         // 中心漩涡爆发高光
         color += vec3(0.9, 0.95, 1.0) * smoothstep(0.3, 0.0, distToCenter) * u_vortex * 2.0;
-        // 吞噬转黑
-        color = mix(color, vec3(0.015, 0.015, 0.02), smoothstep(0.6, 1.0, u_vortex));
+        // 彻底转黑衔接内页
+        color = mix(color, vec3(0.015, 0.015, 0.02), smoothstep(0.7, 1.0, u_vortex));
 
         gl_FragColor = vec4(color, 1.0);
       }
