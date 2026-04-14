@@ -22,8 +22,6 @@ export default function LightPoemRift({ poem }: { poem: any }) {
       ease: [0.19, 1, 0.22, 1],
       onComplete: () => setIsOpen(true)
     })
-    // ⚠️ 核心修复：彻底删除了坑人的 document.body.style.overflow = 'hidden' 
-    // 现在全局滚动权还给了黑色主题！
   }, [progress])
 
   const handleClose = () => {
@@ -93,12 +91,17 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         float finalDist = baseDist + noise;
         if (finalDist > 0.0) discard; 
 
-        // 完美左下流向
+        // ===============================================
+        // 终极修复：深渊级流速 (与黑色主题背景完全同频)
+        // ===============================================
         vec2 fluidP = p;
-        fluidP.x += u_time * 0.05; 
-        fluidP.y += u_time * 0.1; 
+        // 将原先的 0.05 和 0.1 缩小 3 倍，呈现出极度粘稠、厚重的重力感
+        fluidP.x += u_time * 0.015; 
+        fluidP.y += u_time * 0.03; 
 
-        float time = u_time * 0.04; 
+        // 将内部扰动速度也降低一半，水波不再剧烈翻滚，而是缓慢涌动
+        float time = u_time * 0.02; 
+        
         vec2 q = vec2(fbm(fluidP + time * 0.8), fbm(fluidP + vec2(1.0) + time * 0.5));
         vec2 r = vec2(fbm(fluidP + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time), fbm(fluidP + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time));
         float surfaceHeight = fbm(fluidP + r);
@@ -168,13 +171,11 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         <div className="w-full min-h-[100vh] flex justify-center py-[40vh]">
           
           <motion.div 
-            // 手机端宽度控制在 w-[74%] 完美流出黑水边界
             className={`relative w-[74%] md:w-full max-w-[800px] cursor-auto transition-opacity duration-1000 ${isOpen && !isClosing ? 'opacity-100' : 'opacity-0'}`}
             onClick={(e) => e.stopPropagation()} 
             animate={isOpen && !isClosing ? { y: [-6, 6, -6], rotateZ: [-0.5, 0.5, -0.5] } : {}}
             transition={{ repeat: Infinity, duration: 8, ease: "easeInOut" }}
           >
-            {/* 手机端 padding 收缩，排版更加精致 */}
             <div className="w-full bg-[#E6E1D3] rounded-[1px] shadow-[inset_0_0_100px_rgba(100,80,60,0.15),0_15px_40px_rgba(0,0,0,0.6)] px-5 py-14 md:px-24 md:py-32 text-[#2A2622]">
               <LiquidTextReader 
                 title={poem.title} 
