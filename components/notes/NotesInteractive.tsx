@@ -5,7 +5,7 @@ import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, useSp
 import { PortableText } from '@portabletext/react'
 
 // =========================================================
-// 🌑 黑色主题：Z 轴深海沉底瀑布流
+// 🌑 黑色主题：Z 轴深海沉底瀑布流 (一字未动)
 // =========================================================
 function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: any) {
   const pseudo1 = ((index + 1) * 137.5) % 1
@@ -14,10 +14,7 @@ function DarkMemoryFragment({ note, index, hoveredId, setHoveredId, isMobile }: 
 
   const depth = pseudo1 * 0.8 + 0.1 
   
-  // 🚀 核心修复：精准解决手机端跑到屏幕左侧外的问题！
-  // 电脑端保持 20%~80% 极度散落；手机端（由于卡片宽90vw）收紧散落范围为 45%~55%，绝对防止溢出！
   const randomLeft = isMobile ? (45 + pseudo2 * 10) : (20 + pseudo2 * 60); 
-  
   const absoluteTop = `${index * 45 + 15}vh`; 
 
   const baseScale = 1 - depth * 0.4
@@ -77,7 +74,7 @@ function DarkAbyssNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
 
 
 // =========================================================
-// ☁️ 白色主题：包含“墨水凝结”与精准碰撞箱的水世界
+// ☁️ 白色主题：湿透的撕裂纸片渲染引擎
 // =========================================================
 function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constraintsRef, isMobile }: any) {
   const isDragging = useRef(false)
@@ -101,10 +98,8 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
 
   const velX = useVelocity(cardX)
   const velY = useVelocity(cardY)
-  const rawTiltX = useTransform(velY, [-2000, 2000], [50, -50])
-  const rawTiltY = useTransform(velX, [-2000, 2000], [-50, 50])
-  const tiltX = useSpring(rawTiltX, { stiffness: 100, damping: 15 })
-  const tiltY = useSpring(rawTiltY, { stiffness: 100, damping: 15 })
+  const tiltX = useSpring(useTransform(velY, [-2000, 2000], [50, -50]), { stiffness: 100, damping: 15 })
+  const tiltY = useSpring(useTransform(velX, [-2000, 2000], [-50, 50]), { stiffness: 100, damping: 15 })
 
   const repelVx = useRef(0)
   const repelVy = useRef(0)
@@ -126,63 +121,53 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
 
   useAnimationFrame(() => {
     if (isDragging.current) return
-
-    let forceX = gyroForce.current.x * (1 - depth * 0.5)
-    let forceY = gyroForce.current.y * (1 - depth * 0.5)
-
-    repelVx.current += forceX
-    repelVy.current += forceY
-
-    repelVx.current *= 0.92
-    repelVy.current *= 0.92
-
+    repelVx.current = (repelVx.current + gyroForce.current.x * (1 - depth * 0.5)) * 0.92
+    repelVy.current = (repelVy.current + gyroForce.current.y * (1 - depth * 0.5)) * 0.92
     if (Math.abs(repelVx.current) > 0.05 || Math.abs(repelVy.current) > 0.05) {
       cardX.set(cardX.get() + repelVx.current)
       cardY.set(cardY.get() + repelVy.current)
     }
   })
 
-  const filterId = `ink-ripple-${note._id}`
+  const rippleFilterId = `ink-ripple-${note._id}`
+  const tornFilterId = `torn-edge-${note._id}`
 
   return (
     <motion.div
       drag
       onDragStart={() => { isDragging.current = true; setHoveredId(note._id); pokeWater(); }}
       onDragEnd={() => { isDragging.current = false; if (isMobile) setHoveredId(null); }}
-      
-      onMouseEnter={() => {
-        if (!isMobile) {
-          setHoveredId(note._id);
-          pokeWater();
-        }
-      }}
+      onMouseEnter={() => { if (!isMobile) { setHoveredId(note._id); pokeWater(); } }}
       onMouseLeave={() => !isMobile && setHoveredId(null)}
       onPointerDown={() => isMobile && setHoveredId(note._id)}
-      
       dragConstraints={constraintsRef} 
       dragElastic={0.2} 
       dragTransition={{ power: 0.3, timeConstant: 300 }}
-
       style={{ 
         position: 'absolute', left: initialLeft, top: initialTop,
-        x: cardX, y: cardY, 
-        rotateX: tiltX, rotateY: tiltY, 
-        zIndex: targetZIndex,
-        touchAction: 'none'
+        x: cardX, y: cardY, rotateX: tiltX, rotateY: tiltY, zIndex: targetZIndex, touchAction: 'none'
       }}
       className="w-[260px] md:w-[320px] will-change-transform cursor-grab active:cursor-grabbing"
     >
+      {/* =========================================================
+          🎨 核心材质：双滤镜引擎
+          1. tornFilter: 负责撕裂边缘的骨架
+          2. rippleFilter: 负责水波扭曲的灵魂
+          ========================================================= */}
       <svg className="hidden absolute pointer-events-none w-0 h-0">
-        <filter id={filterId} colorInterpolationFilters="sRGB">
-          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
-          <motion.feDisplacementMap 
-            in="SourceGraphic" 
-            in2="noise" 
-            scale={rippleScale as any} 
-            xChannelSelector="R" 
-            yChannelSelector="G" 
-          />
-        </filter>
+        <defs>
+          {/* 撕裂滤镜：利用高频分形噪声扭曲边缘 alpha 通道 */}
+          <filter id={tornFilterId}>
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="5" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          
+          {/* 水波滤镜：维持原有的文字动态 */}
+          <filter id={rippleFilterId} colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise" />
+            <motion.feDisplacementMap in="SourceGraphic" in2="noise" scale={rippleScale as any} xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
       </svg>
 
       <motion.div
@@ -191,22 +176,23 @@ function GlassShard({ note, index, hoveredId, setHoveredId, gyroForce, constrain
         style={{ transformStyle: "preserve-3d" }}
       >
         <motion.div
-          animate={{
-            scale: targetScale,
-            filter: `blur(${targetBlur}px)`,
-            opacity: targetOpacity,
-          }}
+          animate={{ scale: targetScale, filter: `blur(${targetBlur}px)`, opacity: targetOpacity }}
           transition={{ duration: 0.5, ease: "easeOut" }} 
-          className="bg-white/20 backdrop-blur-xl border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-8 md:p-10 relative rounded-sm"
+          // 应用撕裂滤镜到整个卡片背景
+          style={{ 
+            filter: `url(#${tornFilterId})`,
+            backgroundColor: 'rgba(230, 225, 211, 0.95)' // 微透光的羊皮纸感
+          }}
+          className="shadow-[inset_0_0_80px_rgba(140,120,100,0.18),0_15px_40px_rgba(0,0,0,0.12)] p-8 md:p-10 relative"
         >
-          <div className="flex items-center space-x-3 mb-6 opacity-50">
-            <div className="w-1.5 h-1.5 rounded-full bg-black shadow-[0_0_8px_rgba(0,0,0,0.3)]" />
-            <span className="font-mono text-[10px] tracking-[0.2em] uppercase">{note.kind || '念'} {note.name ? `// ${note.name}` : ''}</span>
+          <div className="flex items-center space-x-3 mb-6 opacity-60">
+            <div className="w-1.5 h-1.5 rounded-full bg-[#3a322a] shadow-[0_0_6px_rgba(100,80,60,0.4)]" />
+            <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-[#2A2622]">{note.kind || '念'} {note.name ? `// ${note.name}` : ''}</span>
           </div>
           
           <div 
-            style={{ filter: `url(#${filterId})` }}
-            className="opacity-90 text-[14px] leading-[2.4] tracking-wide text-black/80 pointer-events-none whitespace-pre-wrap"
+            style={{ filter: `url(#${rippleFilterId})` }}
+            className="opacity-90 text-[14px] leading-[2.4] tracking-wide text-[#2A2622] pointer-events-none whitespace-pre-wrap"
           >
             <p>{note.line}</p>
           </div>
@@ -220,18 +206,11 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
   const [hoveredId, setHoveredId] = useState<string | null>(null)
   const gyroForce = useRef({ x: 0, y: 0 })
   const tankRef = useRef<HTMLDivElement>(null)
-  
   const [tankReady, setTankReady] = useState(false)
 
   useEffect(() => {
     if (!tankRef.current) return
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry.contentRect.width > 0) {
-        setTankReady(true)
-      } else {
-        setTankReady(false)
-      }
-    })
+    const observer = new ResizeObserver(([entry]) => { setTankReady(entry.contentRect.width > 0); })
     observer.observe(tankRef.current)
     return () => observer.disconnect()
   }, [])
@@ -239,9 +218,7 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
   useEffect(() => {
     if (!isMobile) return
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      const gx = Math.max(-45, Math.min(45, e.gamma || 0))
-      const gy = Math.max(-45, Math.min(45, e.beta || 0))
-      gyroForce.current = { x: gx * 0.05, y: gy * 0.05 }
+      gyroForce.current = { x: Math.max(-45, Math.min(45, e.gamma || 0)) * 0.05, y: Math.max(-45, Math.min(45, e.beta || 0)) * 0.05 }
     }
     window.addEventListener('deviceorientation', handleOrientation)
     return () => window.removeEventListener('deviceorientation', handleOrientation)
@@ -252,12 +229,8 @@ function LightTankNotes({ notes, isMobile }: { notes: any[], isMobile: boolean }
       {notes.map((note, index) => (
         <GlassShard 
           key={`light-shard-${note._id}-${tankReady}`} 
-          note={note} index={index} 
-          hoveredId={hoveredId} 
-          setHoveredId={setHoveredId}
-          gyroForce={gyroForce}
-          constraintsRef={tankReady ? tankRef : false} 
-          isMobile={isMobile}
+          note={note} index={index} hoveredId={hoveredId} setHoveredId={setHoveredId}
+          gyroForce={gyroForce} constraintsRef={tankReady ? tankRef : false} isMobile={isMobile}
         />
       ))}
     </div>
