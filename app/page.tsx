@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { motion, useMotionValue, animate, AnimatePresence, useSpring } from 'framer-motion'
 
 // =========================================================
-// 🕳️ WebGL 引擎：纯净 S 型分隔 + 左白右黑 + 顺时针流场 + 真实鼠标涟漪
-// (底层着色器保持你最满意的完美神级状态，一字未动)
+// 🕳️ WebGL 引擎：极致锋利刀锋版 (矢量场活水 + 1:1材质 + 纯净S线)
 // =========================================================
 function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -53,64 +52,81 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
         vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
         vec2 p = (uv * 2.0 - 1.0) * aspect; 
         
+        // 👑 真实物理鼠标涟漪
         vec2 mouseP = (u_mouse * 2.0 - 1.0) * aspect;
         vec2 mouseDelta = p - mouseP;
         float mouseDist = length(mouseDelta);
-        
         float rippleFalloff = exp(-mouseDist * 12.0);
         float rippleWave = sin(mouseDist * 50.0 - u_time * 10.0);
         vec2 rippleDisplacement = (mouseDelta / max(mouseDist, 0.001)) * rippleFalloff * rippleWave * 0.03;
-        
         p += rippleDisplacement;
 
+        // ==========================================
+        // 1. S 型交界线 (👑 极致锋利刀锋版)
+        // ==========================================
         float R = 0.6; 
         float targetX = sign(p.y) * sqrt(max(0.0, R*R - pow(abs(p.y) - R, 2.0)));
         float s_curve = p.x - targetX;
         
-        float edgeWiggle = (fbm(vec2(p.x, p.y * 3.0 - u_time * 0.2)) - 0.5) * 0.05;
+        // 收紧水波扰动幅度 (0.015)，让锋利的线绷得更紧，充满张力
+        float edgeWiggle = (fbm(vec2(p.x, p.y * 3.0 - u_time * 0.2)) - 0.5) * 0.015;
         float boundary = s_curve + edgeWiggle;
-
+        
         boundary += u_vortex * 4.0;
-        float baseMix = smoothstep(-0.01, 0.01, boundary);
+        
+        // 💥 极致锋利：只保留 0.001 的微观抗锯齿区，宏观上就是一刀切的绝对清晰！
+        float baseMix = smoothstep(-0.001, 0.001, boundary);
         float mixRatio = 1.0 - baseMix;
 
+        // ==========================================
+        // 2. 灵魂流场：矢量对流 (保持材质大小 1:1 稳定)
+        // ==========================================
         vec2 flow = vec2(p.y, -p.x);
-        vec2 fluidP = p - flow * u_time * 0.06; 
+        vec2 fluidP = p - flow * u_time * 0.055; 
 
+        // 奇点吞噬扭曲逻辑
         float distToCenter = length(p);
         float twist = u_vortex * 18.0 * exp(-distToCenter * 2.5);
         mat2 twistRot = mat2(cos(twist), -sin(twist), sin(twist), cos(twist));
         fluidP = twistRot * fluidP;
         fluidP *= (1.0 + u_vortex * 2.0);
 
-        float time = u_time * 0.02;
+        // ==========================================
+        // 3. 表面材质 (1:1 像素级同步内页)
+        // ==========================================
+        float time = u_time * 0.018;
         vec2 q = vec2(fbm(fluidP + time * 0.8), fbm(fluidP + vec2(1.0) + time * 0.5));
         vec2 noiseR = vec2(fbm(fluidP + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time), fbm(fluidP + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time));
-        float surfaceHeight = fbm(fluidP + noiseR);
+        float h = fbm(fluidP + noiseR);
 
         vec2 eps = vec2(0.01, 0.0); 
-        float nx = fbm(fluidP + noiseR + eps) - surfaceHeight;
-        float ny = fbm(fluidP + noiseR + eps.yx) - surfaceHeight;
-        vec3 normal = normalize(vec3(nx, ny, 0.8)); 
+        float nx = fbm(fluidP + noiseR + eps) - h;
+        float ny = fbm(fluidP + noiseR + eps.yx) - h;
+        vec3 normal = normalize(vec3(nx, ny, 0.85)); 
 
         vec3 viewDir = vec3(0.0, 0.0, 1.0);
         vec3 lightDir = normalize(vec3(0.5, 0.8, 1.5));
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.0);
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.5);
         
-        float specDark = pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 50.0);
-        vec3 abyssColor = mix(vec3(0.015, 0.015, 0.02), vec3(0.08, 0.1, 0.12), fresnel) + (specDark * 0.35);
+        // 🌑 深渊黑水
+        float specD = pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 50.0);
+        vec3 abyssColor = mix(vec3(0.015, 0.015, 0.02), vec3(0.08, 0.1, 0.12), fresnel) + (specD * 0.35);
 
-        float specLight = pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 100.0);
-        vec3 lightWaterDepth = vec3(0.96, 0.94, 0.91); 
-        float caustic = smoothstep(0.4, 0.6, surfaceHeight) * 0.15; 
-        vec3 lightColor = lightWaterDepth + caustic + (specLight * 0.3) - (vec3(0.02, 0.04, 0.05) * noiseR.y * 0.1);
+        // ☀️ 晨曦白水
+        float specL = pow(max(dot(normal, normalize(lightDir + viewDir)), 0.0), 100.0);
+        vec3 lightColor = vec3(0.96, 0.94, 0.91) + (smoothstep(0.4, 0.6, h) * 0.12) + (specL * 0.3);
 
-        vec3 finalColor = mix(abyssColor, lightColor, mixRatio);
+        // ==========================================
+        // 4. 渲染混合
+        // ==========================================
+        vec3 color = mix(abyssColor, lightColor, mixRatio);
         
-        finalColor += vec3(0.9, 0.95, 1.0) * smoothstep(0.3, 0.0, distToCenter) * u_vortex * 2.0;
-        finalColor = mix(finalColor, vec3(0.015, 0.015, 0.02), smoothstep(0.6, 1.0, u_vortex));
+        // 中心漩涡爆发高光
+        color += vec3(0.9, 0.95, 1.0) * smoothstep(0.3, 0.0, distToCenter) * u_vortex * 2.0;
+        // 吞噬转黑
+        color = mix(color, vec3(0.015, 0.015, 0.02), smoothstep(0.6, 1.0, u_vortex));
 
-        gl_FragColor = vec4(finalColor, 1.0);
+        gl_FragColor = vec4(color, 1.0);
       }
     `
     const program = gl.createProgram()!
@@ -132,7 +148,6 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
 
     let targetMouseX = -2.0, targetMouseY = -2.0
     let currentMouseX = -2.0, currentMouseY = -2.0
-    
     const handleMouseMove = (e: MouseEvent) => {
       targetMouseX = e.clientX / window.innerWidth
       targetMouseY = 1.0 - (e.clientY / window.innerHeight)
@@ -150,16 +165,13 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
     const render = () => {
       currentMouseX += (targetMouseX - currentMouseX) * 0.08
       currentMouseY += (targetMouseY - currentMouseY) * 0.08
-
       gl.uniform2f(uRes, canvas.width, canvas.height)
       gl.uniform1f(uTime, (Date.now() - start) * 0.001)
       gl.uniform1f(uVor, vortexProgress.get())
       gl.uniform2f(uMouse, currentMouseX, currentMouseY) 
-
       gl.drawArrays(gl.TRIANGLES, 0, 6); aid = requestAnimationFrame(render)
     }
     render()
-    
     return () => { 
       cancelAnimationFrame(aid); 
       window.removeEventListener('resize', resize); 
@@ -178,42 +190,34 @@ function FloatingMagnetic({ children, floatDelay = 0, isActive = true }: { child
   const ref = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  
-  // Framer Motion 弹簧物理反馈 (质量越小回弹越快，阻尼控制晃动)
   const springX = useSpring(x, { stiffness: 150, damping: 15, mass: 0.1 })
   const springY = useSpring(y, { stiffness: 150, damping: 15, mass: 0.1 })
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!ref.current || !isActive) return
     const { left, top, width, height } = ref.current.getBoundingClientRect()
-    // 获取元素中心点
     const centerX = left + width / 2
     const centerY = top + height / 2
-    // 计算鼠标距离中心点的偏移量，乘以 0.3 产生恰到好处的磁吸拉扯感
     x.set((e.clientX - centerX) * 0.3)
     y.set((e.clientY - centerY) * 0.3)
   }
 
   const handleMouseLeave = () => {
-    // 鼠标离开，弹簧释放归位
     x.set(0)
     y.set(0)
   }
 
   return (
-    // 第一层：无论鼠标在哪都在持续执行的“水面呼吸悬浮”
     <motion.div
       animate={isActive ? { y: [0, -8, 0] } : { y: 0 }}
       transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: floatDelay }}
       className="absolute flex flex-col"
     >
-      {/* 第二层：包含不可见巨大热区的“引力物理场” */}
       <motion.div
         ref={ref}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         style={{ x: springX, y: springY }}
-        // p-8 -m-8 可以在视觉不变的情况下，大大增加鼠标能够触发引力场的面积
         className="p-8 -m-8 flex items-center justify-center cursor-pointer pointer-events-auto"
       >
         {children}
@@ -222,7 +226,6 @@ function FloatingMagnetic({ children, floatDelay = 0, isActive = true }: { child
   )
 }
 
-
 // =========================================================
 // 🔮 交互层：精准排版与物理引擎注入
 // =========================================================
@@ -230,8 +233,8 @@ function FloatingMagnetic({ children, floatDelay = 0, isActive = true }: { child
 const NAVS = [
   { id: 'v', l: '影', s: 'VISIONS', pos: 'top-12 left-10 md:top-16 md:left-16 items-start', textCls: 'text-[#050505]/80 group-hover:text-[#050505]', subCls: 'text-[#050505]/40 group-hover:text-[#050505]/80', dropColor: 'black', path: '/images', delay: 0 },
   { id: 'p', l: '诗', s: 'POEMS', pos: 'top-12 right-10 md:top-16 md:right-16 items-end', textCls: 'text-white/80 group-hover:text-white', subCls: 'text-white/40 group-hover:text-white/80', dropColor: 'white', path: '/poems', delay: 1.2 },
-  { id: 'n', l: '与', s: 'NOTES', pos: 'bottom-12 left-10 md:bottom-16 md:left-16 items-start', textCls: 'text-[#050505]/80 group-hover:text-[#050505]', subCls: 'text-[#050505]/40 group-hover:text-[#050505]/80', dropColor: 'black', path: '/notes', delay: 2.4 },
-  { id: 'a', l: '我', s: 'ABOUT', pos: 'bottom-12 right-10 md:bottom-16 md:right-16 items-end', textCls: 'text-white/80 group-hover:text-white', subCls: 'text-white/40 group-hover:text-white/80', dropColor: 'white', path: '/about', delay: 0.6 },
+  { id: 'n', l: '与', s: 'NOTES', pos: 'bottom-16 left-10 md:bottom-20 md:left-16 items-start', textCls: 'text-[#050505]/80 group-hover:text-[#050505]', subCls: 'text-[#050505]/40 group-hover:text-[#050505]/80', dropColor: 'black', path: '/notes', delay: 2.4 },
+  { id: 'a', l: '我', s: 'ABOUT', pos: 'bottom-16 right-10 md:bottom-20 md:right-16 items-end', textCls: 'text-white/80 group-hover:text-white', subCls: 'text-white/40 group-hover:text-white/80', dropColor: 'white', path: '/about', delay: 0.6 },
 ]
 
 export default function HomeInteractive() {
@@ -239,15 +242,10 @@ export default function HomeInteractive() {
   const [state, setState] = useState<'idle' | 'dropping' | 'vortexing'>('idle')
   const [origin, setOrigin] = useState({ x: 0, y: 0 })
   const vortex = useMotionValue(0)
-  
   const [dropTheme, setDropTheme] = useState<'white' | 'black'>('white')
 
   const trigger = (e: React.MouseEvent, path: string, color: 'white' | 'black') => {
-    // 防止重复点击和动画冲突
     if (state !== 'idle') return
-    
-    // 因为加了弹簧物理，currentTarget (也就是整个磁吸块) 可能会产生偏移
-    // 为了让水珠坠落得绝对精准，我们捕获内部文字最核心的绝对坐标
     const r = e.currentTarget.getBoundingClientRect()
     setOrigin({ x: r.left + r.width / 2, y: r.top + r.height / 2 })
     setDropTheme(color)
@@ -264,7 +262,6 @@ export default function HomeInteractive() {
     <main className="relative w-full h-[100svh] overflow-hidden bg-[#050505]">
       <TaiChiVortexCanvas vortexProgress={vortex} />
 
-      {/* 🌟 阵眼 HAOYE：也加入了沉稳深邃的浮动效果，仿佛悬挂在水底 */}
       <motion.div 
         animate={
           state === 'idle' 
@@ -284,7 +281,6 @@ export default function HomeInteractive() {
         {NAVS.map((n) => (
           <div key={n.id} className={`absolute flex flex-col ${n.pos}`}>
             <FloatingMagnetic floatDelay={n.delay} isActive={state === 'idle'}>
-              {/* 这里是将状态动画和原本的按钮逻辑结合 */}
               <motion.div
                 animate={{ 
                   opacity: state === 'idle' ? 1 : 0, 
