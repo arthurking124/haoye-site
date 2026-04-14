@@ -23,7 +23,6 @@ function DarkAbyss({ about }: { about: any }) {
     mouseY.set(window.innerHeight / 2)
   }, [mouseX, mouseY])
 
-  // 兼容手机和电脑的触摸滑动
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
@@ -71,7 +70,7 @@ function DarkAbyss({ about }: { about: any }) {
 }
 
 // =========================================================
-// 🕳️ 原生 WebGL 深渊裂口着色器 (The Abyss Rift Shader)
+// 🕳️ 原生 WebGL 深渊裂口着色器 (完美同步诗歌深渊流体)
 // =========================================================
 function AbyssRiftCanvas({ progress }: { progress: any }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -122,36 +121,39 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
         vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
         vec2 p = uv * aspect;
         vec2 center = vec2(0.5) * aspect;
-        float time = u_time * 0.5;
 
         vec2 delta = p - center;
         float riftDist = length(vec2(delta.x, delta.y * (1.5 + sin(u_progress*3.14)*1.5))); 
         
-        float edgeNoise = fbm(p * 5.0 - time) * 0.3;
+        float edgeNoise = fbm(p * 5.0 - u_time * 0.5) * 0.3;
         float riftRadius = u_progress * 1.5;
         
         float riftEdgeAlpha = smoothstep(riftRadius, riftRadius - 0.1, riftDist + edgeNoise);
 
-        vec2 q = vec2(fbm(p + time * 0.8), fbm(p + vec2(1.0) + time * 0.5));
-        vec2 r = vec2(fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time), fbm(p + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time));
-        float surfaceHeight = fbm(p + r);
+        // ===============================================
+        // 核心修复：1:1 引入诗歌深渊的材质与流速
+        // ===============================================
+        vec2 fluidP = p;
+        fluidP.x += u_time * 0.015; 
+        fluidP.y += u_time * 0.03; 
+        float fluidTime = u_time * 0.02; // 极慢的涌动时间轴
+
+        vec2 q = vec2(fbm(fluidP + fluidTime * 0.8), fbm(fluidP + vec2(1.0) + fluidTime * 0.5));
+        vec2 r = vec2(fbm(fluidP + 2.0 * q + vec2(1.7, 9.2) + 0.15 * fluidTime), fbm(fluidP + 2.0 * q + vec2(8.3, 2.8) + 0.12 * fluidTime));
+        float surfaceHeight = fbm(fluidP + r);
 
         vec2 eps = vec2(0.01, 0.0); 
-        float nx = fbm(p + r + eps) - surfaceHeight;
-        float ny = fbm(p + r + eps.yx) - surfaceHeight;
-        vec3 normal = normalize(vec3(nx, ny, 1.0)); 
+        float nx = fbm(fluidP + r + eps) - surfaceHeight;
+        float ny = fbm(fluidP + r + eps.yx) - surfaceHeight;
+        vec3 normal = normalize(vec3(nx, ny, 0.8)); 
         
-        vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
-        vec3 lightDir = normalize(vec3(0.5, 0.8, 1.5));
-        
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.0);
-        vec3 halfVector = normalize(lightDir + viewDir);
-        float specular = pow(max(dot(normal, halfVector), 0.0), 90.0); 
+        float fresnel = pow(1.0 - max(dot(normal, vec3(0,0,1)), 0.0), 4.0);
+        float specular = pow(max(dot(normal, normalize(vec3(0.5, 0.8, 1.5) + vec3(0,0,1))), 0.0), 50.0); 
 
-        vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035); 
-        vec3 darkSkyReflection = vec3(0.12, 0.15, 0.18); 
-        vec3 fluidColor = mix(darkWaterDepth, darkSkyReflection, fresnel) + (specular * 0.25);
+        // 完美匹配黑色主题背景的色值
+        vec3 fluidColor = mix(vec3(0.015, 0.015, 0.02), vec3(0.08, 0.1, 0.12), fresnel) + (specular * 0.35);
 
+        // 保持 About 原有的深邃边缘暗角
         float depthDarkness = smoothstep(riftRadius - 0.3, 0.0, riftDist);
         vec3 finalColor = mix(fluidColor, vec3(0.0), depthDarkness * 0.85);
 
@@ -195,7 +197,7 @@ function AbyssRiftCanvas({ progress }: { progress: any }) {
     render()
 
     return () => { cancelAnimationFrame(animationFrameId); window.removeEventListener('resize', resize); gl.deleteProgram(program) }
-  }, [])
+  }, [progress])
 
   return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full pointer-events-none z-0" />
 }
@@ -235,7 +237,6 @@ const CardContent = ({ about }: { about: any }) => (
 function LightPaper({ about }: { about: any }) {
   const containerRef = useRef<HTMLDivElement>(null)
   
-  // 🚀 新增：识别手机端
   const [isMobile, setIsMobile] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [shatterState, setShatterState] = useState<'idle' | 'tearing' | 'imploding' | 'consuming' | 'recovering' | 'kintsugi'>('idle')
@@ -250,7 +251,6 @@ function LightPaper({ about }: { about: any }) {
   const timeouts = useRef<NodeJS.Timeout[]>([])
   const riftProgress = useMotionValue(0)
 
-  // 🚀 新增：手机端滚动进入视野检测
   const triggerRef = useRef<HTMLDivElement>(null)
   const isInView = useInView(triggerRef, { margin: "-25% 0px -25% 0px" })
 
@@ -259,7 +259,6 @@ function LightPaper({ about }: { about: any }) {
     return () => timeouts.current.forEach(clearTimeout) 
   }, [])
 
-  // 🚀 核心状态控制：撕裂中永远激活；手机端看视野；电脑端看悬停
   const isActive = shatterState !== 'idle' || (isMobile ? isInView : isHovered)
 
   const rotateX = useTransform(mouseY, [-400, 400], [12, -12])
@@ -301,14 +300,12 @@ function LightPaper({ about }: { about: any }) {
     )
   }
 
-  // 🚀 兼容手机滑动和电脑摇晃
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!containerRef.current) return
     const rect = containerRef.current.getBoundingClientRect()
     mouseX.set(e.clientX - (rect.left + rect.width / 2))
     mouseY.set(e.clientY - (rect.top + rect.height / 2))
 
-    // 只有电脑端才检测摇晃撕裂
     if (isActive && shatterState === 'idle' && !isMobile) {
       const now = performance.now()
       const dt = now - lastMouse.current.time
@@ -332,14 +329,13 @@ function LightPaper({ about }: { about: any }) {
     >
       <AbyssRiftCanvas progress={riftProgress} />
 
-      {/* 🚀 依然是严格与卡片绑定的精准触发器，增加了 onClick 连击判定 */}
       <div
         ref={triggerRef}
         onPointerEnter={() => !isMobile && setIsHovered(true)}
         onPointerLeave={() => { if(!isMobile) { setIsHovered(false); shakeAccumulator.current = 0; } }}
         onClick={() => {
           if (isMobile && shatterState === 'idle') {
-            shakeAccumulator.current += 260; // 连点 3 次即可积攒到 500 引爆彩蛋！
+            shakeAccumulator.current += 260; 
             if (shakeAccumulator.current > 500) triggerShatterSequence();
           }
         }}
@@ -367,7 +363,6 @@ function LightPaper({ about }: { about: any }) {
           style={{ transformStyle: "preserve-3d" }}
         >
 
-          {/* 完整卡片 */}
           <motion.div
             animate={{ opacity: shatterState === 'idle' ? 1 : 0 }}
             transition={{ duration: 0 }} 
@@ -378,9 +373,6 @@ function LightPaper({ about }: { about: any }) {
             <CardContent about={about} />
           </motion.div>
 
-          {/* ================================================= */}
-          {/* 💥 纸张撕裂：完全无扭曲，100% 像素级对齐！ */}
-          {/* ================================================= */}
           {shatterState !== 'idle' && PAPER_TEARS.map((polygon, index) => {
             const phys = TEAR_PHYSICS[index]
 
