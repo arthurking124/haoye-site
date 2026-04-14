@@ -16,10 +16,14 @@ export default function LightPoemRift({ poem }: { poem: any }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
 
+  // ===============================================
+  // 💥 核心修复：完美的“缓慢撕裂”过程
+  // ===============================================
   useEffect(() => {
     animate(progress, 1, {
-      duration: 1.8,
-      ease: [0.19, 1, 0.22, 1],
+      delay: 0.2,        // 稍微等待一下，衔接水滴塌陷的视觉残影
+      duration: 2.6,     // 延长撕裂的总时间，让过程清晰可见
+      ease: [0.6, 0.05, 0.15, 0.95], // 物理张力曲线：起步极慢（撕开一条缝） -> 平滑扩大 -> 稳稳停住
       onComplete: () => setIsOpen(true)
     })
   }, [progress])
@@ -40,6 +44,7 @@ export default function LightPoemRift({ poem }: { poem: any }) {
     })
   }
 
+  // WebGL 裂口与深渊流体 (一字未动，完美保留)
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -84,6 +89,8 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         vec2 centerP = (uv * 2.0 - 1.0);
         centerP.x *= u_resolution.x / u_resolution.y;
         vec2 maxRift = vec2((u_resolution.x/u_resolution.y) * 0.85, 0.85);
+        
+        // 配合外部的缓动曲线，内部撕裂速度更加线性
         float easeProg = pow(u_progress, 1.2);
         vec2 d = abs(centerP) - (maxRift * easeProg);
         float baseDist = length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
@@ -91,17 +98,12 @@ export default function LightPoemRift({ poem }: { poem: any }) {
         float finalDist = baseDist + noise;
         if (finalDist > 0.0) discard; 
 
-        // ===============================================
-        // 终极修复：深渊级流速 (与黑色主题背景完全同频)
-        // ===============================================
+        // 完美左下流向
         vec2 fluidP = p;
-        // 将原先的 0.05 和 0.1 缩小 3 倍，呈现出极度粘稠、厚重的重力感
         fluidP.x += u_time * 0.015; 
         fluidP.y += u_time * 0.03; 
 
-        // 将内部扰动速度也降低一半，水波不再剧烈翻滚，而是缓慢涌动
         float time = u_time * 0.02; 
-        
         vec2 q = vec2(fbm(fluidP + time * 0.8), fbm(fluidP + vec2(1.0) + time * 0.5));
         vec2 r = vec2(fbm(fluidP + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time), fbm(fluidP + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time));
         float surfaceHeight = fbm(fluidP + r);
