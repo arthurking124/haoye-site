@@ -3,10 +3,10 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * 极致水墨写意双鱼 (v6 - 水流材质同步版)
+ * 极致水墨写意双鱼 (v6 - 动态反馈增强版)
  * 1. 色彩同步：黑鱼采用水流“深渊黑” (0.015, 0.015, 0.02)
  * 2. 色彩同步：白鱼采用水流“晨曦白” (0.96, 0.94, 0.91)
- * 3. 风格：延续写意鱼头、侧生胸鳍、飘逸丝绸长尾
+ * 3. 动态反馈：受惊时胸鳍和尾鳍高频摆动，不受惊时保持优雅
  */
 
 export default function InkFishes() {
@@ -53,6 +53,7 @@ export default function InkFishes() {
       vy: number
       segments: { x: number; y: number; angle: number }[]
       numSegments = 24
+      fearLevel = 0 // 新增：受惊程度 (0-1)
       
       config = {
         bodyLen: 115,
@@ -61,7 +62,7 @@ export default function InkFishes() {
         tailSharpness: 0.85,
         finScale: 0.75,
         finAngle: 45,
-        tailLength: 85,       // 稍微加长尾巴，更显飘逸
+        tailLength: 85,
         tailSpread: 45,
         fearRadius: 180,
         fearForce: 3.5,
@@ -95,10 +96,15 @@ export default function InkFishes() {
         const dx = this.x - mouse.x
         const dy = this.y - mouse.y
         const dist = Math.sqrt(dx * dx + dy * dy)
+        
+        // 更新受惊程度
         if (dist < this.config.fearRadius) {
           const power = Math.pow((this.config.fearRadius - dist) / this.config.fearRadius, 2)
           ax += (dx / dist) * power * this.config.fearForce
           ay += (dy / dist) * power * this.config.fearForce
+          this.fearLevel = Math.min(1, this.fearLevel + 0.1) // 快速反应
+        } else {
+          this.fearLevel *= 0.95 // 缓慢平复
         }
 
         this.vx += ax
@@ -124,11 +130,7 @@ export default function InkFishes() {
       }
 
       draw(ctx: CanvasRenderingContext2D) {
-        const { isBlack, segments, numSegments, config } = this
-        
-        // 🎨 核心色彩同步自 WebGL 材质
-        // 黑鱼：同步自 abyssColor (0.015, 0.015, 0.02) -> RGB(4, 4, 5)
-        // 白鱼：同步自 lightColor (0.96, 0.94, 0.91) -> RGB(245, 240, 232)
+        const { isBlack, segments, numSegments, config, fearLevel } = this
         const rgbBase = isBlack ? '4, 4, 5' : '245, 240, 232'
         const colorMain = `rgba(${rgbBase}, ${isBlack ? 0.95 : 0.85})`
         const colorFade = `rgba(${rgbBase}, 0)`
@@ -167,10 +169,14 @@ export default function InkFishes() {
         ctx.fill()
         if (!isBlack) ctx.stroke()
 
-        // --- 2. 绘制胸鳍 ---
+        // --- 2. 绘制胸鳍 (受惊时会扇动) ---
         const finMount = segments[4]
         const finLen = config.bodyWidth * 2.5
-        const sweep = config.finAngle * (Math.PI / 180)
+        
+        // 胸鳍摆动逻辑：受惊时频率更高、幅度更大
+        const finFreq = 0.005 + fearLevel * 0.015
+        const finWave = Math.sin(Date.now() * finFreq) * (15 + fearLevel * 30)
+        const sweep = (config.finAngle + finWave) * (Math.PI / 180)
 
         const drawFin = (side: number) => {
           ctx.save()
@@ -198,7 +204,7 @@ export default function InkFishes() {
         drawFin(1)
         drawFin(-1)
 
-        // --- 3. 绘制飘逸长尾鳍 ---
+        // --- 3. 绘制飘逸长尾鳍 (受惊时摆动加速) ---
         const tailBase = segments[numSegments - 1]
         const tLen = config.tailLength
         const tSpread = config.tailSpread * (Math.PI / 180)
@@ -218,7 +224,10 @@ export default function InkFishes() {
 
           ctx.beginPath()
           ctx.moveTo(tailBase.x, tailBase.y)
-          const wave = Math.sin(Date.now() * 0.005 + (isBlack ? 0 : 2.5)) * 0.18
+          
+          // 尾鳍摆动逻辑：受惊时频率从 0.005 提升到 0.02
+          const tailFreq = 0.005 + fearLevel * 0.015
+          const wave = Math.sin(Date.now() * tailFreq + (isBlack ? 0 : 2.5)) * (0.18 + fearLevel * 0.3)
           
           ctx.bezierCurveTo(
             tailBase.x - Math.cos(tailBase.angle + angleOffset * 0.5 + wave) * tLen * 0.6,
