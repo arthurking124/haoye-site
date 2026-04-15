@@ -3,10 +3,10 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * 黑白水墨写意双鱼 (v5 - 阴阳双鱼版)
- * 1. 黑鱼：浓墨重彩，表现厚重的水墨感
- * 2. 白鱼：留白淡墨，通过微弱的勾边和透明度表现轻盈感
- * 3. 动态：保持飘逸长尾，模拟水墨交融
+ * 极致水墨写意双鱼 (v6 - 水流材质同步版)
+ * 1. 色彩同步：黑鱼采用水流“深渊黑” (0.015, 0.015, 0.02)
+ * 2. 色彩同步：白鱼采用水流“晨曦白” (0.96, 0.94, 0.91)
+ * 3. 风格：延续写意鱼头、侧生胸鳍、飘逸丝绸长尾
  */
 
 export default function InkFishes() {
@@ -61,7 +61,7 @@ export default function InkFishes() {
         tailSharpness: 0.85,
         finScale: 0.75,
         finAngle: 45,
-        tailLength: 80,
+        tailLength: 85,       // 稍微加长尾巴，更显飘逸
         tailSpread: 45,
         fearRadius: 180,
         fearForce: 3.5,
@@ -84,7 +84,7 @@ export default function InkFishes() {
         const centerX = width / 2
         const centerY = height / 2
         const radius = Math.min(width, height) * 0.25
-        const speed = 0.0006 // 游动稍缓，更显优雅
+        const speed = 0.0006
         
         const targetX = centerX + Math.cos(time * speed + (this.isBlack ? 0 : Math.PI)) * radius
         const targetY = centerY + Math.sin(time * speed + (this.isBlack ? 0 : Math.PI)) * radius
@@ -126,38 +126,37 @@ export default function InkFishes() {
       draw(ctx: CanvasRenderingContext2D) {
         const { isBlack, segments, numSegments, config } = this
         
-        // 颜色定义
-        const colorMain = isBlack ? 'rgba(20, 20, 20, 0.95)' : 'rgba(245, 245, 245, 0.7)'
-        const colorFade = isBlack ? 'rgba(20, 20, 20, 0)' : 'rgba(245, 245, 245, 0)'
-        const strokeColor = isBlack ? 'transparent' : 'rgba(180, 180, 180, 0.3)' // 白鱼加淡淡勾边
+        // 🎨 核心色彩同步自 WebGL 材质
+        // 黑鱼：同步自 abyssColor (0.015, 0.015, 0.02) -> RGB(4, 4, 5)
+        // 白鱼：同步自 lightColor (0.96, 0.94, 0.91) -> RGB(245, 240, 232)
+        const rgbBase = isBlack ? '4, 4, 5' : '245, 240, 232'
+        const colorMain = `rgba(${rgbBase}, ${isBlack ? 0.95 : 0.85})`
+        const colorFade = `rgba(${rgbBase}, 0)`
+        const strokeColor = isBlack ? 'transparent' : 'rgba(200, 190, 180, 0.3)'
         
         ctx.save()
         
         // --- 1. 绘制鱼身 ---
         ctx.fillStyle = colorMain
         ctx.strokeStyle = strokeColor
-        ctx.lineWidth = 1.5
+        ctx.lineWidth = 1.2
         ctx.beginPath()
         
-        // 右侧曲线
         for (let i = 0; i < numSegments; i++) {
           const s = segments[i]
           const progress = i / (numSegments - 1)
           const curve = Math.pow(Math.cos(progress * Math.PI * 0.5), 0.5)
           const thickness = config.bodyWidth * curve * (1 - progress * config.tailSharpness)
-          
           const x = s.x + Math.cos(s.angle + Math.PI / 2) * thickness
           const y = s.y + Math.sin(s.angle + Math.PI / 2) * thickness
           if (i === 0) ctx.moveTo(x, y)
           else ctx.lineTo(x, y)
         }
-        // 左侧曲线
         for (let i = numSegments - 1; i >= 0; i--) {
           const s = segments[i]
           const progress = i / (numSegments - 1)
           const curve = Math.pow(Math.cos(progress * Math.PI * 0.5), 0.5)
           const thickness = config.bodyWidth * curve * (1 - progress * config.tailSharpness)
-          
           const x = s.x + Math.cos(s.angle - Math.PI / 2) * thickness
           const y = s.y + Math.sin(s.angle - Math.PI / 2) * thickness
           ctx.lineTo(x, y)
@@ -170,7 +169,7 @@ export default function InkFishes() {
 
         // --- 2. 绘制胸鳍 ---
         const finMount = segments[4]
-        const finLen = config.bodyWidth * 2.4
+        const finLen = config.bodyWidth * 2.5
         const sweep = config.finAngle * (Math.PI / 180)
 
         const drawFin = (side: number) => {
@@ -213,13 +212,13 @@ export default function InkFishes() {
             tailBase.y - Math.sin(tailBase.angle + angleOffset) * tLen
           )
           tailGrad.addColorStop(0, colorMain)
-          tailGrad.addColorStop(0.5, isBlack ? 'rgba(20, 20, 20, 0.4)' : 'rgba(245, 245, 245, 0.4)')
+          tailGrad.addColorStop(0.5, `rgba(${rgbBase}, 0.4)`)
           tailGrad.addColorStop(1, colorFade)
           ctx.fillStyle = tailGrad
 
           ctx.beginPath()
           ctx.moveTo(tailBase.x, tailBase.y)
-          const wave = Math.sin(Date.now() * 0.005 + (isBlack ? 0 : 2)) * 0.15
+          const wave = Math.sin(Date.now() * 0.005 + (isBlack ? 0 : 2.5)) * 0.18
           
           ctx.bezierCurveTo(
             tailBase.x - Math.cos(tailBase.angle + angleOffset * 0.5 + wave) * tLen * 0.6,
