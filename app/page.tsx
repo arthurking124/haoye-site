@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useMotionValue, animate, AnimatePresence, useSpring } from 'framer-motion'
+import InkFishes from '@/components/ui/InkFishes' // 👑 引入双鱼引擎
 
 // =========================================================
 // 🕳️ WebGL 引擎：大一统顺时针坍缩版 (引力与流向完美统一)
@@ -89,8 +90,6 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
         // ==========================================
         // 2. 👑 大一统引擎：微观水流场 (恢复纯正顺时针)
         // ==========================================
-        // 之前这里被我搞反了！现在恢复 vec2(y, -x) 的顺时针矢量！
-        // 它将与宏观漩涡完美咬合，不再打架！
         vec2 flow = vec2(twistedP.y, -twistedP.x); 
         vec2 fluidP = twistedP - flow * u_time * 0.055; 
 
@@ -266,7 +265,11 @@ export default function HomeInteractive() {
 
   return (
     <main className="relative w-full h-[100svh] overflow-hidden bg-[#050505]">
+      {/* 永远流淌的底层太极背景 */}
       <TaiChiVortexCanvas vortexProgress={vortex} />
+
+      {/* 👑 挂载水墨双鱼，它会飘在水面之上！ */}
+      <InkFishes />
 
       <motion.div 
         animate={
