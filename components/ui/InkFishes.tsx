@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react'
  * 1. 色彩同步：黑鱼采用水流“深渊黑” (0.015, 0.015, 0.02)
  * 2. 色彩同步：白鱼采用水流“晨曦白” (0.96, 0.94, 0.91)
  * 3. 动态反馈：受惊时胸鳍和尾鳍高频摆动，不受惊时保持优雅
+ * 4. 修改：去掉了尾鳍中间竖起来的那三个鳍，保留两侧的鳍
  */
 
 export default function InkFishes() {
@@ -241,11 +242,13 @@ export default function InkFishes() {
           ctx.restore()
         }
 
-        drawTailLeaf(-tSpread, 1.2, 0.7)
-        drawTailLeaf(tSpread, 1.2, 0.7)
-        drawTailLeaf(-tSpread * 0.4, 1.5, 0.5)
-        drawTailLeaf(tSpread * 0.4, 1.5, 0.5)
-        drawTailLeaf(0, 1.0, 0.6)
+        // 修改：去掉了中间的三个鳍，只保留两侧最外侧的鳍
+        drawTailLeaf(-tSpread, 1.2, 0.7) // 左侧外鳍
+        drawTailLeaf(tSpread, 1.2, 0.7)  // 右侧外鳍
+        // 原有的中间三个鳍已移除：
+        // drawTailLeaf(-tSpread * 0.4, 1.5, 0.5)
+        // drawTailLeaf(tSpread * 0.4, 1.5, 0.5)
+        // drawTailLeaf(0, 1.0, 0.6)
         
         ctx.restore()
       }
