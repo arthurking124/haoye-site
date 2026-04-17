@@ -10,50 +10,7 @@ export default defineType({
       title: 'Site Title',
       type: 'string',
     }),
-    defineField({
-      name: 'homeScreen1Text',
-      title: 'Home Screen 1 Text',
-      type: 'string',
-    }),
-    defineField({
-      name: 'homeScreen1Image',
-      title: 'Home Screen 1 Image',
-      type: 'image',
-      options: {hotspot: true},
-    }),
-    defineField({
-      name: 'homeScreen2Text',
-      title: 'Home Screen 2 Text',
-      type: 'string',
-    }),
-    defineField({
-      name: 'homeScreen2Image',
-      title: 'Home Screen 2 Image',
-      type: 'image',
-      options: {hotspot: true},
-    }),
-    defineField({
-      name: 'homeScreen3Text',
-      title: 'Home Screen 3 Text',
-      type: 'string',
-    }),
-    defineField({
-      name: 'homeScreen3Image',
-      title: 'Home Screen 3 Image',
-      type: 'image',
-      options: {hotspot: true},
-    }),
-    defineField({
-      name: 'homeScreen4Text',
-      title: 'Home Screen 4 Text',
-      type: 'string',
-    }),
-    defineField({
-      name: 'homeScreen4Image',
-      title: 'Home Screen 4 Image',
-      type: 'image',
-      options: {hotspot: true},
-    }),
+    // 原来的 8 个 homeScreen 字段已经被彻底超度了 🗑️
     defineField({
       name: 'signature',
       title: 'Signature',
