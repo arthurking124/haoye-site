@@ -137,6 +137,7 @@ function TaiChiVortexCanvas({ vortexProgress }: { vortexProgress: any }) {
     `
     const program = gl.createProgram()!
     const compile = (t: number, s: string) => {
+      // 👑 已修复：正确的 compileShader API 调用
       const sh = gl.createShader(t)!; gl.shaderSource(sh, s); gl.compileShader(sh); return sh;
     }
     gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource))
@@ -243,16 +244,27 @@ const NAVS = [
   { id: 'a', l: '我', s: 'ABOUT', pos: 'bottom-16 right-10 md:bottom-20 md:right-16 items-end', textCls: 'text-white/80 group-hover:text-white', subCls: 'text-white/40 group-hover:text-white/80', dropColor: 'white', path: '/about', delay: 0.6 },
 ]
 
-export default function HomeInteractive() {
+export default function HomePage() {
   const router = useRouter()
   const [state, setState] = useState<'idle' | 'dropping' | 'vortexing'>('idle')
   const [origin, setOrigin] = useState({ x: 0, y: 0 })
   const vortex = useMotionValue(0)
   const [dropTheme, setDropTheme] = useState<'white' | 'black'>('white')
 
-  // 新增：控制是否进入了网站主体
+  // 👑 记忆锁：控制是否进入了网站主体
   const [hasEntered, setHasEntered] = useState(false)
+  const [isChecking, setIsChecking] = useState(true) // 防止页面刷新时状态闪烁
 
+  // 1. 挂载时检查是否已经看过加载大片
+  useEffect(() => {
+    const alreadyEntered = sessionStorage.getItem('haoye-has-entered')
+    if (alreadyEntered === 'true') {
+      setHasEntered(true)
+    }
+    setIsChecking(false)
+  }, [])
+
+  // 2. 点击导航时的下坠与坍缩动画
   const trigger = (e: React.MouseEvent, path: string, color: 'white' | 'black') => {
     if (state !== 'idle') return
     const r = e.currentTarget.getBoundingClientRect()
@@ -267,28 +279,37 @@ export default function HomeInteractive() {
     }, 850)
   }
 
+  // 3. 创世加载结束回调，打上思想钢印
+  const handleLoadingComplete = () => {
+    setHasEntered(true)
+    sessionStorage.setItem('haoye-has-entered', 'true') // 👑 写入记忆
+  }
+
   return (
     <>
-      {/* 1. 创世加载序章：只在未进入时显示 */}
-      {!hasEntered && (
-        <GenesisLoading onComplete={() => setHasEntered(true)} />
-      )}
+      {/* 👑 1. 创世加载序章：仅在没看过且检查完毕后才显示 */}
+      <AnimatePresence>
+        {!isChecking && !hasEntered && (
+          <GenesisLoading onComplete={handleLoadingComplete} />
+        )}
+      </AnimatePresence>
 
-      {/* 2. 网站主体：你的原始代码逻辑 */}
+      {/* 2. 网站主体：你的完美原始代码逻辑 */}
       <main 
         className="relative w-full h-[100svh] overflow-hidden bg-[#050505]"
         style={{ 
           opacity: hasEntered ? 1 : 0, 
-          transition: 'opacity 1s ease',
+          transition: 'opacity 1s ease', // 动画完成后平滑淡入主站
           visibility: hasEntered ? 'visible' : 'hidden' 
         }}
       >
         {/* 永远流淌的底层太极背景 */}
         <TaiChiVortexCanvas vortexProgress={vortex} />
 
-        {/* 👑 挂载水墨双鱼，它会飘在水面之上！ */}
+        {/* 挂载水墨双鱼，飘在水面之上 */}
         <InkFishes />
 
+        {/* 居中 HAOYE 文字 */}
         <motion.div 
           animate={
             state === 'idle' 
@@ -304,6 +325,7 @@ export default function HomeInteractive() {
           HAOYE
         </motion.div>
 
+        {/* 四角导航矩阵 */}
         <div className="absolute inset-0 z-20 pointer-events-none">
           {NAVS.map((n) => (
             <div key={n.id} className={`absolute flex flex-col ${n.pos}`}>
@@ -330,6 +352,7 @@ export default function HomeInteractive() {
           ))}
         </div>
 
+        {/* 水滴坠落引发空间坍缩的顶级特效 */}
         <AnimatePresence>
           {state === 'dropping' && (
             <motion.div
