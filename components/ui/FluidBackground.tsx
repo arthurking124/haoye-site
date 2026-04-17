@@ -8,7 +8,7 @@ export default function FluidBackground() {
   const pathname = usePathname()
 
   // 贯穿全站（除首页），托底所有网页和相册
-  const isAllowedPath = pathname !== '/'
+  const isAllowedPath = true
 
   useEffect(() => {
     if (!isAllowedPath) return
