@@ -42,7 +42,7 @@ export default function Footer() {
             md:text-[11px]
           "
         >
-          © haoye.cyou
+          © 2026 皓野. All rights reserved.
         </p>
       </div>
     </footer>
