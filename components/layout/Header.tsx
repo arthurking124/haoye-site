@@ -66,6 +66,14 @@ export default function Header() {
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(STORAGE_KEY); const initialTheme = savedTheme === 'light' ? 'light' : 'dark'
     setTheme(initialTheme); document.documentElement.dataset.theme = initialTheme
+    
+    // 👑 核心修复 1：同步唤醒 Tailwind 的 class，让内页文字颜色正确反转！
+    if (initialTheme === 'dark') {
+      document.documentElement.classList.add('dark'); document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light'); document.documentElement.classList.remove('dark');
+    }
+
     const audio = new Audio(initialTheme === 'light' ? LIGHT_MUSIC : DARK_MUSIC)
     audio.loop = true; audio.preload = 'auto'; audio.volume = 0; audioRef.current = audio
     const savedSound = window.localStorage.getItem(SOUND_KEY); setSoundEnabled(savedSound ? savedSound === 'on' : true)
@@ -105,6 +113,13 @@ export default function Header() {
     window.localStorage.setItem(STORAGE_KEY, newTheme)
     window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: newTheme }))
     document.documentElement.dataset.theme = newTheme
+    
+    // 👑 核心修复 2：点击切换时，同步更新 Tailwind 的 class
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark'); document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light'); document.documentElement.classList.remove('dark');
+    }
   }
 
   // 👑 奇点坍缩路由拦截器 (修复同页卡死 Bug)

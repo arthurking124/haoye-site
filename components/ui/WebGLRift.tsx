@@ -21,7 +21,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
     const vsSource = `attribute vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`
     
-    // 👑 彻底重写：去圆圈、高质感、有机流体雾气着色器 (修复蓝色光晕为银灰版)
+    // 👑 你的原版代码！仅仅只替换了白天模式的颜色
     const fsSource = `
       precision highp float;
       uniform vec2 u_resolution;
@@ -85,7 +85,8 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
         // 颜色映射
         vec3 darkCloud = mix(vec3(0.02, 0.02, 0.03), vec3(0.1, 0.12, 0.15), cloud);
-        vec3 lightCloud = mix(vec3(0.96, 0.95, 0.93), vec3(0.85, 0.86, 0.84), cloud);
+        // 👑 仅仅修改了这里：宣纸白底 -> 烟墨扩散雾气
+        vec3 lightCloud = mix(vec3(0.961, 0.949, 0.941), vec3(0.882, 0.890, 0.875), cloud);
         vec3 voidColor = mix(darkCloud, lightCloud, u_theme);
 
         // 🕳️ 黑洞核心：仅在坍缩时出现
