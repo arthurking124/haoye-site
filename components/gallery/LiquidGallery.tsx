@@ -15,6 +15,8 @@ const liquidShader = {
     uTime: { value: 0 },
     uMouse: { value: new THREE.Vector2(0.5, 0.5) },
     uVelo: { value: 0 },
+    // 👑 新增：屏幕分辨率，用于计算真实的屏幕宽高比
+    uResolution: { value: new THREE.Vector2(1, 1) }, 
   },
   vertexShader: `
     varying vec2 vUv;
@@ -30,12 +32,23 @@ const liquidShader = {
     uniform float uTime;
     uniform vec2 uMouse;
     uniform float uVelo;
+    uniform vec2 uResolution;
     varying vec2 vUv;
 
     void main() {
       vec2 uv = vUv;
-      float d = distance(uv, uMouse);
+      
+      // 👑 核心修复1：将坐标系转换到物理等距空间，消灭“椭圆病”
+      float aspect = uResolution.x / uResolution.y;
+      vec2 correctUv = vec2(uv.x * aspect, uv.y);
+      vec2 correctMouse = vec2(uMouse.x * aspect, uMouse.y);
+      
+      // 在正圆空间里计算距离
+      float d = distance(correctUv, correctMouse);
+      
       float ripple = sin(d * 15.0 - uTime * 3.0) * (0.05 * uVelo);
+      
+      // 折射依然应用在原始 UV 上，保证贴图不拉伸
       vec2 refractedUv = uv + ripple;
       
       float r = texture2D(uTexture, refractedUv + ripple * 0.8).r;
@@ -73,15 +86,22 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
     transparent: true,
   }), []);
 
-  useFrame((state) => {
+  // 👑 核心修复2：引入 delta 时间，建立帧率无关的全局物理系统
+  useFrame((state, delta) => {
     if (!meshRef.current) return;
-    progress.current += (1.0 - progress.current) * 0.06;
+    
+    // 进度条的阻尼平滑，替代原来的 += (1-p)*0.06
+    progress.current = THREE.MathUtils.damp(progress.current, 1.0, 4.0, delta);
     
     const targetMouse = new THREE.Vector2((state.mouse.x + 1) / 2, (state.mouse.y + 1) / 2);
-    mouse.current.lerp(targetMouse, 0.08);
     
-    velocity.current *= 0.92;
-    velocity.current += targetMouse.distanceTo(mouse.current) * 0.8;
+    // 鼠标坐标的弹性跟随
+    mouse.current.x = THREE.MathUtils.damp(mouse.current.x, targetMouse.x, 6.0, delta);
+    mouse.current.y = THREE.MathUtils.damp(mouse.current.y, targetMouse.y, 6.0, delta);
+    
+    // 速度衰减方程 (指数级衰减，替代简单的 *= 0.92)
+    velocity.current *= Math.exp(-4.0 * delta);
+    velocity.current += targetMouse.distanceTo(mouse.current) * 45.0 * delta;
     const activeVelo = Math.max(velocity.current, 0.05);
 
     const shader = meshRef.current.material as THREE.ShaderMaterial;
@@ -91,6 +111,9 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
     shader.uniforms.uTime.value = state.clock.getElapsedTime();
     shader.uniforms.uMouse.value = mouse.current;
     shader.uniforms.uVelo.value = activeVelo;
+    
+    // 动态传入当前屏幕的像素尺寸
+    shader.uniforms.uResolution.value.set(state.size.width, state.size.height);
   });
 
   useEffect(() => {
@@ -109,7 +132,7 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   );
 }
 
-// 接收父组件(GalleryClientWrapper)下发的状态和触发事件
+// ... 这里的 Props 和 LiquidGallery 主体函数完全保留你原来的逻辑 ...
 interface Props {
   items: any[];
   currentIndex: number;
@@ -208,7 +231,6 @@ export default function LiquidGallery({ items, currentIndex, setCurrentIndex, on
             transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
             className="text-center"
           >
-            {/* 优雅的 INDEX 触发器 */}
             <button 
               onClick={onOpenIndex}
               className="pointer-events-auto text-[10px] tracking-[0.5em] text-[var(--site-faint)] mb-4 font-mono hover:text-white transition-colors cursor-pointer outline-none group/idx flex items-center justify-center gap-3 w-full"
