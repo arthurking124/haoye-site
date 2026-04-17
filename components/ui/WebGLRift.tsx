@@ -21,7 +21,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
     const vsSource = `attribute vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`
     
-    // 👑 修复了死亡蓝屏的终极数学管线
+    // 👑 彻底重写：去圆圈、高质感、有机流体雾气着色器 (修复蓝色光晕为银灰版)
     const fsSource = `
       precision highp float;
       uniform vec2 u_resolution;
@@ -30,6 +30,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
       uniform float u_theme;
       uniform float u_collapse;
 
+      // 核心随机函数
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
       float snoise(vec2 v){
         const vec4 C = vec4(0.211324865, 0.366025404, -0.577350269, 0.0243902439);
@@ -43,10 +44,15 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         vec3 g; g.x  = a0.x  * x0.x  + h.x  * x0.y; g.yz = a0.yz * x12.xz + h.yz * x12.yw;
         return 130.0 * dot(m, g);
       }
+
+      // FBM 生成有机纹理
       float fbm(vec2 uv) {
         float f = 0.0; float amp = 0.5;
-        mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
-        for (int i = 0; i < 4; i++) { f += amp * snoise(uv); uv = rot * uv * 2.0; amp *= 0.5; }
+        for (int i = 0; i < 5; i++) {
+          f += amp * snoise(uv);
+          uv *= 2.02;
+          amp *= 0.5;
+        }
         return f;
       }
 
@@ -54,47 +60,48 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         vec2 uv = gl_FragCoord.xy / u_resolution.xy;
         vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
         vec2 p = uv * aspect;
-        vec2 origin = vec2(1.0, 0.0) * aspect;
-        vec2 center = vec2(0.5, 0.5) * aspect;
+        vec2 origin = vec2(1.0, 0.0) * aspect; // 右下角起爆点
+        vec2 center = vec2(0.5, 0.5) * aspect; // 奇点中心
 
-        vec2 toCenter = p - center;
-        float warp = exp(-length(toCenter) * 5.0) * u_collapse;
-        p -= toCenter * warp * 1.5;
+        // 🌊 核心修复：平时绝对不使用强旋转！
+        // 只在坍缩阶段 (u_collapse) 引入漩涡引力
+        float angle = u_collapse * 4.0 * exp(-length(p - center) * 2.0);
+        mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+        vec2 distortedP = center + rot * (p - center);
 
+        // 坍缩时的中心吸力
+        distortedP -= (p - center) * u_collapse * 0.5;
+
+        // 水膜撕裂逻辑
         float dist = length(p - origin);
-        float maxDist = length(vec2(1.0, 1.0) * aspect);
-        float baseRadius = u_progress * maxDist * 1.5;
+        float radius = u_progress * 1.5;
+        float noise = fbm(distortedP * 3.0 + u_time * 0.1);
+        float border = smoothstep(radius, radius - 0.1, dist + noise * 0.15);
 
-        float tear = (fbm(p * 4.0 + u_time * 0.4) - 0.5) * 0.25;
-        float radius = baseRadius + tear * smoothstep(0.0, 0.3, u_progress);
+        // 🌫️ 质感雾气：使用多层 Domain Warping 彻底消灭圆圈
+        vec2 q = vec2(fbm(distortedP + u_time * 0.05), fbm(distortedP + vec2(5.2, 1.3)));
+        vec2 r = vec2(fbm(distortedP + 4.0 * q + u_time * 0.02), fbm(distortedP + 4.0 * q));
+        float cloud = fbm(distortedP + 4.0 * r);
 
-        // 👑 蓝屏修复核心：使用 abs 确保光晕只产生在边界
-        float edgeDist = abs(dist - radius);
-        float edgeGlow = exp(-edgeDist * 40.0) * smoothstep(0.0, 0.1, u_progress);
+        // 颜色映射
+        vec3 darkCloud = mix(vec3(0.02, 0.02, 0.03), vec3(0.1, 0.12, 0.15), cloud);
+        vec3 lightCloud = mix(vec3(0.96, 0.95, 0.93), vec3(0.85, 0.86, 0.84), cloud);
+        vec3 voidColor = mix(darkCloud, lightCloud, u_theme);
+
+        // 🕳️ 黑洞核心：仅在坍缩时出现
+        float core = smoothstep(0.4, 0.0, length(p - center) / u_collapse);
+        voidColor = mix(voidColor, vec3(0.0), core * u_collapse);
+
+        // 最终合成
+        float alpha = border * u_progress;
         
-        // 👑 色彩修复：将刺眼的蓝色改为极其克制、高级的“冷月/水银”色
-        vec3 darkEdge = vec3(0.12, 0.15, 0.18) * edgeGlow * 1.5; // 冷峻的深灰水银色
-        vec3 lightEdge = vec3(0.05, 0.05, 0.05) * edgeGlow * 1.5; // 水墨渗出边缘
-        vec3 edgeColor = mix(darkEdge, lightEdge, u_theme);
+        // 增加边缘柔和感 (呼应雾气)
+        float edgeGlow = exp(-abs(dist - radius) * 20.0) * u_progress;
+        
+        // 👑 色彩修复：将刺眼的蓝色 (0.1, 0.2, 0.4) 改为高级克制的银灰色 (0.16, 0.18, 0.20)
+        vec3 edgeColor = mix(vec3(0.16, 0.18, 0.20), vec3(0.2), u_theme) * edgeGlow;
 
-        float inside = smoothstep(0.01, -0.01, dist - radius); // 1.0 内部，0.0 外部
-
-        float n = fbm(p * 2.0 + u_time * 0.1);
-        vec3 darkVoid = mix(vec3(0.02, 0.02, 0.03), vec3(0.06, 0.07, 0.09), n);
-        vec3 lightVoid = mix(vec3(0.96, 0.95, 0.94), vec3(0.88, 0.89, 0.87), n);
-        vec3 voidColor = mix(darkVoid, lightVoid, u_theme);
-
-        // 奇点星尘
-        float specs = smoothstep(0.8, 0.9, fbm(p * 40.0 - u_time * 0.2));
-        voidColor += mix(vec3(0.5, 0.7, 1.0), vec3(0.1), u_theme) * specs * (1.0 - u_collapse);
-
-        vec3 finalColor = mix(vec3(0.0), voidColor, inside) + edgeColor;
-        float finalAlpha = clamp(inside + edgeGlow, 0.0, 1.0);
-
-        finalColor = mix(finalColor, voidColor, u_collapse);
-        finalAlpha = clamp(finalAlpha + u_collapse, 0.0, 1.0);
-
-        gl_FragColor = vec4(finalColor, finalAlpha * u_progress);
+        gl_FragColor = vec4(voidColor + edgeColor, alpha);
       }
     `
     const program = gl.createProgram()!
@@ -117,6 +124,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
     let aid: number, start = Date.now()
     const resize = () => {
+      if (!canvas) return
       canvas.width = window.innerWidth * Math.min(window.devicePixelRatio, 2)
       canvas.height = window.innerHeight * Math.min(window.devicePixelRatio, 2)
       gl.viewport(0, 0, canvas.width, canvas.height)
@@ -124,15 +132,13 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
     window.addEventListener('resize', resize); resize()
     
     const render = () => {
-      const p = progress.get(); const c = collapse.get()
-      if (p < 0.001 && c < 0.001) {
-        gl.clearColor(0,0,0,0); gl.clear(gl.COLOR_BUFFER_BIT)
-      } else {
-        gl.uniform2f(uRes, canvas.width, canvas.height)
-        gl.uniform1f(uTime, (Date.now() - start) * 0.001)
-        gl.uniform1f(uProg, p); gl.uniform1f(uThm, themeVal.get()); gl.uniform1f(uCol, c)
-        gl.drawArrays(gl.TRIANGLES, 0, 6)
-      }
+      if (!canvas) return
+      gl.uniform2f(uRes, canvas.width, canvas.height)
+      gl.uniform1f(uTime, (Date.now() - start) * 0.001)
+      gl.uniform1f(uProg, progress.get())
+      gl.uniform1f(uThm, themeVal.get())
+      gl.uniform1f(uCol, collapse.get())
+      gl.drawArrays(gl.TRIANGLES, 0, 6)
       aid = requestAnimationFrame(render)
     }
     render()

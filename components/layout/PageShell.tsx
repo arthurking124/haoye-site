@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
 export default function PageShell({
@@ -9,37 +10,32 @@ export default function PageShell({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const [visible, setVisible] = useState(pathname === '/')
+  // 👑 强制洗牌触发器
+  const [trigger, setTrigger] = useState(0)
 
   useEffect(() => {
-    if (pathname === '/') {
-      setVisible(true)
-      return
-    }
-
-    setVisible(false)
-
-    const id = window.requestAnimationFrame(() => {
-      setVisible(true)
-    })
-
-    return () => window.cancelAnimationFrame(id)
+    // 只要路由变了，直接 +1，强迫 framer-motion 重新从 initial 开始爆
+    setTrigger(prev => prev + 1)
   }, [pathname])
 
-  // 首页不加这层过渡，避免破坏你的四屏节奏
   if (pathname === '/') {
     return <>{children}</>
   }
 
   return (
-    <div
-      className={`transition-all duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform ${
-        visible
-          ? 'translate-y-0 opacity-100 blur-0'
-          : 'translate-y-[14px] opacity-0 blur-[6px]'
-      }`}
+    <motion.div
+      key={trigger} // 👑 绑定触发器，不用 pathname 了
+      initial={{ scale: 0.2, opacity: 0, filter: 'blur(50px)', y: '10vh' }}
+      animate={{ scale: 1, opacity: 1, filter: 'blur(0px)', y: '0vh' }}
+      transition={{
+        type: 'spring',
+        stiffness: 200,  // 爆发力再次加强
+        damping: 14,     // 阻尼回弹
+        mass: 0.8,
+      }}
+      className="will-change-transform origin-center"
     >
       {children}
-    </div>
+    </motion.div>
   )
 }
