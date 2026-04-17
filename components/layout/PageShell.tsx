@@ -1,50 +1,52 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 
-export default function PageShell({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const pathname = usePathname()
+export default function PageShell({ children }: { children: React.ReactNode }) {
+  const [isMobile, setIsMobile] = useState(false)
 
-  // 首页不需要大爆炸，它有自己的太极流体和 Loading
-  if (pathname === '/') {
-    return <>{children}</>
-  }
+  // 1. 动态检测是否为移动端
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
-  // 👑 蓝图核心：大爆炸重构 (The Big Bang Reconstruction)
-  // 当路由变化时，framer-motion 的 key 属性会强制重新执行进场动画
   return (
-    <motion.div
-      key={pathname}
-      // 1. 奇点状态 (Singularity State)
-      initial={{ 
-        scale: 0.3,         // 从一个极小的点开始
-        opacity: 0, 
-        filter: 'blur(40px)', // 极度模糊，呼应上一幕的黑洞
-        y: '10vh'           // 略微靠下，模拟引力拉扯
-      }}
-      // 2. 宇宙膨胀 (Expansion)
-      animate={{ 
-        scale: 1, 
-        opacity: 1, 
-        filter: 'blur(0px)', 
-        y: '0vh' 
-      }}
-      // 3. 物理引擎 (Physics Physics)
+    // 2. 核心修复：移除会遮挡底层的背景色，确保它是透明的！
+    // 强制使用 bg-transparent，让底层的 FluidBackground 能够透出来
+    <motion.main
+      // 3. 核心修复：针对手机端和 PC 端做动画分级！
+      // 手机端：去除会导致 iOS 渲染白块的 blur 和极端的 scale: 0.3，改为轻微的缩放和纯透明度渐变
+      // PC 端：保留你原本高级的景深模糊和大幅度缩放
+      initial={
+        isMobile 
+          ? { opacity: 0, scale: 0.95 } 
+          : { opacity: 0, scale: 0.8, filter: 'blur(20px)' }
+      }
+      animate={
+        isMobile 
+          ? { opacity: 1, scale: 1 } 
+          : { opacity: 1, scale: 1, filter: 'blur(0px)' }
+      }
+      exit={
+        isMobile 
+          ? { opacity: 0, scale: 0.95 } 
+          : { opacity: 0, scale: 0.9, filter: 'blur(15px)' }
+      }
       transition={{
-        type: 'spring',     // 使用弹簧物理引擎
-        stiffness: 85,      // 爆发力度
-        damping: 18,        // 阻尼摩擦力，防止过度弹跳
-        mass: 0.8,          // 质量感
-        restDelta: 0.001    // 0.8秒内精确落位
+        duration: 1.2,
+        ease: [0.22, 1, 0.36, 1], // 高级的 Apple 阻尼曲线
       }}
-      className="will-change-transform"
+      // 4. 打破层叠囚笼：去掉 overflow-hidden 等限制性 class，确保内部 Canvas 不会被裁剪
+      className="relative w-full min-h-screen bg-transparent origin-center flex flex-col"
+      
+      // 告诉浏览器优先处理复合层，避免闪烁
+      style={{ willChange: 'transform, opacity' }}
     >
       {children}
-    </motion.div>
+    </motion.main>
   )
 }
