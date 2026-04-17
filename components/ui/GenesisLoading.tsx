@@ -352,7 +352,11 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
   }, [onComplete])
 
   return (
-    <div className="fixed inset-0 z-[999] bg-transparent pointer-events-none overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[999] pointer-events-none overflow-hidden"
+      // 👑 核心修复：初始赋予纯黑背景挡住一切，震荡波触发时瞬间透明，交由 WebGL 接管
+      style={{ backgroundColor: isShockwave ? 'transparent' : '#0a0a0a' }}
+    >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
       
       {/* 流体数字文字：在粒子海中若隐若现 */}
