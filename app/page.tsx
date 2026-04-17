@@ -229,7 +229,7 @@ export default function HomePage() {
 
   const [hasEntered, setHasEntered] = useState(false)
 
-  // 👑 彻底杀掉 isChecking，利用 useLayoutEffect 实现拦截！
+  // 利用 useLayoutEffect 拦截 SSR 闪屏
   useIsomorphicLayoutEffect(() => {
     if (!isSpaInitialized) {
       isSpaInitialized = true;
@@ -270,7 +270,6 @@ export default function HomePage() {
   return (
     <>
       <AnimatePresence>
-        {/* 没有了 isChecking 的阻拦，GenesisLoading 会在渲染瞬间立即就位！ */}
         {!hasEntered && (
           <GenesisLoading onComplete={handleLoadingComplete} />
         )}
@@ -281,6 +280,25 @@ export default function HomePage() {
         <TaiChiVortexCanvas vortexProgress={vortex} />
         <InkFishes />
 
+        {/* 👑 悬浮文字层：高级灰反转与纤细骨感 */}
+        <motion.div 
+          animate={
+            (state === 'idle' && hasEntered) 
+              ? { opacity: 0.55, y: [0, -10, 0] } // 👑 调整为 0.55：在差值模式下生成最完美的“克制灰”
+              : { opacity: 0, y: 0 }
+          }
+          transition={{ 
+            opacity: { duration: 0.8, delay: hasEntered ? 0.5 : 0 }, 
+            y: { duration: 8, repeat: Infinity, ease: "easeInOut" } 
+          }}
+          // 👑 删除了 font-bold 和 drop-shadow，只保留纯粹的 font-mono 细体
+          className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none font-mono text-[16px] md:text-[22px] tracking-[1.5em] text-white mix-blend-difference ml-[1.5em]"
+          style={{ visibility: hasEntered ? 'visible' : 'hidden' }}
+        >
+          HAOYE
+        </motion.div>
+
+        {/* 导航面板，保留其自身的渐隐动画 */}
         <div 
           className="absolute inset-0 z-20 pointer-events-none"
           style={{ 
@@ -289,14 +307,6 @@ export default function HomePage() {
             visibility: hasEntered ? 'visible' : 'hidden' 
           }}
         >
-          <motion.div 
-            animate={state === 'idle' ? { opacity: 0.4, y: [0, -10, 0] } : { opacity: 0, y: 0 }}
-            transition={{ opacity: { duration: 0.8 }, y: { duration: 8, repeat: Infinity, ease: "easeInOut" } }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none font-mono text-[16px] md:text-[22px] tracking-[1.5em] text-white mix-blend-difference ml-[1.5em]"
-          >
-            HAOYE
-          </motion.div>
-
           {NAVS.map((n) => (
             <div key={n.id} className={`absolute flex flex-col ${n.pos}`}>
               <FloatingMagnetic floatDelay={n.delay} isActive={state === 'idle'}>
