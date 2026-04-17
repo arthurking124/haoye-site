@@ -4,6 +4,7 @@ import { useRef, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, useMotionValue, animate, AnimatePresence, useSpring } from 'framer-motion'
 import InkFishes from '@/components/ui/InkFishes' // 👑 引入双鱼引擎
+import GenesisLoading from '@/components/ui/GenesisLoading' // 引入创世加载
 
 // =========================================================
 // 🕳️ WebGL 引擎：大一统顺时针坍缩版 (引力与流向完美统一)
@@ -249,6 +250,9 @@ export default function HomeInteractive() {
   const vortex = useMotionValue(0)
   const [dropTheme, setDropTheme] = useState<'white' | 'black'>('white')
 
+  // 新增：控制是否进入了网站主体
+  const [hasEntered, setHasEntered] = useState(false)
+
   const trigger = (e: React.MouseEvent, path: string, color: 'white' | 'black') => {
     if (state !== 'idle') return
     const r = e.currentTarget.getBoundingClientRect()
@@ -264,73 +268,88 @@ export default function HomeInteractive() {
   }
 
   return (
-    <main className="relative w-full h-[100svh] overflow-hidden bg-[#050505]">
-      {/* 永远流淌的底层太极背景 */}
-      <TaiChiVortexCanvas vortexProgress={vortex} />
+    <>
+      {/* 1. 创世加载序章：只在未进入时显示 */}
+      {!hasEntered && (
+        <GenesisLoading onComplete={() => setHasEntered(true)} />
+      )}
 
-      {/* 👑 挂载水墨双鱼，它会飘在水面之上！ */}
-      <InkFishes />
-
-      <motion.div 
-        animate={
-          state === 'idle' 
-            ? { opacity: 0.4, y: [0, -10, 0] } 
-            : { opacity: 0, y: 0 }
-        }
-        transition={{ 
-          opacity: { duration: 0.8 }, 
-          y: { duration: 8, repeat: Infinity, ease: "easeInOut" } 
+      {/* 2. 网站主体：你的原始代码逻辑 */}
+      <main 
+        className="relative w-full h-[100svh] overflow-hidden bg-[#050505]"
+        style={{ 
+          opacity: hasEntered ? 1 : 0, 
+          transition: 'opacity 1s ease',
+          visibility: hasEntered ? 'visible' : 'hidden' 
         }}
-        className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none font-mono text-[16px] md:text-[22px] tracking-[1.5em] text-white mix-blend-difference ml-[1.5em]"
       >
-        HAOYE
-      </motion.div>
+        {/* 永远流淌的底层太极背景 */}
+        <TaiChiVortexCanvas vortexProgress={vortex} />
 
-      <div className="absolute inset-0 z-20 pointer-events-none">
-        {NAVS.map((n) => (
-          <div key={n.id} className={`absolute flex flex-col ${n.pos}`}>
-            <FloatingMagnetic floatDelay={n.delay} isActive={state === 'idle'}>
-              <motion.div
-                animate={{ 
-                  opacity: state === 'idle' ? 1 : 0, 
-                  filter: state === 'idle' ? 'blur(0px)' : 'blur(10px)',
-                  scale: state === 'idle' ? 1 : 0.95
-                }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                onClick={(e: any) => trigger(e, n.path, n.dropColor as 'white' | 'black')} 
-                className="group flex flex-col items-center"
-              >
-                <span className={`text-[24px] md:text-[28px] font-light tracking-[0.2em] transition-all duration-700 ${n.textCls}`}>
-                  {n.l}
-                </span>
-                <span className={`text-[9px] md:text-[10px] font-mono tracking-[0.4em] mt-3 transition-all duration-700 ${n.subCls}`}>
-                  {n.s}
-                </span>
-              </motion.div>
-            </FloatingMagnetic>
-          </div>
-        ))}
-      </div>
+        {/* 👑 挂载水墨双鱼，它会飘在水面之上！ */}
+        <InkFishes />
 
-      <AnimatePresence>
-        {state === 'dropping' && (
-          <motion.div
-            initial={{ x: origin.x, y: origin.y, scale: 0.1, opacity: 0 }}
-            animate={{ 
-              x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, 
-              y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0, 
-              scale: [0.1, 1.5, 1.0],
-              opacity: 1 
-            }}
-            transition={{ duration: 0.85, ease: "circIn" }}
-            className={`fixed z-50 w-3 h-3 rounded-full pointer-events-none -ml-1.5 -mt-1.5 ${
-              dropTheme === 'black' 
-                ? 'bg-[#050505] shadow-[0_0_20px_3px_rgba(0,0,0,0.6),0_0_50px_rgba(0,0,0,0.3)]'
-                : 'bg-white shadow-[0_0_20px_3px_rgba(255,255,255,0.9),0_0_50px_rgba(255,255,255,0.4)]'
-            }`}
-          />
-        )}
-      </AnimatePresence>
-    </main>
+        <motion.div 
+          animate={
+            state === 'idle' 
+              ? { opacity: 0.4, y: [0, -10, 0] } 
+              : { opacity: 0, y: 0 }
+          }
+          transition={{ 
+            opacity: { duration: 0.8 }, 
+            y: { duration: 8, repeat: Infinity, ease: "easeInOut" } 
+          }}
+          className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none font-mono text-[16px] md:text-[22px] tracking-[1.5em] text-white mix-blend-difference ml-[1.5em]"
+        >
+          HAOYE
+        </motion.div>
+
+        <div className="absolute inset-0 z-20 pointer-events-none">
+          {NAVS.map((n) => (
+            <div key={n.id} className={`absolute flex flex-col ${n.pos}`}>
+              <FloatingMagnetic floatDelay={n.delay} isActive={state === 'idle'}>
+                <motion.div
+                  animate={{ 
+                    opacity: state === 'idle' ? 1 : 0, 
+                    filter: state === 'idle' ? 'blur(0px)' : 'blur(10px)',
+                    scale: state === 'idle' ? 1 : 0.95
+                  }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  onClick={(e: any) => trigger(e, n.path, n.dropColor as 'white' | 'black')} 
+                  className="group flex flex-col items-center"
+                >
+                  <span className={`text-[24px] md:text-[28px] font-light tracking-[0.2em] transition-all duration-700 ${n.textCls}`}>
+                    {n.l}
+                  </span>
+                  <span className={`text-[9px] md:text-[10px] font-mono tracking-[0.4em] mt-3 transition-all duration-700 ${n.subCls}`}>
+                    {n.s}
+                  </span>
+                </motion.div>
+              </FloatingMagnetic>
+            </div>
+          ))}
+        </div>
+
+        <AnimatePresence>
+          {state === 'dropping' && (
+            <motion.div
+              initial={{ x: origin.x, y: origin.y, scale: 0.1, opacity: 0 }}
+              animate={{ 
+                x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, 
+                y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0, 
+                scale: [0.1, 1.5, 1.0],
+                opacity: 1 
+              }}
+              transition={{ duration: 0.85, ease: "circIn" }}
+              className={`fixed z-50 w-3 h-3 rounded-full pointer-events-none -ml-1.5 -mt-1.5 ${
+                dropTheme === 'black' 
+                  ? 'bg-[#050505] shadow-[0_0_20px_3px_rgba(0,0,0,0.6),0_0_50px_rgba(0,0,0,0.3)]'
+                  : 'bg-white shadow-[0_0_20px_3px_rgba(255,255,255,0.9),0_0_50px_rgba(255,255,255,0.4)]'
+              }`}
+            />
+          )}
+        </AnimatePresence>
+      </main>
+    </>
   )
 }
