@@ -104,7 +104,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         // 👑 色彩修复：将刺眼的蓝色 (0.1, 0.2, 0.4) 改为高级克制的银灰色 (0.16, 0.18, 0.20)
         vec3 edgeColor = mix(vec3(0.16, 0.18, 0.20), vec3(0.2), u_theme) * edgeGlow;
 
-        gl_FragColor = vec4(voidColor + edgeColor, alpha);
+        gl_FragColor = vec4(voidColor + edgeColor, alpha) * u_progress;
       }
     `
     const program = gl.createProgram()!
