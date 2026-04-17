@@ -327,6 +327,13 @@ function LightPaper({ about }: { about: any }) {
       className="relative min-h-[100svh] w-full flex items-center justify-center py-32 px-6 overflow-hidden pointer-events-auto"
       style={{ perspective: '2000px' }} 
     >
+      {/* 👑 核心修复3：SVG 湍流滤镜，赋予多边形真实的纸张纤维感 */}
+      <svg className="hidden pointer-events-none absolute w-0 h-0">
+        <filter id="torn-paper-edge" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       <AbyssRiftCanvas progress={riftProgress} />
 
       <div
@@ -396,7 +403,7 @@ function LightPaper({ about }: { about: any }) {
                 initial={{ x: 0, y: 0, z: 0, rotateX: 0, rotateY: 0, rotateZ: 0, scale: 1, opacity: 1 }}
                 animate={{ z: targetZ, x: targetX, y: targetY, rotateX: targetRotX, rotateY: targetRotY, rotateZ: targetRotZ, scale: targetScale }}
                 transition={{ duration: duration, ease: easeType as any }}
-                style={{ clipPath: polygon, filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.3))" }}
+                style={{ clipPath: polygon, filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.3)) url(#torn-paper-edge)"}}
                 className={`${CARD_BASE_STYLE} z-20`}
               >
                 <CardContent about={about} />
