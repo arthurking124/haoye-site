@@ -21,7 +21,6 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
     const vsSource = `attribute vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`
     
-    // 👑 彻底重写：去圆圈、高质感、有机流体雾气着色器 (修复蓝色光晕为银灰版)
     const fsSource = `
       precision highp float;
       uniform vec2 u_resolution;
@@ -83,12 +82,11 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         vec2 r = vec2(fbm(distortedP + 4.0 * q + u_time * 0.02), fbm(distortedP + 4.0 * q));
         float cloud = fbm(distortedP + 4.0 * r);
 
-        // 颜色映射
-        vec3 darkCloud = mix(vec3(0.02, 0.02, 0.03), vec3(0.1, 0.12, 0.15), cloud);
-        
-        // 👑 仅仅修改这里：基调 #F5F2F0 -> 雾气最外侧 #E1E3DF
-        vec3 lightCloud = mix(vec3(0.961, 0.949, 0.941), vec3(0.882, 0.890, 0.875), cloud);
-        
+        // 👑 Awwwards 级别：顶级流体物质色盘
+        // 1. 深色云雾：【深渊引力】
+        vec3 darkCloud = mix(vec3(0.008, 0.008, 0.012), vec3(0.06, 0.07, 0.10), cloud);
+        // 2. 浅色云雾：【宣纸灵魂】
+        vec3 lightCloud = mix(vec3(0.975, 0.962, 0.940), vec3(0.91, 0.89, 0.85), cloud);
         vec3 voidColor = mix(darkCloud, lightCloud, u_theme);
 
         // 🕳️ 黑洞核心：仅在坍缩时出现
@@ -101,8 +99,12 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         // 增加边缘柔和感 (呼应雾气)
         float edgeGlow = exp(-abs(dist - radius) * 20.0) * u_progress;
         
-        // 👑 色彩修复：将刺眼的蓝色 (0.1, 0.2, 0.4) 改为高级克制的银灰色 (0.16, 0.18, 0.20)
-        vec3 edgeColor = mix(vec3(0.16, 0.18, 0.20), vec3(0.2), u_theme) * edgeGlow;
+        // 💎 边缘光泽：物理级材质模拟
+        // 深色边缘：【钛银冷光】
+        vec3 darkEdge = vec3(0.18, 0.22, 0.28) * (1.0 - u_theme); 
+        // 浅色边缘：【湿润琥珀】
+        vec3 lightEdge = vec3(0.52, 0.46, 0.38) * u_theme;
+        vec3 edgeColor = (darkEdge + lightEdge) * edgeGlow;
 
         gl_FragColor = vec4(voidColor + edgeColor, alpha) * u_progress;
       }
