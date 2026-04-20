@@ -1,18 +1,16 @@
 'use client'
 
-import React, { useRef, useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import GhostAnchor from '@/components/ui/GhostAnchor'
 import WebGLRiftCanvas from '@/components/ui/WebGLRift'
+// 👑 引入感官系统钩子
+import { useSensory } from '@/components/providers/GlobalSensoryProvider'
 
 const THEME_EVENT = 'haoye-theme-change'
 const STORAGE_KEY = 'haoye-theme'
 const SOUND_KEY = 'haoye-sound'
-
-const BASE_VOLUME = 0.24
-const DARK_MUSIC = '/audio/ryuichi.mp3'
-const LIGHT_MUSIC = '/audio/ambre1.mp3'
 
 const NAVS = [
   { href: '/images', label: '影', sub: 'VISIONS' },
@@ -27,121 +25,85 @@ export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isCollapsing, setIsCollapsing] = useState(false) 
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
-  
   const [soundEnabled, setSoundEnabled] = useState(true)
-  const [isPlaying, setIsPlaying] = useState(false) 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const fadeFrameRef = useRef<number | null>(null)
 
-  const clearFade = useCallback(() => {
-    if (fadeFrameRef.current !== null) { cancelAnimationFrame(fadeFrameRef.current); fadeFrameRef.current = null }
-  }, [])
-
-  const fadeTo = useCallback((target: number, duration: number, onDone?: () => void) => {
-    const audio = audioRef.current; if (!audio) return
-    clearFade()
-    const startVolume = audio.volume; const startTime = performance.now()
-    const tick = (now: number) => {
-      const elapsed = now - startTime; const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3) 
-      audio.volume = Math.max(0, Math.min(1, startVolume + (target - startVolume) * eased))
-      if (progress < 1) { fadeFrameRef.current = requestAnimationFrame(tick); return }
-      fadeFrameRef.current = null; audio.volume = Math.max(0, Math.min(1, target)); onDone?.()
-    }
-    fadeFrameRef.current = requestAnimationFrame(tick)
-  }, [clearFade])
-
-  const playAmbient = useCallback(async (targetVolume: number) => {
-    const audio = audioRef.current; if (!audio) return
-    if (audio.paused) { try { await audio.play() } catch (err) { setIsPlaying(false); return } }
-    setIsPlaying(true); fadeTo(targetVolume, 1800)
-  }, [fadeTo])
-
-  const pauseAmbient = useCallback(() => {
-    const audio = audioRef.current; if (!audio) return
-    fadeTo(0, 900, () => { audio.pause(); setIsPlaying(false) })
-  }, [fadeTo])
+  // 👑 获取底层引擎和全站主题状态
+  const { engine, triggerTransition, currentTheme } = useSensory()
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem(STORAGE_KEY); const initialTheme = savedTheme === 'light' ? 'light' : 'dark'
-    setTheme(initialTheme); document.documentElement.dataset.theme = initialTheme
+    const savedTheme = window.localStorage.getItem(STORAGE_KEY)
+    const initialTheme = savedTheme === 'light' ? 'light' : 'dark'
     
-    // 👑 核心修复 1：同步唤醒 Tailwind 的 class，让内页文字颜色正确反转！
+    // 初始化 Tailwind 昼夜神经
     if (initialTheme === 'dark') {
       document.documentElement.classList.add('dark'); document.documentElement.classList.remove('light');
     } else {
       document.documentElement.classList.add('light'); document.documentElement.classList.remove('dark');
     }
+    document.documentElement.dataset.theme = initialTheme
 
-    const audio = new Audio(initialTheme === 'light' ? LIGHT_MUSIC : DARK_MUSIC)
-    audio.loop = true; audio.preload = 'auto'; audio.volume = 0; audioRef.current = audio
-    const savedSound = window.localStorage.getItem(SOUND_KEY); setSoundEnabled(savedSound ? savedSound === 'on' : true)
+    const savedSound = window.localStorage.getItem(SOUND_KEY)
+    setSoundEnabled(savedSound ? savedSound === 'on' : true)
     setMounted(true)
-    return () => { clearFade(); audio.pause(); audioRef.current = null }
-  }, [clearFade])
+  }, [])
+
+  // 👑 全局静音控制：直接干预引擎总音量
+  useEffect(() => {
+    if (!engine) return;
+    const now = engine.context.currentTime;
+    // 0.5秒平滑静音/恢复，杜绝爆音
+    engine.masterGain.gain.setTargetAtTime(soundEnabled ? 1 : 0, now, 0.5);
+  }, [soundEnabled, engine]);
+
+  // 👑 情绪联动：当菜单打开或页面跳转时，声音瞬间潜入水底 (Lowpass 滤波)
+  useEffect(() => {
+    if (!engine) return;
+    engine.setCollapseEmotion(menuOpen || isCollapsing);
+  }, [menuOpen, isCollapsing, engine]);
 
   useEffect(() => {
     if (!mounted) return
     window.localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off')
-    if (pathname !== '/' && soundEnabled) { void playAmbient(BASE_VOLUME) } else if (pathname === '/') { pauseAmbient() }
     setMenuOpen(false); setIsCollapsing(false); document.body.style.overflow = 'auto' 
-  }, [pathname, soundEnabled, mounted, playAmbient, pauseAmbient])
+  }, [pathname, soundEnabled, mounted])
 
-  useEffect(() => {
-    if (!audioRef.current || !mounted) return
-    const targetSrc = theme === 'light' ? LIGHT_MUSIC : DARK_MUSIC
-    if (audioRef.current.src.indexOf(targetSrc) === -1) {
-      const swapAndPlay = async () => {
-        audioRef.current!.src = targetSrc
-        if (soundEnabled && pathname !== '/') {
-          audioRef.current!.volume = 0
-          try { await audioRef.current!.play(); setIsPlaying(true); fadeTo(BASE_VOLUME, 1200) } catch (err) {}
-        }
-      }
-      if (isPlaying) { fadeTo(0, 600, () => { audioRef.current!.pause(); void swapAndPlay() }) } else { void swapAndPlay() }
-    }
-  }, [theme, mounted, soundEnabled, pathname, isPlaying, fadeTo])
+  const toggleSound = () => setSoundEnabled(!soundEnabled)
 
-  const toggleSound = () => {
-    const next = !soundEnabled; setSoundEnabled(next)
-    if (!next) { pauseAmbient() } else { if (pathname !== '/') void playAmbient(BASE_VOLUME) }
-  }
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark'; setTheme(newTheme)
+  const toggleTheme = async () => {
+    if (!engine) return;
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark'
+    
     window.localStorage.setItem(STORAGE_KEY, newTheme)
     window.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: newTheme }))
     document.documentElement.dataset.theme = newTheme
     
-    // 👑 核心修复 2：点击切换时，同步更新 Tailwind 的 class
     if (newTheme === 'dark') {
       document.documentElement.classList.add('dark'); document.documentElement.classList.remove('light');
     } else {
       document.documentElement.classList.add('light'); document.documentElement.classList.remove('dark');
     }
+    
+    // 👑 发动宇宙级奇点坍缩转场！引擎会自动处理音画同步和音乐切换
+    await triggerTransition(newTheme)
   }
 
-  // 👑 奇点坍缩路由拦截器 (修复同页卡死 Bug)
   const handleNavClick = (e: React.MouseEvent, path: string) => {
     e.preventDefault()
+    if (path === pathname) { setMenuOpen(false); document.body.style.overflow = 'auto'; return }
     
-    // 如果点击的是当前正在浏览的页面
-    if (path === pathname) {
-      setMenuOpen(false)
-      document.body.style.overflow = 'auto'
-      return
-    }
-
     setIsCollapsing(true)
-    // 给予 1.2 秒的坍缩动画时间，然后执行路由跳转
+    
+    // 👑 路由跳转时触发一次撕裂音效，空间定位在屏幕正中心
+    if (engine && soundEnabled) {
+      engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, 0.8)
+    }
+    
     setTimeout(() => { router.push(path) }, 1200)
   }
 
   if (!mounted || pathname === '/' || pathname === '') return null
-  const isLight = theme === 'light'
+  const isLight = currentTheme === 'light'
 
-  // 👑 修复文字颜色：动态匹配昼夜感知
   const menuTextColor = isLight ? 'text-black/40 group-hover:text-black' : 'text-white/30 group-hover:text-white'
   const menuSubColor = isLight ? 'text-black/20 group-hover:text-black/60' : 'text-white/10 group-hover:text-white/60'
   const watermarkColor = isLight ? 'text-black' : 'text-white'
@@ -150,13 +112,14 @@ export default function Header() {
     <>
       <div className="fixed inset-0 pointer-events-none z-[100]">
         <GhostAnchor id="origin" alignX="left" alignY="top" label="归" sub="ORIGIN" isLight={isLight} onClick={() => router.push('/')} icon={<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1"><path d="M12 2L22 12L12 22L2 12Z" /></svg>} />
-        <GhostAnchor id="theme" alignX="right" alignY="top" label="境" sub="THEME" isLight={isLight} onClick={toggleTheme} isActive={theme === 'light'} icon={<svg viewBox="0 0 24 24" className="w-5 h-5 transition-transform duration-700" style={{ transform: isLight ? 'rotate(180deg)' : 'rotate(0deg)' }}><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1" /><circle cx="12" cy="4" r="1" fill="currentColor" /></svg>} />
-        <GhostAnchor id="sound" alignX="left" alignY="bottom" label="音" sub="SOUND" isLight={isLight} onClick={toggleSound} isActive={isPlaying} icon={<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1"><motion.line x1="6" y1="12" x2="6" y2="12" animate={{ y1: isPlaying ? [12, 6, 12] : 12, y2: isPlaying ? [12, 18, 12] : 12 }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} /><motion.line x1="12" y1="12" x2="12" y2="12" animate={{ y1: isPlaying ? [12, 4, 12] : 12, y2: isPlaying ? [12, 20, 12] : 12 }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} /><motion.line x1="18" y1="12" x2="18" y2="12" animate={{ y1: isPlaying ? [12, 8, 12] : 12, y2: isPlaying ? [12, 16, 12] : 12 }} transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} /></svg>} />
+        <GhostAnchor id="theme" alignX="right" alignY="top" label="境" sub="THEME" isLight={isLight} onClick={toggleTheme} isActive={currentTheme === 'light'} icon={<svg viewBox="0 0 24 24" className="w-5 h-5 transition-transform duration-700" style={{ transform: isLight ? 'rotate(180deg)' : 'rotate(0deg)' }}><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1" /><circle cx="12" cy="4" r="1" fill="currentColor" /></svg>} />
+        <GhostAnchor id="sound" alignX="left" alignY="bottom" label="音" sub="SOUND" isLight={isLight} onClick={toggleSound} isActive={soundEnabled} icon={<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1"><motion.line x1="6" y1="12" x2="6" y2="12" animate={{ y1: soundEnabled ? [12, 6, 12] : 12, y2: soundEnabled ? [12, 18, 12] : 12 }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} /><motion.line x1="12" y1="12" x2="12" y2="12" animate={{ y1: soundEnabled ? [12, 4, 12] : 12, y2: soundEnabled ? [12, 20, 12] : 12 }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} /><motion.line x1="18" y1="12" x2="18" y2="12" animate={{ y1: soundEnabled ? [12, 8, 12] : 12, y2: soundEnabled ? [12, 16, 12] : 12 }} transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} /></svg>} />
         <GhostAnchor id="portal" alignX="right" alignY="bottom" label={menuOpen ? '灭' : '界'} sub={menuOpen ? 'CLOSE' : 'PORTAL'} isLight={isLight} onClick={() => { if(isCollapsing) return; setMenuOpen(!menuOpen); document.body.style.overflow = menuOpen ? 'auto' : 'hidden' }} isActive={menuOpen} icon={<svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1"><motion.path d="M12 4V20M4 12H20" animate={{ rotate: menuOpen ? 45 : 0, scale: menuOpen ? 1.2 : [1, 1.1, 1] }} transition={menuOpen ? { duration: 0.5, ease: "circOut" } : { duration: 4, repeat: Infinity, ease: "easeInOut" }} /></svg>} />
       </div>
 
-      <div className="fixed inset-0 z-[85] pointer-events-none">
-        <WebGLRiftCanvas isOpen={menuOpen} theme={theme} isCollapsing={isCollapsing} />
+      <div className={`fixed inset-0 z-[85] transition-opacity duration-500 ${menuOpen || isCollapsing ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}>
+        {/* WebGLRift 完美接入 currentTheme */}
+        <WebGLRiftCanvas isOpen={menuOpen} theme={currentTheme} isCollapsing={isCollapsing} />
       </div>
 
       <AnimatePresence>

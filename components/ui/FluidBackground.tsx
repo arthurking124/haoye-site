@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+// 👑 直接引入单例引擎，绕过 React 状态，实现零延迟性能！
+import { SensoryEngine } from '@/lib/SensoryEngine'
 
 export default function FluidBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -34,8 +36,9 @@ export default function FluidBackground() {
       uniform vec2 u_mouse;
       uniform float u_scrollVelocity;
       uniform float u_theme;
-      // 【新增】：接收设备状态
       uniform float u_isMobile; 
+      // 👑 【新增】：接收来自音频引擎的实时振幅能量
+      uniform float u_audio_amplitude; 
 
       // --- 数学噪声引擎 ---
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
@@ -80,33 +83,33 @@ export default function FluidBackground() {
         vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
         vec2 p = uv * aspect;
 
-        // 👑 保留你最喜欢的极品交互：真实鼠标涟漪
         vec2 mouseP = u_mouse * aspect;
         vec2 mouseDelta = p - mouseP;
         float mouseDist = length(mouseDelta);
-        float rippleFalloff = exp(-mouseDist * 12.0);
-        float rippleWave = sin(mouseDist * 50.0 - u_time * 10.0);
-        vec2 rippleDisplacement = normalize(mouseDelta) * rippleFalloff * rippleWave * 0.03;
         
-        // 我们只用鼠标涟漪去扰动 UV，绝对不再整体平移画布！
+        // 👑 音画联动 1：音乐振幅增强鼠标涟漪的扩散力度
+        float rippleFalloff = exp(-mouseDist * (12.0 - u_audio_amplitude * 4.0));
+        float rippleWave = sin(mouseDist * 50.0 - u_time * 10.0);
+        vec2 rippleDisplacement = normalize(mouseDelta) * rippleFalloff * rippleWave * (0.03 + u_audio_amplitude * 0.02);
+        
         p += rippleDisplacement;
 
-        // 🚀 核心修复：告别“图片平移”，回归真实的“波浪扭曲演化 (Morphing)”
         float time = u_time * mix(0.04, 0.08, u_theme); 
         float scroll = u_scrollVelocity * mix(0.003, 0.006, u_theme);
 
-        // 依靠时间扭曲噪声输入参数，让水面在原地产生“沸腾、翻滚”的物理现象
+        // 👑 音画联动 2：将音乐能量注入流体物理演化
+        // 振幅越大，底层流体的撕裂感和流动频率越高
         vec2 q = vec2(0.0);
-        q.x = fbm(p + time * 0.8);
-        q.y = fbm(p + vec2(1.0) + time * 0.5 - scroll); // 滚轮动能注入水体演化频率
+        q.x = fbm(p + time * 0.8 + u_audio_amplitude * 0.1);
+        q.y = fbm(p + vec2(1.0) + time * 0.5 - scroll); 
 
         vec2 r = vec2(0.0);
         r.x = fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time);
-        r.y = fbm(p + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time - scroll);
+        r.y = fbm(p + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time - scroll + u_audio_amplitude * 0.15);
 
-        float surfaceHeight = fbm(p + r);
+        // 音乐让水面产生整体性的微频震荡隆起
+        float surfaceHeight = fbm(p + r) + u_audio_amplitude * 0.08;
 
-        // 👑 保留上一版的通透材质：光学法线与真实折射
         vec2 eps = vec2(0.01, 0.0); 
         float nx = fbm(p + r + eps) - surfaceHeight;
         float ny = fbm(p + r + eps.yx) - surfaceHeight;
@@ -114,22 +117,21 @@ export default function FluidBackground() {
         
         vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
         vec3 lightDir = normalize(vec3(0.5, 0.8, 1.5));
-        
-        // 菲涅尔效应与锐利微光
-        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.0);
+        // 👑 补上这行：计算光线与视线的半角向量
         vec3 halfVector = normalize(lightDir + viewDir);
-        float specular = pow(max(dot(normal, halfVector), 0.0), mix(80.0, 100.0, u_theme)); 
+        
+        
+        float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.0);
+        // 👑 音画联动 3：高潮部分的锋利反光
+        float specular = pow(max(dot(normal, halfVector), 0.0), mix(80.0, 100.0, u_theme) - u_audio_amplitude * 20.0); 
 
-        // 🌙 深渊活水 
-        // 【核心修改】：通过 u_isMobile 判断，在手机端将水底亮度提亮 0.025，天空反射提亮 0.06
         vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035) + vec3(0.025 * u_isMobile); 
         vec3 darkSkyReflection = vec3(0.12, 0.15, 0.18) + vec3(0.06 * u_isMobile); 
-        vec3 finalDark = mix(darkWaterDepth, darkSkyReflection, fresnel) + (specular * 0.2);
+        vec3 finalDark = mix(darkWaterDepth, darkSkyReflection, fresnel) + (specular * (0.2 + u_audio_amplitude * 0.2));
 
-        // ☀️ 晨曦清泉 
         vec3 lightWaterDepth = vec3(0.96, 0.94, 0.91); 
         float caustic = smoothstep(0.4, 0.6, surfaceHeight) * 0.15; 
-        vec3 finalLight = lightWaterDepth + caustic + (specular * 0.3) - (vec3(0.02, 0.04, 0.05) * r.y * 0.1); 
+        vec3 finalLight = lightWaterDepth + caustic + (specular * (0.3 + u_audio_amplitude * 0.2)) - (vec3(0.02, 0.04, 0.05) * r.y * 0.1); 
 
         vec3 finalColor = mix(finalDark, finalLight, u_theme);
         
@@ -170,13 +172,13 @@ export default function FluidBackground() {
     const uMouse = gl.getUniformLocation(program, 'u_mouse')
     const uScrollVelocity = gl.getUniformLocation(program, 'u_scrollVelocity')
     const uTheme = gl.getUniformLocation(program, 'u_theme')
-    // 【新增】：绑定 u_isMobile 地址
     const uIsMobile = gl.getUniformLocation(program, 'u_isMobile')
+    // 👑 拿到音量能量槽的位置
+    const uAudioAmplitude = gl.getUniformLocation(program, 'u_audio_amplitude')
 
     let animationFrameId: number
     const startTime = Date.now()
 
-    // 设置在屏幕外，防止初始产生涟漪
     let targetMouseX = -1.0, targetMouseY = -1.0
     let currentMouseX = -1.0, currentMouseY = -1.0
     let lastScrollY = window.scrollY
@@ -228,9 +230,14 @@ export default function FluidBackground() {
       gl.uniform1f(uScrollVelocity, currentScrollVelocity)
       gl.uniform1f(uTheme, currentTheme)
 
-      // 【新增】：实时检测是否为移动端（以 768px 为界），1.0 为是，0.0 为否，传递给着色器补偿亮度
       const isMobile = window.innerWidth < 768 ? 1.0 : 0.0;
       gl.uniform1f(uIsMobile, isMobile);
+
+      // 👑 提取音频引擎能量，喂给 GPU 渲染！
+      // 通过 getInstance() 直接读取底层声学内存，不触发任何 React 重绘，性能无敌
+      const engine = SensoryEngine.getInstance();
+      const amplitude = engine ? engine.getAmplitude() : 0.0;
+      gl.uniform1f(uAudioAmplitude, amplitude);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
       animationFrameId = requestAnimationFrame(render)
