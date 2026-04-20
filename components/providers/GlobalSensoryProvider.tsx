@@ -1,5 +1,5 @@
 'use client'
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { SensoryEngine } from '@/lib/SensoryEngine';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -18,24 +18,35 @@ export const GlobalSensoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // 👑 初始化引擎但不发声，等待用户物理授权
   useEffect(() => {
     const eng = SensoryEngine.getInstance();
     setEngine(eng);
     
-    // 👑 修正了加载路径：只加载你 public 文件夹里真实存在的文件
     Promise.all([
       eng.loadSound('/audio/ryuichi.mp3', 'darkTheme'),
       eng.loadSound('/audio/ambre1.mp3', 'lightTheme'),
       eng.loadSound('/audio/portal.mp3', 'collapse'), 
-      // 暂时注释掉不存在的交互音效，等以后有了文件再解开
-      // eng.loadSound('/sounds/crystal_hover.mp3', 'crystalHover'),
     ]).then(() => {
       console.log("Quantum Sensory Engine: Assets Loaded");
     });
-  }, []);
 
-  // 👑 破壁唤醒：用户第一次点击时真正激活系统
+    // 🏆 顶级优化 3：注册页面可见性生命周期监听，做个“懂事”的顶级网站
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        eng.suspendAndMute();
+      } else {
+        // 只有在用户已经解锁系统的情况下，切回 Tab 才恢复音频
+        if (isReady) eng.resumeAndUnmute(); 
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isReady]); // 将 isReady 作为依赖，确保恢复逻辑正确执行
+
   const handleEnter = useCallback(() => {
     if (!engine) return;
     engine.unlock();
@@ -44,33 +55,30 @@ export const GlobalSensoryProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [engine]);
 
   const triggerTransition = useCallback(async (newTheme: 'dark' | 'light') => {
-    if (isTransitioning || !engine) return;
+    // 🏆 顶级优化 4：极其严格的状态锁。防止用户疯狂点击导致 AudioParam 包络线计算错乱产生爆音
+    if (isTransitioning || !engine || currentTheme === newTheme) return;
+    
     setIsTransitioning(true);
 
-    // 1. 声音情绪开始下潜（低通滤波生效）
     engine.setCollapseEmotion(true);
-    // 2. 触发坍缩撕裂音效
-    engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, 1.2);
+    // 🏆 顶级优化 2：触发坍缩时，注入 -3.0 的 Z 轴深度。声音会从空旷的深渊处传来。
+    engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, -3.0, 1.2);
 
-    // 3. 视觉奇点汇聚等待...
     await new Promise(r => setTimeout(r, 1200));
     
     setCurrentTheme(newTheme);
     engine.switchThemeMusic(newTheme === 'dark' ? 'darkTheme' : 'lightTheme');
 
-    // 4. 视觉奇点爆发等待...
     await new Promise(r => setTimeout(r, 800));
     
-    // 5. 情绪浮出水面，声音恢复通透
     engine.setCollapseEmotion(false);
     setIsTransitioning(false);
-  }, [engine, isTransitioning]);
+  }, [engine, isTransitioning, currentTheme]);
 
   return (
     <SensoryContext.Provider value={{ engine, triggerTransition, currentTheme, isTransitioning }}>
       {children}
       
-      {/* 👑 神级阻断层：解决 100% 的 Autoplay 报错问题 */}
       <AnimatePresence>
         {!isReady && (
           <motion.div 
