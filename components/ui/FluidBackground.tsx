@@ -2,14 +2,12 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-// 👑 直接引入单例引擎，绕过 React 状态，实现零延迟性能！
 import { SensoryEngine } from '@/lib/SensoryEngine'
 
 export default function FluidBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pathname = usePathname()
 
-  // 贯穿全站（除首页），托底所有网页和相册
   const isAllowedPath = true
 
   useEffect(() => {
@@ -37,10 +35,8 @@ export default function FluidBackground() {
       uniform float u_scrollVelocity;
       uniform float u_theme;
       uniform float u_isMobile; 
-      // 👑 【新增】：接收来自音频引擎的实时振幅能量
       uniform float u_audio_amplitude; 
 
-      // --- 数学噪声引擎 ---
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
       float snoise(vec2 v){
         const vec4 C = vec4(0.211324865, 0.366025404, -0.577350269, 0.0243902439);
@@ -65,7 +61,6 @@ export default function FluidBackground() {
         return 130.0 * dot(m, g);
       }
 
-      // --- FBM 分形波面 ---
       float fbm(vec2 uv) {
         float f = 0.0;
         float amp = 0.5;
@@ -87,7 +82,6 @@ export default function FluidBackground() {
         vec2 mouseDelta = p - mouseP;
         float mouseDist = length(mouseDelta);
         
-        // 👑 音画联动 1：音乐振幅增强鼠标涟漪的扩散力度
         float rippleFalloff = exp(-mouseDist * (12.0 - u_audio_amplitude * 4.0));
         float rippleWave = sin(mouseDist * 50.0 - u_time * 10.0);
         vec2 rippleDisplacement = normalize(mouseDelta) * rippleFalloff * rippleWave * (0.03 + u_audio_amplitude * 0.02);
@@ -97,8 +91,6 @@ export default function FluidBackground() {
         float time = u_time * mix(0.04, 0.08, u_theme); 
         float scroll = u_scrollVelocity * mix(0.003, 0.006, u_theme);
 
-        // 👑 音画联动 2：将音乐能量注入流体物理演化
-        // 振幅越大，底层流体的撕裂感和流动频率越高
         vec2 q = vec2(0.0);
         q.x = fbm(p + time * 0.8 + u_audio_amplitude * 0.1);
         q.y = fbm(p + vec2(1.0) + time * 0.5 - scroll); 
@@ -107,7 +99,6 @@ export default function FluidBackground() {
         r.x = fbm(p + 2.0 * q + vec2(1.7, 9.2) + 0.15 * time);
         r.y = fbm(p + 2.0 * q + vec2(8.3, 2.8) + 0.12 * time - scroll + u_audio_amplitude * 0.15);
 
-        // 音乐让水面产生整体性的微频震荡隆起
         float surfaceHeight = fbm(p + r) + u_audio_amplitude * 0.08;
 
         vec2 eps = vec2(0.01, 0.0); 
@@ -117,12 +108,9 @@ export default function FluidBackground() {
         
         vec3 viewDir = normalize(vec3(0.0, 0.0, 1.0));
         vec3 lightDir = normalize(vec3(0.5, 0.8, 1.5));
-        // 👑 补上这行：计算光线与视线的半角向量
         vec3 halfVector = normalize(lightDir + viewDir);
         
-        
         float fresnel = pow(1.0 - max(dot(normal, viewDir), 0.0), 4.0);
-        // 👑 音画联动 3：高潮部分的锋利反光
         float specular = pow(max(dot(normal, halfVector), 0.0), mix(80.0, 100.0, u_theme) - u_audio_amplitude * 20.0); 
 
         vec3 darkWaterDepth = vec3(0.03, 0.03, 0.035) + vec3(0.025 * u_isMobile); 
@@ -173,11 +161,11 @@ export default function FluidBackground() {
     const uScrollVelocity = gl.getUniformLocation(program, 'u_scrollVelocity')
     const uTheme = gl.getUniformLocation(program, 'u_theme')
     const uIsMobile = gl.getUniformLocation(program, 'u_isMobile')
-    // 👑 拿到音量能量槽的位置
     const uAudioAmplitude = gl.getUniformLocation(program, 'u_audio_amplitude')
 
     let animationFrameId: number
     const startTime = Date.now()
+    let lastTime = startTime // 🏆 新增：时间记录仪
 
     let targetMouseX = -1.0, targetMouseY = -1.0
     let currentMouseX = -1.0, currentMouseY = -1.0
@@ -216,25 +204,36 @@ export default function FluidBackground() {
     resize()
 
     const render = () => {
-      const elapsedTime = (Date.now() - startTime) * 0.001
+      const now = Date.now()
+      // 🏆 核心：计算真实帧时间差（最大 50ms 防止切屏爆帧）
+      const dt = Math.min((now - lastTime) * 0.001, 0.05) 
+      lastTime = now
+      const elapsedTime = (now - startTime) * 0.001
       
-      currentMouseX += (targetMouseX - currentMouseX) * 0.08
-      currentMouseY += (targetMouseY - currentMouseY) * 0.08
-      targetScrollVelocity *= 0.92 
-      currentScrollVelocity += (targetScrollVelocity - currentScrollVelocity) * 0.1
-      currentTheme += (targetTheme - currentTheme) * 0.03
+      // 🏆 物理级指数衰减曲线：帧率无关的真实流体阻尼
+      const damping = 12.0 
+      const lerpFactor = 1.0 - Math.exp(-damping * dt)
+
+      currentMouseX += (targetMouseX - currentMouseX) * lerpFactor
+      currentMouseY += (targetMouseY - currentMouseY) * lerpFactor
+      
+      targetScrollVelocity *= Math.exp(-3.0 * dt) 
+      currentScrollVelocity += (targetScrollVelocity - currentScrollVelocity) * (1.0 - Math.exp(-8.0 * dt))
+      
+      currentTheme += (targetTheme - currentTheme) * (1.0 - Math.exp(-4.0 * dt))
 
       gl.uniform2f(uResolution, canvas.width, canvas.height)
       gl.uniform1f(uTime, elapsedTime)
       gl.uniform2f(uMouse, currentMouseX, currentMouseY)
       gl.uniform1f(uScrollVelocity, currentScrollVelocity)
-      gl.uniform1f(uTheme, currentTheme)
+      
+      // 🏆 非线性 S 型过渡：黑白交替的“粘滞感”呼吸
+      const easeTheme = currentTheme * currentTheme * (3.0 - 2.0 * currentTheme); 
+      gl.uniform1f(uTheme, easeTheme)
 
       const isMobile = window.innerWidth < 768 ? 1.0 : 0.0;
       gl.uniform1f(uIsMobile, isMobile);
 
-      // 👑 提取音频引擎能量，喂给 GPU 渲染！
-      // 通过 getInstance() 直接读取底层声学内存，不触发任何 React 重绘，性能无敌
       const engine = SensoryEngine.getInstance();
       const amplitude = engine ? engine.getAmplitude() : 0.0;
       gl.uniform1f(uAudioAmplitude, amplitude);

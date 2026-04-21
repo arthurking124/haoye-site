@@ -29,7 +29,6 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
       uniform float u_theme;
       uniform float u_collapse;
 
-      // 核心随机函数
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
       float snoise(vec2 v){
         const vec4 C = vec4(0.211324865, 0.366025404, -0.577350269, 0.0243902439);
@@ -44,7 +43,6 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         return 130.0 * dot(m, g);
       }
 
-      // FBM 生成有机纹理
       float fbm(vec2 uv) {
         float f = 0.0; float amp = 0.5;
         for (int i = 0; i < 5; i++) {
@@ -59,52 +57,44 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         vec2 uv = gl_FragCoord.xy / u_resolution.xy;
         vec2 aspect = vec2(u_resolution.x / u_resolution.y, 1.0);
         vec2 p = uv * aspect;
-        vec2 origin = vec2(1.0, 0.0) * aspect; // 右下角起爆点
-        vec2 center = vec2(0.5, 0.5) * aspect; // 奇点中心
+        vec2 origin = vec2(1.0, 0.0) * aspect; 
+        vec2 center = vec2(0.5, 0.5) * aspect; 
 
-        // 🌊 核心修复：平时绝对不使用强旋转！
-        // 只在坍缩阶段 (u_collapse) 引入漩涡引力
         float angle = u_collapse * 4.0 * exp(-length(p - center) * 2.0);
         mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
         vec2 distortedP = center + rot * (p - center);
 
-        // 坍缩时的中心吸力
         distortedP -= (p - center) * u_collapse * 0.5;
 
-        // 水膜撕裂逻辑
         float dist = length(p - origin);
         float radius = u_progress * 1.5;
         float noise = fbm(distortedP * 3.0 + u_time * 0.1);
         float border = smoothstep(radius, radius - 0.1, dist + noise * 0.15);
 
-        // 🌫️ 质感雾气：使用多层 Domain Warping 彻底消灭圆圈
         vec2 q = vec2(fbm(distortedP + u_time * 0.05), fbm(distortedP + vec2(5.2, 1.3)));
         vec2 r = vec2(fbm(distortedP + 4.0 * q + u_time * 0.02), fbm(distortedP + 4.0 * q));
         float cloud = fbm(distortedP + 4.0 * r);
 
-        // 👑 Awwwards 级别：顶级流体物质色盘
-        // 1. 深色云雾：【深渊引力】
         vec3 darkCloud = mix(vec3(0.008, 0.008, 0.012), vec3(0.06, 0.07, 0.10), cloud);
-        // 2. 浅色云雾：【宣纸灵魂】
         vec3 lightCloud = mix(vec3(0.975, 0.962, 0.940), vec3(0.91, 0.89, 0.85), cloud);
         vec3 voidColor = mix(darkCloud, lightCloud, u_theme);
 
-        // 🕳️ 黑洞核心：仅在坍缩时出现
         float core = smoothstep(0.4, 0.0, length(p - center) / u_collapse);
         voidColor = mix(voidColor, vec3(0.0), core * u_collapse);
 
-        // 最终合成
         float alpha = border * u_progress;
         
-        // 增加边缘柔和感 (呼应雾气)
+        // 【核心还原】：彻底删掉刻意的线条逻辑，退回原版最自然的边缘羽化
         float edgeGlow = exp(-abs(dist - radius) * 20.0) * u_progress;
         
-        // 💎 边缘光泽：物理级材质模拟
-        // 深色边缘：【钛银冷光】
         vec3 darkEdge = vec3(0.18, 0.22, 0.28) * (1.0 - u_theme); 
-        // 浅色边缘：【湿润琥珀】
         vec3 lightEdge = vec3(0.52, 0.46, 0.38) * u_theme;
-        vec3 edgeColor = (darkEdge + lightEdge) * edgeGlow;
+        
+        // 保留深渊引力带来的色散偏色
+        vec3 abyssAberration = vec3(0.05, 0.0, 0.1) * u_collapse;
+        
+        // 柔和羽化光泽 + 深渊色
+        vec3 edgeColor = (darkEdge + lightEdge + abyssAberration) * edgeGlow;
 
         gl_FragColor = vec4(voidColor + edgeColor, alpha) * u_progress;
       }
