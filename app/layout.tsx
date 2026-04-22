@@ -5,7 +5,7 @@ import Header from '@/components/layout/Header'
 import ConditionalFooter from '@/components/layout/ConditionalFooter'
 import { Inter, Noto_Serif_SC } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/react'
-import CustomCursor from '@/components/ui/CustomCursor'
+import SymbioteCursorEnhanced from '@/components/cursor/SymbioteCursorEnhanced'
 import FluidBackground from '@/components/ui/FluidBackground'
 
 // 👑 引入顶级感官系统中枢
@@ -39,7 +39,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
         {/* 👑 将感官中枢包裹在最外层，接管全站音画 */}
         <GlobalSensoryProvider>
-          <CustomCursor />
+          <SymbioteCursorEnhanced />
           
           {/* 流体引擎 */}
           <FluidBackground />
