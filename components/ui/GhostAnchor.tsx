@@ -55,11 +55,22 @@ export default function GhostAnchor({ alignX, alignY, icon, label, sub, isActive
 
   return (
     <motion.div className={`fixed ${posClasses} z-[100] flex items-center ${flexDir} pointer-events-auto ${blendMode} cursor-pointer`} onClick={onClick}>
-      <motion.div ref={ref} style={{ x: springX, y: springY, opacity: isActive ? 1 : iconOpacity }} className={`relative flex items-center justify-center w-10 h-10 ${textColor} transition-colors duration-500`}>{icon}</motion.div>
+      
+      {/* 👑 核心修复：把 data-cursor="dot" 精准打在这个 w-10 h-10 的 Icon 容器上！ */}
+      <motion.div 
+        ref={ref} 
+        data-cursor="dot" 
+        style={{ x: springX, y: springY, opacity: isActive ? 1 : iconOpacity }} 
+        className={`relative flex items-center justify-center w-10 h-10 ${textColor} transition-colors duration-500`}
+      >
+        {icon}
+      </motion.div>
+
       <motion.div style={{ opacity: textOpacity, x: textTranslateX }} className={`flex flex-col justify-center ${textMargin} ${alignX === 'left' ? 'text-left' : 'text-right'} ${textColor} transition-colors duration-500`}>
         <span className="text-[12px] md:text-[14px] font-light tracking-[0.3em]">{label}</span>
         <span className={`text-[8px] font-mono tracking-[0.5em] mt-1 ${subTextColor}`}>{sub}</span>
       </motion.div>
+
     </motion.div>
   )
 }

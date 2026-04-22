@@ -7,7 +7,8 @@ import { BioFieldDisruption } from '@/lib/BioFieldDisruption'
 import { useCursorState } from '@/hooks/useCursorState'
 
 /**
- * 👑 「共生体·天演」- SOTY 终极完全体 (包含拉丝变细、趋光触手、X-ray余温)
+ * 👑 「共生体·天演」- Awwwards SOTY 终极定稿版
+ * 包含：平滑演化(Lerp) + 惯性拉丝变细 + X-ray余温 + 触手趋光重力 + 多材质动态粘滞度(极细拉丝)
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
@@ -20,13 +21,16 @@ export default function SymbioteCursorEnhanced() {
   const [isTouchDevice, setIsTouchDevice] = useState(false)
   
   const { engine } = useSensory()
-  const { state, updatePosition, addEnergy, setTargetElement } = useCursorState()
+  const { state, updatePosition, setMood, addEnergy, setTargetElement } = useCursorState()
 
   const glRef = useRef<WebGLRenderingContext | null>(null)
   const programRef = useRef<WebGLProgram | null>(null)
   const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({})
   const textureCache = useRef<Map<string, WebGLTexture | 'loading'>>(new Map())
 
+  // ==========================================
+  // 🧬 WebGL 着色器引擎 (躯干)
+  // ==========================================
   const initWebGL = useCallback(() => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -53,6 +57,9 @@ export default function SymbioteCursorEnhanced() {
       uniform vec3 u_baseColor;
       uniform vec3 u_glowColor;
       uniform float u_tentacleIntensity;
+      
+      uniform float u_targetRadius;     
+      uniform float u_targetViscosity;  
       
       uniform float u_audio_amplitude;
       uniform vec2 u_targetPos;
@@ -105,30 +112,25 @@ export default function SymbioteCursorEnhanced() {
         vec2 prevPos = (u_prevCursorPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
         prevPos.y = -prevPos.y;
 
-        // 👑 1. 动态拉伸质量守恒 (速度越快，半径越细)
+        // 1. 动态拉伸质量守恒 (速度越快，半径越细)
         float speed = length(currPos - prevPos) * u_resolution.y; 
         float stretchThinning = clamp(1.0 - speed * 0.015, 0.3, 1.0); 
         float currentRadius = (u_baseRadius / u_resolution.y) * stretchThinning;
         
         float dist = sdSegment(p, prevPos, currPos) - currentRadius;
 
-        // 👑 2. 趋光性与重力算法
+        // 2. 趋光性与重力触手
         if (u_tentacleIntensity > 0.0) {
            float angle = atan(p.y - currPos.y, p.x - currPos.x);
            float activeFilaments = max(6.0, u_filamentCount);
            
-           // 重力下垂: 面朝下(-PI/2)时伸长，面朝上(PI/2)时收缩
            float gravityBias = mix(0.7, 1.3, smoothstep(1.0, -1.0, sin(angle)));
-           
-           // 趋光性嗅探
            float photoTaxis = 1.0;
            if (u_isHovering > 0.5) {
                vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
                targetPos.y = -targetPos.y;
                float angleToTarget = atan(targetPos.y - currPos.y, targetPos.x - currPos.x);
-               // 计算触手与目标的对齐度：完美对齐为1，背对为0
                float alignment = max(0.0, cos(angle - angleToTarget));
-               // 对齐的触手最高伸长 2.5倍
                photoTaxis = mix(1.0, 2.5, alignment); 
            }
 
@@ -143,22 +145,19 @@ export default function SymbioteCursorEnhanced() {
         dist -= sin(u_time * 2.0) * 0.01; 
         dist -= u_audio_amplitude * 0.1;
 
-        // 目标吸附拉丝
+        // 3. 动态目标吸附拉丝
         if (u_isHovering > 0.5) {
           vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
           targetPos.y = -targetPos.y;
-          float targetDist = length(p - targetPos) - 18.0 / u_resolution.y;
-          dist = smin(dist, targetDist, 0.4); 
+          float targetDist = length(p - targetPos) - (u_targetRadius / u_resolution.y);
+          dist = smin(dist, targetDist, u_targetViscosity); 
         }
 
         float alpha = smoothstep(0.01, 0.0, dist);
         float specular = exp(-dist * 80.0) * 0.8; 
         vec3 finalColor = u_baseColor + u_glowColor * specular;
 
-        // ==========================================
-        // 👑 3. 带有生物场边缘和余温衰减的 X-ray
-        // ==========================================
-        // u_hasTexture 现在是一个 0~1 的渐变透明度参数
+        // 4. X-ray 生物场腐蚀边缘与视觉余温
         if (u_hasTexture > 0.01 && dist < 0.05) { 
             vec2 mousePixelPos = vec2(u_cursorPos.x, u_resolution.y - u_cursorPos.y); 
             vec2 offset = gl_FragCoord.xy - mousePixelPos;
@@ -172,11 +171,9 @@ export default function SymbioteCursorEnhanced() {
                 float gray = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
                 vec3 xrayColor = vec3(1.0 - gray) * vec3(0.4, 0.8, 1.0); 
                 
-                // 生物场腐蚀噪声遮罩
                 float edgeErosion = snoise(p * 15.0 - u_time * 4.0) * 0.015;
                 float innerMask = smoothstep(0.005, -0.01, dist + edgeErosion);
                 
-                // 乘上 u_hasTexture 产生完美的“视觉余温”淡出
                 finalColor = mix(finalColor, xrayColor, innerMask * u_hasTexture);
             }
         }
@@ -219,6 +216,8 @@ export default function SymbioteCursorEnhanced() {
       u_baseColor: gl.getUniformLocation(prog, 'u_baseColor'),
       u_glowColor: gl.getUniformLocation(prog, 'u_glowColor'),
       u_tentacleIntensity: gl.getUniformLocation(prog, 'u_tentacleIntensity'),
+      u_targetRadius: gl.getUniformLocation(prog, 'u_targetRadius'),
+      u_targetViscosity: gl.getUniformLocation(prog, 'u_targetViscosity'),
       u_audio_amplitude: gl.getUniformLocation(prog, 'u_audio_amplitude'),
       u_targetPos: gl.getUniformLocation(prog, 'u_targetPos'),
       u_isHovering: gl.getUniformLocation(prog, 'u_isHovering'),
@@ -240,6 +239,9 @@ export default function SymbioteCursorEnhanced() {
     resize()
   }, [])
 
+  // ==========================================
+  // 🧠 渲染引擎与状态机联动 (大脑)
+  // ==========================================
   useEffect(() => {
     if (window.matchMedia('(pointer: coarse)').matches) {
       setIsTouchDevice(true)
@@ -256,7 +258,7 @@ export default function SymbioteCursorEnhanced() {
     const startTime = Date.now()
     const dpr = Math.min(window.devicePixelRatio, 2)
 
-    // 👑 独立渲染状态机：负责极度丝滑的参数插值 (Lerp)
+    // 状态插值器：记录当前帧的渲染数据
     const renderState = {
       baseRadius: 15.0,
       nFreq: 3.0, nAmp: 0.015, timeScale: 2.0,
@@ -264,7 +266,9 @@ export default function SymbioteCursorEnhanced() {
       tentacleIntensity: 1.0,
       cursorX: state.position.x * dpr, cursorY: state.position.y * dpr,
       
-      // X-ray 缓存属性
+      targetRadius: 15.0,
+      targetViscosity: 0.3,
+
       hasTextureFactor: 0.0,
       lastValidTexture: null as WebGLTexture | null,
       lastValidRect: [0, 0, 0, 0] as [number, number, number, number]
@@ -278,7 +282,7 @@ export default function SymbioteCursorEnhanced() {
       const time = (Date.now() - startTime) * 0.001
       const energyNorm = state.energy / 100.0
 
-      // 计算目标基准参数
+      // --- 1. 基础情绪推演 ---
       let targetBaseRadius = 10.0 + 15.0 * energyNorm
       let targetNFreq = 3.0, targetNAmp = 0.015, targetTimeScale = 2.0
       let targetBaseColor = [0.02, 0.03, 0.05], targetGlowColor = [0.1, 0.15, 0.2]
@@ -301,46 +305,33 @@ export default function SymbioteCursorEnhanced() {
         targetTentacleIntensity = 0.0 
       }
 
-      // 执行平滑插值 (阻尼系数 0.08)
-      const lf = 0.08
-      renderState.baseRadius = lerp(renderState.baseRadius, targetBaseRadius, lf)
-      renderState.nFreq = lerp(renderState.nFreq, targetNFreq, lf)
-      renderState.nAmp = lerp(renderState.nAmp, targetNAmp, lf)
-      renderState.timeScale = lerp(renderState.timeScale, targetTimeScale, lf)
-      renderState.baseColor = lerpColor(renderState.baseColor, targetBaseColor, lf)
-      renderState.glowColor = lerpColor(renderState.glowColor, targetGlowColor, lf)
-      renderState.tentacleIntensity = lerp(renderState.tentacleIntensity, targetTentacleIntensity, lf)
-
-      // 👑 惯性坐标结算：前一帧保留 -> 现坐标缓动更新
-      gl.uniform2f(uniforms.u_prevCursorPos, renderState.cursorX, renderState.cursorY)
-      renderState.cursorX = lerp(renderState.cursorX, state.position.x * dpr, 0.3) // 0.3粘滞感
-      renderState.cursorY = lerp(renderState.cursorY, state.position.y * dpr, 0.3)
-      gl.uniform2f(uniforms.u_cursorPos, renderState.cursorX, renderState.cursorY)
-
-      gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
-      gl.uniform1f(uniforms.u_time, time)
-      gl.uniform1f(uniforms.u_baseRadius, renderState.baseRadius)
-      gl.uniform1f(uniforms.u_nFreq, renderState.nFreq)
-      gl.uniform1f(uniforms.u_nAmp, renderState.nAmp * energyNorm)
-      gl.uniform1f(uniforms.u_timeScale, renderState.timeScale)
-      gl.uniform3f(uniforms.u_baseColor, renderState.baseColor[0], renderState.baseColor[1], renderState.baseColor[2])
-      gl.uniform3f(uniforms.u_glowColor, renderState.glowColor[0], renderState.glowColor[1], renderState.glowColor[2])
-      gl.uniform1f(uniforms.u_tentacleIntensity, renderState.tentacleIntensity * energyNorm)
-
-      gl.uniform1f(uniforms.u_audio_amplitude, engine?.getAmplitude() || 0)
-      gl.uniform1f(uniforms.u_theme, document.documentElement.getAttribute('data-theme') === 'light' ? 1 : 0)
-      gl.uniform1f(uniforms.u_tentaclePhase, (state as any).tentaclePhase || time * 2.0)
-      gl.uniform1f(uniforms.u_filamentCount, (state as any).filamentCount || 6.0)
-
-      // 👑 X-ray 视觉余温逻辑与纹理拦截
+      // --- 2. 材质侦测推演 (解决吞噬，实现细丝) ---
       let targetHasTexture = 0.0
+      let tRadius = 15.0 
+      let tViscosity = 0.25 
+      let isTextureBound = false
+
       if (state.targetElement) {
-        const rect = state.targetElement.getBoundingClientRect()
+        const el = state.targetElement
+        const rect = el.getBoundingClientRect()
         gl.uniform2f(uniforms.u_targetPos, (rect.left + rect.width/2) * dpr, (rect.top + rect.height/2) * dpr)
         gl.uniform1f(uniforms.u_isHovering, 1.0)
 
-        if (state.targetElement.tagName.toLowerCase() === 'img') {
-          const src = state.targetElement.getAttribute('src')
+        const isDot = el.getAttribute('data-cursor') === 'dot'
+        const isImg = el.tagName.toLowerCase() === 'img'
+
+        if (isDot) {
+          // 👑 圆点材质：主体迅速脱水收缩(2.0)，目标吸附点小(6.0)，极细拉丝(0.12)
+          targetBaseRadius = 2.0 
+          tRadius = 6.0          
+          tViscosity = 0.12      
+        } else if (isImg) {
+          // 👑 照片材质：黑洞级吸附，极端粘稠，触发 X-ray
+          targetBaseRadius = 15.0
+          tRadius = 25.0
+          tViscosity = 0.45
+
+          const src = el.getAttribute('src')
           if (src) {
             if (!textureCache.current.has(src)) {
               textureCache.current.set(src, 'loading')
@@ -365,28 +356,71 @@ export default function SymbioteCursorEnhanced() {
               renderState.lastValidTexture = tex
               const glImgY = (window.innerHeight - rect.bottom) * dpr
               renderState.lastValidRect = [rect.left * dpr, glImgY, rect.width * dpr, rect.height * dpr]
+              isTextureBound = true
             }
           }
+        } else {
+          // 普通文本链接
+          targetBaseRadius = 10.0
+          tRadius = 12.0
+          tViscosity = 0.25
         }
       } else {
         gl.uniform1f(uniforms.u_isHovering, 0.0)
       }
 
-      // 视觉余温渐变：进入快 (0.15)，离开极慢 (0.02)
+      // --- 3. 阻尼插值 (Lerp) ---
+      const lf = 0.08 
+      renderState.baseRadius = lerp(renderState.baseRadius, targetBaseRadius, lf)
+      renderState.nFreq = lerp(renderState.nFreq, targetNFreq, lf)
+      renderState.nAmp = lerp(renderState.nAmp, targetNAmp, lf)
+      renderState.timeScale = lerp(renderState.timeScale, targetTimeScale, lf)
+      renderState.baseColor = lerpColor(renderState.baseColor, targetBaseColor, lf)
+      renderState.glowColor = lerpColor(renderState.glowColor, targetGlowColor, lf)
+      renderState.tentacleIntensity = lerp(renderState.tentacleIntensity, targetTentacleIntensity, lf)
+      
+      renderState.targetRadius = lerp(renderState.targetRadius, tRadius, lf)
+      renderState.targetViscosity = lerp(renderState.targetViscosity, tViscosity, lf)
+
       renderState.hasTextureFactor = lerp(
         renderState.hasTextureFactor, 
         targetHasTexture, 
         targetHasTexture > 0.5 ? 0.15 : 0.02
       )
-      
-      gl.uniform1f(uniforms.u_hasTexture, renderState.hasTextureFactor)
 
-      // 只要余温还在，就持续渲染最后捕获的图片纹理
+      // --- 4. 惯性坐标结算 ---
+      gl.uniform2f(uniforms.u_prevCursorPos, renderState.cursorX, renderState.cursorY)
+      renderState.cursorX = lerp(renderState.cursorX, state.position.x * dpr, 0.3) 
+      renderState.cursorY = lerp(renderState.cursorY, state.position.y * dpr, 0.3)
+      gl.uniform2f(uniforms.u_cursorPos, renderState.cursorX, renderState.cursorY)
+
+      // --- 5. 推送 GPU ---
+      gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
+      gl.uniform1f(uniforms.u_time, time)
+      gl.uniform1f(uniforms.u_baseRadius, renderState.baseRadius)
+      gl.uniform1f(uniforms.u_nFreq, renderState.nFreq)
+      gl.uniform1f(uniforms.u_nAmp, renderState.nAmp * energyNorm)
+      gl.uniform1f(uniforms.u_timeScale, renderState.timeScale)
+      gl.uniform3f(uniforms.u_baseColor, renderState.baseColor[0], renderState.baseColor[1], renderState.baseColor[2])
+      gl.uniform3f(uniforms.u_glowColor, renderState.glowColor[0], renderState.glowColor[1], renderState.glowColor[2])
+      gl.uniform1f(uniforms.u_tentacleIntensity, renderState.tentacleIntensity * energyNorm)
+      
+      gl.uniform1f(uniforms.u_targetRadius, renderState.targetRadius)
+      gl.uniform1f(uniforms.u_targetViscosity, renderState.targetViscosity)
+
+      gl.uniform1f(uniforms.u_audio_amplitude, engine?.getAmplitude() || 0)
+      gl.uniform1f(uniforms.u_theme, document.documentElement.getAttribute('data-theme') === 'light' ? 1 : 0)
+      gl.uniform1f(uniforms.u_tentaclePhase, (state as any).tentaclePhase || time * 2.0)
+      gl.uniform1f(uniforms.u_filamentCount, (state as any).filamentCount || 6.0)
+
+      gl.uniform1f(uniforms.u_hasTexture, renderState.hasTextureFactor)
       if (renderState.hasTextureFactor > 0.001 && renderState.lastValidTexture) {
          gl.activeTexture(gl.TEXTURE0)
          gl.bindTexture(gl.TEXTURE_2D, renderState.lastValidTexture)
          gl.uniform1i(uniforms.u_photoTexture, 0)
          gl.uniform4f(uniforms.u_imgRect, ...renderState.lastValidRect)
+      } else if (!isTextureBound) {
+        gl.uniform1f(uniforms.u_hasTexture, 0.0)
       }
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
@@ -394,6 +428,7 @@ export default function SymbioteCursorEnhanced() {
     }
     render()
 
+    // 交互侦听逻辑
     const handleMove = (e: MouseEvent) => {
       updatePosition(e.clientX, e.clientY)
       spatialAudio.playBioFieldDisruptionAtPosition({ x: e.clientX, y: e.clientY }, state.energy / 100)
@@ -401,11 +436,19 @@ export default function SymbioteCursorEnhanced() {
 
     const handleOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      const interactable = target.closest('button, a, img') as HTMLElement
+      const interactable = target.closest('button, a, img, [data-cursor]') as HTMLElement
+      
       if (interactable) {
         setTargetElement(interactable)
-        addEnergy(5) 
-        spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY })
+        
+        if (interactable.getAttribute('data-cursor') === 'dot') {
+            setMood('curious') 
+            addEnergy(2) 
+        } else {
+            setMood('happy')
+            addEnergy(5) 
+            spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY })
+        }
       }
     }
 
@@ -423,7 +466,7 @@ export default function SymbioteCursorEnhanced() {
       window.removeEventListener('mouseover', handleOver)
       window.removeEventListener('mouseout', handleOut)
     }
-  }, [initWebGL, state, updatePosition, addEnergy, setTargetElement, engine])
+  }, [initWebGL, state, updatePosition, setMood, addEnergy, setTargetElement, engine])
 
   if (isTouchDevice) return null
 
