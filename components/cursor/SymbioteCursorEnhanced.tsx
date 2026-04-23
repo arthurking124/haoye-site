@@ -1,15 +1,16 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { usePathname } from 'next/navigation' // 👑 引入路由监听
 import { useSensory } from '@/components/providers/GlobalSensoryProvider'
 import { SymbioteSpatialAudio } from '@/lib/SymbioteSpatialAudio'
 import { BioFieldDisruption } from '@/lib/BioFieldDisruption'
 import { useCursorState } from '@/hooks/useCursorState'
 
 /**
- * 👑 「共生体·天演」- SOTY 满血究极版 (V3)
- * 包含：平滑演化 + X-ray呼吸余温 + 触手趋光重力 + LRU显存防崩 + ScrollSniper
- * 🆕 终极优化：彻底的 WebGL 内存回收 + DPR 动态侦测 + Haptic 安全降级
+ * 👑 「共生体·天演」- Awwwards SOTY 终极进化版 (V4 Final)
+ * 包含：平滑演化 + X-ray呼吸 + LRU显存防崩 + DPR自适应 + Haptic降级
+ * 🆕 终极生命体征：路由跃迁失忆 + 潜意识微动抽搐 + 后台休眠代谢
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
@@ -17,14 +18,12 @@ const lerpColor = (c1: number[], c2: number[], factor: number) => [
   lerp(c1[0], c2[0], factor), lerp(c1[1], c2[1], factor), lerp(c1[2], c2[2], factor)
 ]
 
-// 👑 安全的 Haptic 触觉触发器 (优雅降级 iOS Safari)
+// 安全的 Haptic 触觉触发器
 const triggerHaptic = (pattern: number | number[]) => {
   if (typeof navigator !== 'undefined' && navigator.vibrate) {
     try {
       navigator.vibrate(pattern)
-    } catch (e) {
-      // 忽略部分严格模式浏览器下抛出的权限异常
-    }
+    } catch (e) {}
   }
 }
 
@@ -32,14 +31,22 @@ export default function SymbioteCursorEnhanced() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isTouchDevice, setIsTouchDevice] = useState(false)
   
+  const pathname = usePathname() // 👑 路由监听钩子
   const { engine } = useSensory()
   const { state, updatePosition, setMood, addEnergy, setTargetElement } = useCursorState()
 
   const glRef = useRef<WebGLRenderingContext | null>(null)
   const programRef = useRef<WebGLProgram | null>(null)
-  const bufferRef = useRef<WebGLBuffer | null>(null) // 👑 新增：追踪 Buffer 以便卸载
+  const bufferRef = useRef<WebGLBuffer | null>(null) 
   const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({})
   const textureCache = useRef<Map<string, WebGLTexture | 'loading'>>(new Map())
+
+  // 👑 终极进化 1：Next.js 路由跃迁的“记忆清除” (Route Transition Amnesia)
+  // 当发生页面跳转时，强行切断旧页面的 DOM 引用，防止 X-ray 卡死悬空
+  useEffect(() => {
+    setTargetElement(null)
+    setMood('curious') // 跃迁后由于空间变化，重置为好奇探索状态
+  }, [pathname, setTargetElement, setMood])
 
   // ==========================================
   // 🧬 WebGL 着色器引擎 (躯干)
@@ -166,7 +173,6 @@ export default function SymbioteCursorEnhanced() {
         float specular = exp(-dist * 80.0) * 0.8; 
         vec3 finalColor = u_baseColor + u_glowColor * specular;
 
-        // 4. X-ray 生物场腐蚀边缘与视觉余温 (呼吸感增强版)
         if (u_hasTexture > 0.01 && dist < 0.05) { 
             vec2 mousePixelPos = vec2(u_cursorPos.x, u_resolution.y - u_cursorPos.y); 
             vec2 offset = gl_FragCoord.xy - mousePixelPos;
@@ -174,14 +180,12 @@ export default function SymbioteCursorEnhanced() {
             float magnification = 1.5;
             vec2 samplePos = mousePixelPos + offset / magnification;
             vec2 uv = (samplePos - u_imgRect.xy) / u_imgRect.zw;
-            // 👑 在此处插入下面这一行（变为新的第 131 行）：
             uv.y = 1.0 - uv.y;
             
             if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
                 vec4 texColor = texture2D(u_photoTexture, uv);
                 float gray = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
                 
-                // 👑 核心优化4：增加 X-ray 生物场呼吸感 (亮度微幅起伏)
                 float breath = 0.85 + 0.15 * sin(u_time * 2.5);
                 vec3 xrayColor = vec3(1.0 - gray) * vec3(0.4, 0.8, 1.0) * breath; 
                 
@@ -265,7 +269,6 @@ export default function SymbioteCursorEnhanced() {
     const startTime = Date.now()
     const MAX_TEXTURE_CACHE = 8 
 
-    // 👑 核心优化2：动态计算 DPR 的 Resize 函数提取到最外层
     const handleResize = () => {
       if (!canvasRef.current || !glRef.current) return
       const currentDpr = Math.min(window.devicePixelRatio, 2)
@@ -274,11 +277,9 @@ export default function SymbioteCursorEnhanced() {
       glRef.current.viewport(0, 0, canvasRef.current.width, canvasRef.current.height)
     }
     
-    // 初始化时调用一次
     handleResize()
     window.addEventListener('resize', handleResize)
 
-    // 初始化渲染状态
     const initialDpr = Math.min(window.devicePixelRatio, 2)
     const renderState = {
       baseRadius: 15.0, nFreq: 3.0, nAmp: 0.015, timeScale: 2.0,
@@ -298,9 +299,7 @@ export default function SymbioteCursorEnhanced() {
       const uniforms = uniformsRef.current
       if (!gl || !programRef.current) return
 
-      // 👑 每帧动态获取当前 DPR，防止拖拽跨屏时坐标算错
       const currentDpr = Math.min(window.devicePixelRatio, 2)
-      
       const time = (Date.now() - startTime) * 0.001
       const energyNorm = state.energy / 100.0
 
@@ -316,8 +315,16 @@ export default function SymbioteCursorEnhanced() {
 
       if (state.mood === 'tired') {
         targetBaseRadius *= 0.8
-        targetNFreq = 1.0; targetNAmp = 0.005; targetTimeScale = 0.5
-        targetBaseColor = [0.01, 0.01, 0.02]; targetGlowColor = [0.02, 0.02, 0.05]
+        
+        // 👑 终极进化 3：潜意识微动 (Subconscious Twitches)
+        // 利用极高次幂的 sin 函数，制造不可预知的极其偶发的生物抽搐脉冲
+        const twitch = Math.pow(Math.max(0, Math.sin(time * 0.8)), 60.0) 
+        
+        targetNFreq = 1.0 + twitch * 15.0        // 抽搐时毛刺激增
+        targetNAmp = 0.005 + twitch * 0.04       // 抽搐时幅度加大
+        targetTimeScale = 0.5 + twitch * 10.0    // 抽搐时时间流速加快
+        targetBaseColor = [0.01, 0.01, 0.02]
+        targetGlowColor = [0.02 + twitch * 0.2, 0.02 + twitch * 0.2, 0.05]
         targetTentacleIntensity = 0.0 
       } else if (state.mood === 'happy') {
         targetBaseRadius *= 1.1
@@ -337,6 +344,7 @@ export default function SymbioteCursorEnhanced() {
       let isTextureBound = false
 
       if (state.targetElement) {
+        // 由于有 Route Transition 的清除保护，这里的 getBoundingClientRect 绝对安全
         const el = state.targetElement
         const rect = el.getBoundingClientRect() 
         gl.uniform2f(uniforms.u_targetPos, (rect.left + rect.width/2) * currentDpr, (rect.top + rect.height/2) * currentDpr)
@@ -464,11 +472,11 @@ export default function SymbioteCursorEnhanced() {
         
         if (interactable.getAttribute('data-cursor') === 'dot') {
             setMood('curious'); addEnergy(2) 
-            triggerHaptic(5) // 👑 安全的微震触发
+            triggerHaptic(5) 
         } else {
             setMood('happy'); addEnergy(5) 
             spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY })
-            triggerHaptic(10) // 👑 安全的饱满震动触发
+            triggerHaptic(10) 
         }
       }
     }
@@ -499,7 +507,6 @@ export default function SymbioteCursorEnhanced() {
     window.addEventListener('mouseout', handleOut)
     window.addEventListener('scroll', handleScroll, { passive: true })
 
-    // 👑 核心优化1：极其干净且彻底的组件卸载机制 (避免 React Strict Mode 下显存爆炸)
     return () => {
       cancelAnimationFrame(raf)
       window.removeEventListener('resize', handleResize)
@@ -511,19 +518,16 @@ export default function SymbioteCursorEnhanced() {
       if (glRef.current) {
         const gl = glRef.current
         
-        // 1. 清空所有缓存的纹理
         textureCache.current.forEach((tex) => {
           if (tex !== 'loading') gl.deleteTexture(tex)
         })
         textureCache.current.clear()
 
-        // 2. 销毁缓冲区 (Buffer)
         if (bufferRef.current) {
           gl.deleteBuffer(bufferRef.current)
           bufferRef.current = null
         }
 
-        // 3. 销毁着色器程序 (Program) 及其挂载的 Shaders
         if (programRef.current) {
           gl.deleteProgram(programRef.current)
           programRef.current = null
