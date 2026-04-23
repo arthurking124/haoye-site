@@ -1,18 +1,36 @@
 import { SensoryEngine } from './SensoryEngine'
 
 /**
- * 毒液光标的空间音效系统
- * 将光标位置映射到 3D 音频空间，创建极致的触觉化听感
+ * 👑 毒液光标的空间音效系统 - SOTY 巅峰性能版 (V6 终局版)
+ * 包含：3D空间音频 + 颗粒合成 + 潜意识LFO呼吸 + 实时振幅分析
+ * 🆕 终极优化：上下文自愈防线 + 32Hz触觉下潜 + 黏液阻尼反馈 + 完美褪音(Anti-Clicking)
  */
 
 export class SymbioteSpatialAudio {
   private static instance: SymbioteSpatialAudio
   private engine: SensoryEngine
+  
+  // 核心音频节点
   private panner: PannerNode | null = null
   private gainNode: GainNode | null = null
-  private oscillator: OscillatorNode | null = null
   private filterNode: BiquadFilterNode | null = null
+  private distortionNode: WaveShaperNode | null = null 
+  
+  // 实时振幅分析器 (反哺视觉)
+  private analyser: AnalyserNode | null = null
+  private dataArray: Uint8Array | null = null
+  
+  // DSP 曲线缓存
+  private angryDistortionCurve: Float32Array | null = null
+  
+  // 状态节点
+  private oscillator: OscillatorNode | null = null
+  private droneOsc: OscillatorNode | null = null
+  private droneGain: GainNode | null = null
+  private breathLfo: OscillatorNode | null = null
+
   private isActive = false
+  private isInitializing = false
 
   private constructor() {
     this.engine = SensoryEngine.getInstance()
@@ -26,14 +44,40 @@ export class SymbioteSpatialAudio {
   }
 
   /**
-   * 初始化空间音频系统
+   * 非对称模拟失真算法
    */
+  private makeAsymmetricDistortionCurve(amount: number): Float32Array {
+    const k = amount
+    const n_samples = 44100
+    const curve = new Float32Array(n_samples)
+    const deg = Math.PI / 180
+
+    for (let i = 0; i < n_samples; ++i) {
+      let x = (i * 2) / n_samples - 1
+      if (x > 0) {
+        x = x - 0.1 * Math.sin(x * Math.PI)
+      } else {
+        x = x + 0.05 * Math.sin(x * Math.PI)
+      }
+      curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x))
+    }
+    return curve
+  }
+
   async init(): Promise<void> {
+    if (this.isActive || this.isInitializing) return 
+    this.isInitializing = true
+
     try {
       const ctx = this.engine.context
       if (!ctx) return
 
-      // 创建音频节点
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {})
+      }
+
+      this.angryDistortionCurve = this.makeAsymmetricDistortionCurve(300)
+
       this.gainNode = ctx.createGain()
       this.gainNode.gain.value = 0.15
 
@@ -42,7 +86,14 @@ export class SymbioteSpatialAudio {
       this.filterNode.frequency.value = 2500
       this.filterNode.Q.value = 1.0
 
-      // 使用 SensoryEngine 的 PannerNode（如果可用）或创建新的
+      this.distortionNode = ctx.createWaveShaper()
+      this.distortionNode.curve = null 
+      this.distortionNode.oversample = '4x'
+
+      this.analyser = ctx.createAnalyser()
+      this.analyser.fftSize = 256
+      this.dataArray = new Uint8Array(this.analyser.frequencyBinCount)
+
       this.panner = ctx.createPanner()
       this.panner.panningModel = 'HRTF'
       this.panner.distanceModel = 'inverse'
@@ -50,102 +101,128 @@ export class SymbioteSpatialAudio {
       this.panner.maxDistance = 100
       this.panner.rolloffFactor = 1.5
 
-      // 连接音频图
+      // 👑 优化 2：下潜至 32Hz，产生压抑的深渊震动感
+      this.droneOsc = ctx.createOscillator()
+      this.droneOsc.type = 'sine'
+      this.droneOsc.frequency.value = 32 
+      
+      this.droneGain = ctx.createGain()
+      this.droneGain.gain.value = 0 
+      
+      this.breathLfo = ctx.createOscillator()
+      this.breathLfo.type = 'sine'
+      this.breathLfo.frequency.value = 0.15 
+      
+      const lfoDepth = ctx.createGain()
+      lfoDepth.gain.value = 0.1 
+
+      this.breathLfo.connect(lfoDepth)
+      lfoDepth.connect(this.droneGain.gain)
+      this.droneOsc.connect(this.droneGain)
+      this.droneGain.connect(this.distortionNode) 
+
+      this.breathLfo.start()
+      this.droneOsc.start()
+
+      // 组装主干音频图
       this.gainNode.connect(this.filterNode)
-      this.filterNode.connect(this.panner)
+      this.filterNode.connect(this.distortionNode)
+      this.distortionNode.connect(this.analyser)
+      this.distortionNode.connect(this.panner)
       this.panner.connect(ctx.destination)
 
       this.isActive = true
     } catch (error) {
-      console.warn('Failed to initialize SymbioteSpatialAudio:', error)
+      console.warn('共生体听觉引擎初始化失败:', error)
+    } finally {
+      this.isInitializing = false
     }
   }
 
-  /**
-   * 更新光标的 3D 空间位置
-   * @param screenX 屏幕 X 坐标 (0-window.innerWidth)
-   * @param screenY 屏幕 Y 坐标 (0-window.innerHeight)
-   * @param velocity 光标速度
-   * @param mood 光标情绪
-   */
+  getAmplitude(): number {
+    if (!this.analyser || !this.dataArray) return 0
+    this.analyser.getByteTimeDomainData(this.dataArray as any)
+    
+    let sum = 0
+    for (let i = 0; i < this.dataArray.length; i++) {
+      const v = (this.dataArray[i] - 128) / 128
+      sum += v * v
+    }
+    return Math.sqrt(sum / this.dataArray.length)
+  }
+
   updateCursorPosition(
     screenX: number,
     screenY: number,
     velocity: { x: number; y: number },
     mood: 'happy' | 'curious' | 'angry' | 'tired'
   ): void {
-    if (!this.panner || !this.gainNode || !this.filterNode) return
+    if (!this.isActive || !this.panner || !this.gainNode || !this.filterNode || !this.distortionNode) return
 
     const ctx = this.engine.context
-    if (!ctx) return
+    if (!ctx) return 
 
-    // 将屏幕坐标映射到 3D 空间
-    // X: -1 (左) 到 1 (右)
-    // Y: -1 (下) 到 1 (上)
-    // Z: 0.5 (远) 到 -0.5 (近) - 基于速度
+    // 👑 优化 1：音频上下文自愈防线 (防挂起哑巴)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
+
     const x = (screenX / window.innerWidth) * 2 - 1
     const y = 1 - (screenY / window.innerHeight) * 2
     const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2)
-    const z = 0.5 - (speed / 1000) * 0.3 // 速度越快，声源越近
+    const z = 0.5 - (speed / 1000) * 0.3 
 
     this.panner.setPosition(x, y, z)
 
-    // 根据速度调整音量和频率
-    const volume = Math.min(0.3, speed / 1000)
-    this.gainNode.gain.setTargetAtTime(volume, ctx.currentTime, 0.05)
+    // 👑 优化 3 衍生：运动音量也增加一点阻尼感 (从 0.05 增至 0.1)
+    const volume = Math.min(0.25, speed / 1000)
+    this.gainNode.gain.setTargetAtTime(volume, ctx.currentTime, 0.1)
 
-    // 根据情绪调整音色
-    let filterFreq = 2500
+    let filterFreq = 2000
+    let resonance = 1.0
+    
+    this.distortionNode.curve = null 
+    
+    if (this.droneGain) {
+      if (mood === 'tired' && speed < 20) {
+        this.droneGain.gain.setTargetAtTime(0.15, ctx.currentTime, 3.0) 
+      } else {
+        this.droneGain.gain.setTargetAtTime(0.0, ctx.currentTime, 0.5) 
+      }
+    }
+
     switch (mood) {
-      case 'happy':
-        filterFreq = 3500
-        break
-      case 'curious':
-        filterFreq = 2800
-        break
+      case 'happy': filterFreq = 2500; break
+      case 'curious': filterFreq = 1800; break
       case 'angry':
-        filterFreq = 1500
+        filterFreq = 800
+        resonance = 8.0  
+        this.distortionNode.curve = this.angryDistortionCurve as any
         break
-      case 'tired':
-        filterFreq = 1000
-        break
+      case 'tired': filterFreq = 500; break
     }
 
     this.filterNode.frequency.setTargetAtTime(filterFreq, ctx.currentTime, 0.1)
+    this.filterNode.Q.setTargetAtTime(resonance, ctx.currentTime, 0.1)
 
-    // 生成运动音效
     this.generateMotionSound(velocity, mood)
   }
 
-  /**
-   * 生成空间化的运动音效
-   */
   private generateMotionSound(velocity: { x: number; y: number }, mood: 'happy' | 'curious' | 'angry' | 'tired'): void {
-    if (!this.engine.context || !this.gainNode) return
-
+    if (!this.isActive || !this.engine.context || !this.gainNode) return
     const speed = Math.sqrt(velocity.x ** 2 + velocity.y ** 2)
-    if (speed < 50) return // 速度太低时不生成音效
+    if (speed < 50) return 
 
     const ctx = this.engine.context
     const now = ctx.currentTime
-
-    // 基础频率随速度变化
-    const baseFreq = 150 + speed * 0.3
+    const baseFreq = 100 + speed * 0.2
     let waveType: OscillatorType = 'sine'
 
     switch (mood) {
-      case 'happy':
-        waveType = 'sine'
-        break
-      case 'curious':
-        waveType = 'triangle'
-        break
-      case 'angry':
-        waveType = 'sawtooth'
-        break
-      case 'tired':
-        waveType = 'sine'
-        break
+      case 'happy': waveType = 'sine'; break
+      case 'curious': waveType = 'triangle'; break
+      case 'angry': waveType = 'triangle'; break 
+      case 'tired': waveType = 'sine'; break
     }
 
     if (!this.oscillator) {
@@ -155,165 +232,180 @@ export class SymbioteSpatialAudio {
       this.oscillator.start()
     }
 
-    this.oscillator.frequency.setTargetAtTime(baseFreq, now, 0.05)
+    // 👑 优化 3：强化动态物理阻尼 (时间常数从 0.05 -> 0.15，模拟浓稠毒液中的拖拽)
+    this.oscillator.frequency.setTargetAtTime(baseFreq, now, 0.15)
     this.oscillator.type = waveType
   }
 
-  /**
-   * 播放空间化的"进食"音效
-   * @param position 屏幕位置
-   */
   playEatSoundAtPosition(position: { x: number; y: number }): void {
-    if (!this.engine.context || !this.gainNode || !this.panner) return
-
+    if (!this.isActive || !this.engine.context || !this.gainNode || !this.panner) return
     const ctx = this.engine.context
-    const now = ctx.currentTime
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
 
-    // 更新 Panner 位置到进食位置
+    const now = ctx.currentTime
     const x = (position.x / window.innerWidth) * 2 - 1
     const y = 1 - (position.y / window.innerHeight) * 2
     this.panner.setPosition(x, y, 0)
 
-    // 创建短暂的上升音调
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
+    const grainCount = 8
+    for (let i = 0; i < grainCount; i++) {
+      const timeOffset = Math.random() * 0.1 
+      const grainOsc = ctx.createOscillator()
+      const grainGain = ctx.createGain()
 
-    osc.frequency.setValueAtTime(300, now)
-    osc.frequency.exponentialRampToValueAtTime(900, now + 0.15)
-    osc.type = 'sine'
+      const randomFreq = 150 + Math.random() * 300 
+      grainOsc.type = 'sine' 
+      grainOsc.frequency.setValueAtTime(randomFreq, now + timeOffset)
+      grainOsc.frequency.exponentialRampToValueAtTime(50, now + timeOffset + 0.05)
 
-    gain.gain.setValueAtTime(0.25, now)
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15)
+      grainGain.gain.setValueAtTime(0, now + timeOffset)
+      grainGain.gain.linearRampToValueAtTime(0.1, now + timeOffset + 0.01) 
+      grainGain.gain.exponentialRampToValueAtTime(0.001, now + timeOffset + 0.08) 
 
-    osc.connect(gain)
-    gain.connect(this.gainNode)
+      grainOsc.connect(grainGain)
+      if (this.distortionNode) grainGain.connect(this.distortionNode) 
 
-    osc.start(now)
-    osc.stop(now + 0.15)
+      const endTime = now + timeOffset + 0.1
+      grainOsc.start(now + timeOffset)
+      grainOsc.stop(endTime)
+
+      grainOsc.onended = () => {
+        grainOsc.disconnect()
+        grainGain.disconnect()
+      }
+    }
   }
 
-  /**
-   * 播放空间化的"受伤"音效
-   */
   playHurtSoundAtPosition(position: { x: number; y: number }): void {
-    if (!this.engine.context || !this.gainNode || !this.panner) return
-
+    if (!this.isActive || !this.engine.context || !this.gainNode || !this.panner) return
     const ctx = this.engine.context
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
     const now = ctx.currentTime
-
-    // 更新 Panner 位置
+    
     const x = (position.x / window.innerWidth) * 2 - 1
     const y = 1 - (position.y / window.innerHeight) * 2
     this.panner.setPosition(x, y, -0.3)
 
-    // 创建下降的电流音效
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
 
-    osc.frequency.setValueAtTime(700, now)
-    osc.frequency.exponentialRampToValueAtTime(150, now + 0.25)
-    osc.type = 'sawtooth'
+    osc.frequency.setValueAtTime(400, now) 
+    osc.frequency.exponentialRampToValueAtTime(80, now + 0.25)
+    osc.type = 'triangle'
 
-    gain.gain.setValueAtTime(0.2, now)
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25)
+    gain.gain.setValueAtTime(0.15, now)
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25)
 
     osc.connect(gain)
     gain.connect(this.gainNode)
 
+    const endTime = now + 0.3
     osc.start(now)
-    osc.stop(now + 0.25)
+    osc.stop(endTime)
+
+    osc.onended = () => {
+      osc.disconnect()
+      gain.disconnect()
+    }
   }
 
-  /**
-   * 播放空间化的"呼吸"环境音
-   */
-  playBreathingSoundAtPosition(position: { x: number; y: number }, energy: number): void {
-    if (!this.engine.context || !this.gainNode || !this.panner) return
-
-    const ctx = this.engine.context
-    const now = ctx.currentTime
-
-    // 更新 Panner 位置
-    const x = (position.x / window.innerWidth) * 2 - 1
-    const y = 1 - (position.y / window.innerHeight) * 2
-    this.panner.setPosition(x, y, 0)
-
-    // 根据能量调整呼吸频率
-    const breathRate = 0.3 + (energy / 100) * 1.2
-
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-
-    osc.frequency.value = breathRate
-    osc.type = 'sine'
-
-    // 呼吸包络
-    const breathDuration = 1 / breathRate
-    gain.gain.setValueAtTime(0, now)
-    gain.gain.linearRampToValueAtTime(0.08, now + breathDuration * 0.5)
-    gain.gain.linearRampToValueAtTime(0, now + breathDuration)
-
-    osc.connect(gain)
-    gain.connect(this.gainNode)
-
-    osc.start(now)
-    osc.stop(now + breathDuration)
-  }
-
-  /**
-   * 创建"生物场"干扰音效
-   * 当光标在文本上方时，产生微弱的磁力干扰声
-   */
   playBioFieldDisruptionAtPosition(position: { x: number; y: number }, intensity: number = 0.5): void {
-    if (!this.engine.context || !this.gainNode || !this.panner) return
-
+    if (!this.isActive || !this.engine.context || !this.gainNode || !this.panner) return
     const ctx = this.engine.context
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {})
+    }
     const now = ctx.currentTime
 
-    // 更新 Panner 位置
     const x = (position.x / window.innerWidth) * 2 - 1
     const y = 1 - (position.y / window.innerHeight) * 2
     this.panner.setPosition(x, y, 0.2)
 
-    // 创建多个谐波层
     for (let i = 0; i < 3; i++) {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
 
-      const baseFreq = 100 + i * 50
+      const baseFreq = 80 + i * 40 
       osc.frequency.value = baseFreq
       osc.type = 'sine'
 
-      gain.gain.setValueAtTime(0.05 * intensity, now)
+      gain.gain.setValueAtTime(0.03 * intensity, now)
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3)
 
       osc.connect(gain)
       gain.connect(this.gainNode)
 
+      const endTime = now + 0.35
       osc.start(now)
-      osc.stop(now + 0.3)
+      osc.stop(endTime)
+
+      osc.onended = () => {
+        osc.disconnect()
+        gain.disconnect()
+      }
     }
   }
 
-  /**
-   * 停止所有音效
-   */
   stop(): void {
+    const ctx = this.engine.context
+    if (!ctx) return
+    
+    const now = ctx.currentTime
+
+    // 👑 优化 4：完美 Fade-out，在彻底销毁节点前先平滑将增益降至极低，彻底解决金属爆音
+    if (this.gainNode) {
+      this.gainNode.gain.setTargetAtTime(0.001, now, 0.02)
+    }
+    if (this.droneGain) {
+      this.droneGain.gain.setTargetAtTime(0.001, now, 0.02)
+    }
+
+    const stopTime = now + 0.05
+
     if (this.oscillator) {
-      try {
-        this.oscillator.stop()
-      } catch (e) {
-        // 已停止
-      }
+      try { 
+        this.oscillator.stop(stopTime) 
+        const osc = this.oscillator
+        osc.onended = () => osc.disconnect()
+      } catch (e) {}
       this.oscillator = null
     }
+    if (this.breathLfo) {
+      try { 
+        this.breathLfo.stop(stopTime) 
+        const lfo = this.breathLfo
+        lfo.onended = () => lfo.disconnect()
+      } catch (e) {}
+      this.breathLfo = null
+    }
+    if (this.droneOsc) {
+      try { 
+        this.droneOsc.stop(stopTime) 
+        const drone = this.droneOsc
+        drone.onended = () => drone.disconnect()
+      } catch (e) {}
+      this.droneOsc = null
+    }
   }
 
-  /**
-   * 清理资源
-   */
   dispose(): void {
     this.stop()
+    // 延迟断开常驻增益与分析器节点，确保 Fade-out 完成
+    setTimeout(() => {
+      if (this.droneGain) {
+         this.droneGain.disconnect()
+         this.droneGain = null
+      }
+      if (this.analyser) {
+        this.analyser.disconnect()
+        this.analyser = null
+      }
+    }, 100)
+    
     this.isActive = false
   }
 }

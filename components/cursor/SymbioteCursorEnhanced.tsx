@@ -438,7 +438,7 @@ export default function SymbioteCursorEnhanced() {
       gl.uniform1f(uniforms.u_targetRadius, renderState.targetRadius)
       gl.uniform1f(uniforms.u_targetViscosity, renderState.targetViscosity)
 
-      gl.uniform1f(uniforms.u_audio_amplitude, engine?.getAmplitude() || 0)
+      gl.uniform1f(uniforms.u_audio_amplitude, spatialAudio.getAmplitude())
       gl.uniform1f(uniforms.u_theme, document.documentElement.getAttribute('data-theme') === 'light' ? 1 : 0)
       gl.uniform1f(uniforms.u_tentaclePhase, (state as any).tentaclePhase || time * 2.0)
       gl.uniform1f(uniforms.u_filamentCount, (state as any).filamentCount || 6.0)
