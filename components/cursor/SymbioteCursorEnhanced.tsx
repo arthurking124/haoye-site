@@ -7,14 +7,26 @@ import { BioFieldDisruption } from '@/lib/BioFieldDisruption'
 import { useCursorState } from '@/hooks/useCursorState'
 
 /**
- * 👑 「共生体·天演」- Awwwards SOTY 终极定稿版
- * 包含：平滑演化(Lerp) + 惯性拉丝变细 + X-ray余温 + 触手趋光重力 + 多材质动态粘滞度(极细拉丝)
+ * 👑 「共生体·天演」- SOTY 满血究极版 (V3)
+ * 包含：平滑演化 + X-ray呼吸余温 + 触手趋光重力 + LRU显存防崩 + ScrollSniper
+ * 🆕 终极优化：彻底的 WebGL 内存回收 + DPR 动态侦测 + Haptic 安全降级
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
 const lerpColor = (c1: number[], c2: number[], factor: number) => [
   lerp(c1[0], c2[0], factor), lerp(c1[1], c2[1], factor), lerp(c1[2], c2[2], factor)
 ]
+
+// 👑 安全的 Haptic 触觉触发器 (优雅降级 iOS Safari)
+const triggerHaptic = (pattern: number | number[]) => {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try {
+      navigator.vibrate(pattern)
+    } catch (e) {
+      // 忽略部分严格模式浏览器下抛出的权限异常
+    }
+  }
+}
 
 export default function SymbioteCursorEnhanced() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -25,6 +37,7 @@ export default function SymbioteCursorEnhanced() {
 
   const glRef = useRef<WebGLRenderingContext | null>(null)
   const programRef = useRef<WebGLProgram | null>(null)
+  const bufferRef = useRef<WebGLBuffer | null>(null) // 👑 新增：追踪 Buffer 以便卸载
   const uniformsRef = useRef<Record<string, WebGLUniformLocation | null>>({})
   const textureCache = useRef<Map<string, WebGLTexture | 'loading'>>(new Map())
 
@@ -112,14 +125,12 @@ export default function SymbioteCursorEnhanced() {
         vec2 prevPos = (u_prevCursorPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
         prevPos.y = -prevPos.y;
 
-        // 1. 动态拉伸质量守恒 (速度越快，半径越细)
         float speed = length(currPos - prevPos) * u_resolution.y; 
         float stretchThinning = clamp(1.0 - speed * 0.015, 0.3, 1.0); 
         float currentRadius = (u_baseRadius / u_resolution.y) * stretchThinning;
         
         float dist = sdSegment(p, prevPos, currPos) - currentRadius;
 
-        // 2. 趋光性与重力触手
         if (u_tentacleIntensity > 0.0) {
            float angle = atan(p.y - currPos.y, p.x - currPos.x);
            float activeFilaments = max(6.0, u_filamentCount);
@@ -140,12 +151,10 @@ export default function SymbioteCursorEnhanced() {
            dist -= tentacle;
         }
 
-        // 情绪毛刺与心跳
         dist += snoise(p * u_nFreq + u_time * u_timeScale) * u_nAmp * stretchThinning;
         dist -= sin(u_time * 2.0) * 0.01; 
         dist -= u_audio_amplitude * 0.1;
 
-        // 3. 动态目标吸附拉丝
         if (u_isHovering > 0.5) {
           vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
           targetPos.y = -targetPos.y;
@@ -157,7 +166,7 @@ export default function SymbioteCursorEnhanced() {
         float specular = exp(-dist * 80.0) * 0.8; 
         vec3 finalColor = u_baseColor + u_glowColor * specular;
 
-        // 4. X-ray 生物场腐蚀边缘与视觉余温
+        // 4. X-ray 生物场腐蚀边缘与视觉余温 (呼吸感增强版)
         if (u_hasTexture > 0.01 && dist < 0.05) { 
             vec2 mousePixelPos = vec2(u_cursorPos.x, u_resolution.y - u_cursorPos.y); 
             vec2 offset = gl_FragCoord.xy - mousePixelPos;
@@ -165,11 +174,16 @@ export default function SymbioteCursorEnhanced() {
             float magnification = 1.5;
             vec2 samplePos = mousePixelPos + offset / magnification;
             vec2 uv = (samplePos - u_imgRect.xy) / u_imgRect.zw;
+            // 👑 在此处插入下面这一行（变为新的第 131 行）：
+            uv.y = 1.0 - uv.y;
             
             if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
                 vec4 texColor = texture2D(u_photoTexture, uv);
                 float gray = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
-                vec3 xrayColor = vec3(1.0 - gray) * vec3(0.4, 0.8, 1.0); 
+                
+                // 👑 核心优化4：增加 X-ray 生物场呼吸感 (亮度微幅起伏)
+                float breath = 0.85 + 0.15 * sin(u_time * 2.5);
+                vec3 xrayColor = vec3(1.0 - gray) * vec3(0.4, 0.8, 1.0) * breath; 
                 
                 float edgeErosion = snoise(p * 15.0 - u_time * 4.0) * 0.015;
                 float innerMask = smoothstep(0.005, -0.01, dist + edgeErosion);
@@ -197,9 +211,11 @@ export default function SymbioteCursorEnhanced() {
     gl.useProgram(prog)
     programRef.current = prog
 
-    const buffer = gl.createBuffer()
+    const buffer = gl.createBuffer()!
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW)
+    bufferRef.current = buffer
+
     const posAttrib = gl.getAttribLocation(prog, 'a_position')
     gl.enableVertexAttribArray(posAttrib)
     gl.vertexAttribPointer(posAttrib, 2, gl.FLOAT, false, 0, 0)
@@ -228,19 +244,10 @@ export default function SymbioteCursorEnhanced() {
       u_imgRect: gl.getUniformLocation(prog, 'u_imgRect'),
       u_photoTexture: gl.getUniformLocation(prog, 'u_photoTexture')
     }
-
-    const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio, 2)
-      canvas.width = window.innerWidth * dpr
-      canvas.height = window.innerHeight * dpr
-      gl.viewport(0, 0, canvas.width, canvas.height)
-    }
-    window.addEventListener('resize', resize)
-    resize()
   }, [])
 
   // ==========================================
-  // 🧠 渲染引擎与状态机联动 (大脑)
+  // 🧠 渲染引擎与状态机联动 (大脑) 
   // ==========================================
   useEffect(() => {
     if (window.matchMedia('(pointer: coarse)').matches) {
@@ -256,33 +263,52 @@ export default function SymbioteCursorEnhanced() {
 
     let raf: number
     const startTime = Date.now()
-    const dpr = Math.min(window.devicePixelRatio, 2)
+    const MAX_TEXTURE_CACHE = 8 
 
-    // 状态插值器：记录当前帧的渲染数据
+    // 👑 核心优化2：动态计算 DPR 的 Resize 函数提取到最外层
+    const handleResize = () => {
+      if (!canvasRef.current || !glRef.current) return
+      const currentDpr = Math.min(window.devicePixelRatio, 2)
+      canvasRef.current.width = window.innerWidth * currentDpr
+      canvasRef.current.height = window.innerHeight * currentDpr
+      glRef.current.viewport(0, 0, canvasRef.current.width, canvasRef.current.height)
+    }
+    
+    // 初始化时调用一次
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    // 初始化渲染状态
+    const initialDpr = Math.min(window.devicePixelRatio, 2)
     const renderState = {
-      baseRadius: 15.0,
-      nFreq: 3.0, nAmp: 0.015, timeScale: 2.0,
+      baseRadius: 15.0, nFreq: 3.0, nAmp: 0.015, timeScale: 2.0,
       baseColor: [0.02, 0.03, 0.05], glowColor: [0.1, 0.15, 0.2],
       tentacleIntensity: 1.0,
-      cursorX: state.position.x * dpr, cursorY: state.position.y * dpr,
-      
-      targetRadius: 15.0,
-      targetViscosity: 0.3,
-
+      cursorX: state.position.x * initialDpr, cursorY: state.position.y * initialDpr,
+      targetRadius: 15.0, targetViscosity: 0.3,
       hasTextureFactor: 0.0,
       lastValidTexture: null as WebGLTexture | null,
       lastValidRect: [0, 0, 0, 0] as [number, number, number, number]
     }
+
+    let prevMood = state.mood
 
     const render = () => {
       const gl = glRef.current
       const uniforms = uniformsRef.current
       if (!gl || !programRef.current) return
 
+      // 👑 每帧动态获取当前 DPR，防止拖拽跨屏时坐标算错
+      const currentDpr = Math.min(window.devicePixelRatio, 2)
+      
       const time = (Date.now() - startTime) * 0.001
       const energyNorm = state.energy / 100.0
 
-      // --- 1. 基础情绪推演 ---
+      if (state.mood === 'angry' && prevMood !== 'angry') {
+        triggerHaptic([20, 30, 20])
+      }
+      prevMood = state.mood
+
       let targetBaseRadius = 10.0 + 15.0 * energyNorm
       let targetNFreq = 3.0, targetNAmp = 0.015, targetTimeScale = 2.0
       let targetBaseColor = [0.02, 0.03, 0.05], targetGlowColor = [0.1, 0.15, 0.2]
@@ -305,7 +331,6 @@ export default function SymbioteCursorEnhanced() {
         targetTentacleIntensity = 0.0 
       }
 
-      // --- 2. 材质侦测推演 (解决吞噬，实现细丝) ---
       let targetHasTexture = 0.0
       let tRadius = 15.0 
       let tViscosity = 0.25 
@@ -313,27 +338,32 @@ export default function SymbioteCursorEnhanced() {
 
       if (state.targetElement) {
         const el = state.targetElement
-        const rect = el.getBoundingClientRect()
-        gl.uniform2f(uniforms.u_targetPos, (rect.left + rect.width/2) * dpr, (rect.top + rect.height/2) * dpr)
+        const rect = el.getBoundingClientRect() 
+        gl.uniform2f(uniforms.u_targetPos, (rect.left + rect.width/2) * currentDpr, (rect.top + rect.height/2) * currentDpr)
         gl.uniform1f(uniforms.u_isHovering, 1.0)
 
         const isDot = el.getAttribute('data-cursor') === 'dot'
         const isImg = el.tagName.toLowerCase() === 'img'
 
         if (isDot) {
-          // 👑 圆点材质：主体迅速脱水收缩(2.0)，目标吸附点小(6.0)，极细拉丝(0.12)
-          targetBaseRadius = 2.0 
-          tRadius = 6.0          
-          tViscosity = 0.12      
+          targetBaseRadius = 2.0; tRadius = 6.0; tViscosity = 0.12      
         } else if (isImg) {
-          // 👑 照片材质：黑洞级吸附，极端粘稠，触发 X-ray
-          targetBaseRadius = 15.0
-          tRadius = 25.0
-          tViscosity = 0.45
+          targetBaseRadius = 15.0; tRadius = 25.0; tViscosity = 0.45
 
           const src = el.getAttribute('src')
           if (src) {
             if (!textureCache.current.has(src)) {
+              if (textureCache.current.size >= MAX_TEXTURE_CACHE) {
+                const oldestKey = textureCache.current.keys().next().value
+                if (oldestKey) { 
+                  const oldestTex = textureCache.current.get(oldestKey)
+                  if (oldestTex && oldestTex !== 'loading') {
+                    gl.deleteTexture(oldestTex) 
+                  }
+                  textureCache.current.delete(oldestKey)
+                }
+              }
+
               textureCache.current.set(src, 'loading')
               const img = new Image()
               img.crossOrigin = 'anonymous' 
@@ -354,22 +384,18 @@ export default function SymbioteCursorEnhanced() {
             if (tex && tex !== 'loading') {
               targetHasTexture = 1.0
               renderState.lastValidTexture = tex
-              const glImgY = (window.innerHeight - rect.bottom) * dpr
-              renderState.lastValidRect = [rect.left * dpr, glImgY, rect.width * dpr, rect.height * dpr]
+              const glImgY = (window.innerHeight - rect.bottom) * currentDpr
+              renderState.lastValidRect = [rect.left * currentDpr, glImgY, rect.width * currentDpr, rect.height * currentDpr]
               isTextureBound = true
             }
           }
         } else {
-          // 普通文本链接
-          targetBaseRadius = 10.0
-          tRadius = 12.0
-          tViscosity = 0.25
+          targetBaseRadius = 10.0; tRadius = 12.0; tViscosity = 0.25
         }
       } else {
         gl.uniform1f(uniforms.u_isHovering, 0.0)
       }
 
-      // --- 3. 阻尼插值 (Lerp) ---
       const lf = 0.08 
       renderState.baseRadius = lerp(renderState.baseRadius, targetBaseRadius, lf)
       renderState.nFreq = lerp(renderState.nFreq, targetNFreq, lf)
@@ -378,7 +404,6 @@ export default function SymbioteCursorEnhanced() {
       renderState.baseColor = lerpColor(renderState.baseColor, targetBaseColor, lf)
       renderState.glowColor = lerpColor(renderState.glowColor, targetGlowColor, lf)
       renderState.tentacleIntensity = lerp(renderState.tentacleIntensity, targetTentacleIntensity, lf)
-      
       renderState.targetRadius = lerp(renderState.targetRadius, tRadius, lf)
       renderState.targetViscosity = lerp(renderState.targetViscosity, tViscosity, lf)
 
@@ -388,14 +413,12 @@ export default function SymbioteCursorEnhanced() {
         targetHasTexture > 0.5 ? 0.15 : 0.02
       )
 
-      // --- 4. 惯性坐标结算 ---
       gl.uniform2f(uniforms.u_prevCursorPos, renderState.cursorX, renderState.cursorY)
-      renderState.cursorX = lerp(renderState.cursorX, state.position.x * dpr, 0.3) 
-      renderState.cursorY = lerp(renderState.cursorY, state.position.y * dpr, 0.3)
+      renderState.cursorX = lerp(renderState.cursorX, state.position.x * currentDpr, 0.3) 
+      renderState.cursorY = lerp(renderState.cursorY, state.position.y * currentDpr, 0.3)
       gl.uniform2f(uniforms.u_cursorPos, renderState.cursorX, renderState.cursorY)
 
-      // --- 5. 推送 GPU ---
-      gl.uniform2f(uniforms.u_resolution, gl.canvas.width, gl.canvas.height)
+      gl.uniform2f(uniforms.u_resolution, canvasRef.current!.width, canvasRef.current!.height)
       gl.uniform1f(uniforms.u_time, time)
       gl.uniform1f(uniforms.u_baseRadius, renderState.baseRadius)
       gl.uniform1f(uniforms.u_nFreq, renderState.nFreq)
@@ -404,7 +427,6 @@ export default function SymbioteCursorEnhanced() {
       gl.uniform3f(uniforms.u_baseColor, renderState.baseColor[0], renderState.baseColor[1], renderState.baseColor[2])
       gl.uniform3f(uniforms.u_glowColor, renderState.glowColor[0], renderState.glowColor[1], renderState.glowColor[2])
       gl.uniform1f(uniforms.u_tentacleIntensity, renderState.tentacleIntensity * energyNorm)
-      
       gl.uniform1f(uniforms.u_targetRadius, renderState.targetRadius)
       gl.uniform1f(uniforms.u_targetViscosity, renderState.targetViscosity)
 
@@ -428,7 +450,6 @@ export default function SymbioteCursorEnhanced() {
     }
     render()
 
-    // 交互侦听逻辑
     const handleMove = (e: MouseEvent) => {
       updatePosition(e.clientX, e.clientY)
       spatialAudio.playBioFieldDisruptionAtPosition({ x: e.clientX, y: e.clientY }, state.energy / 100)
@@ -442,12 +463,12 @@ export default function SymbioteCursorEnhanced() {
         setTargetElement(interactable)
         
         if (interactable.getAttribute('data-cursor') === 'dot') {
-            setMood('curious') 
-            addEnergy(2) 
+            setMood('curious'); addEnergy(2) 
+            triggerHaptic(5) // 👑 安全的微震触发
         } else {
-            setMood('happy')
-            addEnergy(5) 
+            setMood('happy'); addEnergy(5) 
             spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY })
+            triggerHaptic(10) // 👑 安全的饱满震动触发
         }
       }
     }
@@ -456,15 +477,58 @@ export default function SymbioteCursorEnhanced() {
       setTargetElement(null)
     }
 
+    const handleScroll = () => {
+      const currentX = state.position.x
+      const currentY = state.position.y
+      
+      const target = document.elementFromPoint(currentX, currentY) as HTMLElement
+      if (!target) {
+        setTargetElement(null)
+        return
+      }
+
+      const interactable = target.closest('button, a, img, [data-cursor]') as HTMLElement
+      
+      if (interactable !== state.targetElement) {
+        setTargetElement(interactable)
+      }
+    }
+
     window.addEventListener('mousemove', handleMove)
     window.addEventListener('mouseover', handleOver)
     window.addEventListener('mouseout', handleOut)
+    window.addEventListener('scroll', handleScroll, { passive: true })
 
+    // 👑 核心优化1：极其干净且彻底的组件卸载机制 (避免 React Strict Mode 下显存爆炸)
     return () => {
       cancelAnimationFrame(raf)
+      window.removeEventListener('resize', handleResize)
       window.removeEventListener('mousemove', handleMove)
       window.removeEventListener('mouseover', handleOver)
       window.removeEventListener('mouseout', handleOut)
+      window.removeEventListener('scroll', handleScroll)
+      
+      if (glRef.current) {
+        const gl = glRef.current
+        
+        // 1. 清空所有缓存的纹理
+        textureCache.current.forEach((tex) => {
+          if (tex !== 'loading') gl.deleteTexture(tex)
+        })
+        textureCache.current.clear()
+
+        // 2. 销毁缓冲区 (Buffer)
+        if (bufferRef.current) {
+          gl.deleteBuffer(bufferRef.current)
+          bufferRef.current = null
+        }
+
+        // 3. 销毁着色器程序 (Program) 及其挂载的 Shaders
+        if (programRef.current) {
+          gl.deleteProgram(programRef.current)
+          programRef.current = null
+        }
+      }
     }
   }, [initWebGL, state, updatePosition, setMood, addEnergy, setTargetElement, engine])
 
