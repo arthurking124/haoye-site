@@ -3,6 +3,10 @@
 import React, { useRef, useEffect } from 'react'
 import { useSpring } from 'framer-motion'
 
+/**
+ * 👑 WebGL Rift Canvas (SOTY 巅峰架构版 - 修复 Context 变砖 Bug)
+ * 包含：域扭曲 FBM + 引力透镜塌缩 + 物理弹簧桥接
+ */
 export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpen: boolean, theme: 'dark' | 'light', isCollapsing: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const progress = useSpring(0, { stiffness: 60, damping: 15 }) 
@@ -18,6 +22,10 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
     if (!canvas) return
     const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false, antialias: true })
     if (!gl) return
+
+    // 探测设备性能进行 FBM 优雅降级 (加入容错防报错)
+    const isMobile = window.innerWidth < 768 || (navigator.hardwareConcurrency || 4) <= 4
+    const fbmLoops = isMobile ? 3 : 5
 
     const vsSource = `attribute vec2 a_position; void main() { gl_Position = vec4(a_position, 0.0, 1.0); }`
     
@@ -45,7 +53,8 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
       float fbm(vec2 uv) {
         float f = 0.0; float amp = 0.5;
-        for (int i = 0; i < 5; i++) {
+        // 动态注入循环次数
+        for (int i = 0; i < ${fbmLoops}; i++) {
           f += amp * snoise(uv);
           uv *= 2.02;
           amp *= 0.5;
@@ -60,6 +69,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         vec2 origin = vec2(1.0, 0.0) * aspect; 
         vec2 center = vec2(0.5, 0.5) * aspect; 
 
+        // 引力透镜坍缩算法
         float angle = u_collapse * 4.0 * exp(-length(p - center) * 2.0);
         mat2 rot = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
         vec2 distortedP = center + rot * (p - center);
@@ -71,6 +81,7 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
         float noise = fbm(distortedP * 3.0 + u_time * 0.1);
         float border = smoothstep(radius, radius - 0.1, dist + noise * 0.15);
 
+        // 域扭曲 (Domain Warping)
         vec2 q = vec2(fbm(distortedP + u_time * 0.05), fbm(distortedP + vec2(5.2, 1.3)));
         vec2 r = vec2(fbm(distortedP + 4.0 * q + u_time * 0.02), fbm(distortedP + 4.0 * q));
         float cloud = fbm(distortedP + 4.0 * r);
@@ -84,28 +95,32 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
 
         float alpha = border * u_progress;
         
-        // 【核心还原】：彻底删掉刻意的线条逻辑，退回原版最自然的边缘羽化
         float edgeGlow = exp(-abs(dist - radius) * 20.0) * u_progress;
         
         vec3 darkEdge = vec3(0.18, 0.22, 0.28) * (1.0 - u_theme); 
         vec3 lightEdge = vec3(0.52, 0.46, 0.38) * u_theme;
         
-        // 保留深渊引力带来的色散偏色
         vec3 abyssAberration = vec3(0.05, 0.0, 0.1) * u_collapse;
-        
-        // 柔和羽化光泽 + 深渊色
         vec3 edgeColor = (darkEdge + lightEdge + abyssAberration) * edgeGlow;
 
         gl_FragColor = vec4(voidColor + edgeColor, alpha) * u_progress;
       }
     `
     const program = gl.createProgram()!
-    const compile = (t: number, s: string) => {
-      const sh = gl.createShader(t)!; gl.shaderSource(sh, s); gl.compileShader(sh); return sh;
-    }
-    gl.attachShader(program, compile(gl.VERTEX_SHADER, vsSource))
-    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fsSource))
-    gl.linkProgram(program); gl.useProgram(program)
+    
+    // 分离 Shader 的创建，以便后续能够干净地 deleteShader
+    const vs = gl.createShader(gl.VERTEX_SHADER)!
+    gl.shaderSource(vs, vsSource)
+    gl.compileShader(vs)
+    
+    const fs = gl.createShader(gl.FRAGMENT_SHADER)!
+    gl.shaderSource(fs, fsSource)
+    gl.compileShader(fs)
+
+    gl.attachShader(program, vs)
+    gl.attachShader(program, fs)
+    gl.linkProgram(program)
+    gl.useProgram(program)
 
     const uRes = gl.getUniformLocation(program, 'u_resolution')
     const uTime = gl.getUniformLocation(program, 'u_time')
@@ -113,9 +128,12 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
     const uThm = gl.getUniformLocation(program, 'u_theme')
     const uCol = gl.getUniformLocation(program, 'u_collapse')
 
-    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+    const buf = gl.createBuffer()!
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW)
-    const pos = gl.getAttribLocation(program, 'a_position'); gl.enableVertexAttribArray(pos); gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
+    const pos = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(pos)
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0)
 
     let aid: number, start = Date.now()
     const resize = () => {
@@ -124,7 +142,8 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
       canvas.height = window.innerHeight * Math.min(window.devicePixelRatio, 2)
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
-    window.addEventListener('resize', resize); resize()
+    window.addEventListener('resize', resize)
+    resize()
     
     const render = () => {
       if (!canvas) return
@@ -137,7 +156,19 @@ export default function WebGLRiftCanvas({ isOpen, theme, isCollapsing }: { isOpe
       aid = requestAnimationFrame(render)
     }
     render()
-    return () => { cancelAnimationFrame(aid); window.removeEventListener('resize', resize); gl.deleteProgram(program) }
+
+    return () => { 
+      cancelAnimationFrame(aid)
+      window.removeEventListener('resize', resize)
+      
+      // 温和而彻底的内存回收：只删资源，不杀 Context
+      if (buf) gl.deleteBuffer(buf)
+      if (program) {
+        gl.deleteProgram(program)
+        gl.deleteShader(vs)
+        gl.deleteShader(fs)
+      }
+    }
   }, [progress, collapse, themeVal])
 
   return <canvas ref={canvasRef} className="w-full h-full" />
