@@ -1,8 +1,9 @@
 import { SymbioteSpatialAudio } from './SymbioteSpatialAudio'
+import { useEffect } from 'react'
 
 /**
- * 👑 生物场干扰系统 (SOTY 盖革脉冲版 V4)
- * 包含：坐标缓存 + 视口剔除 + 动态高频脉冲反馈 (Dynamic Pulse Synesthesia)
+ * 👑 生物场干扰系统 (SOTY 终极完全体 V6)
+ * 融合：V5 的绝对稳定架构 (防重影/漂移/脱节) + V4 的盖革脉冲通感算法
  */
 
 export interface DisruptedElement {
@@ -20,7 +21,11 @@ export class BioFieldDisruption {
   private static instance: BioFieldDisruption
   private disruptedElements: Map<HTMLElement, DisruptedElement> = new Map()
   
-  private cursorPosition: { x: number; y: number } = { x: -9999, y: -9999 } 
+  private cursorPosition: { x: number; y: number } = { x: -9999, y: -9999 }
+  // 🛡️ V5 架构：滚动脱节防护
+  private lastClientX: number = -9999
+  private lastClientY: number = -9999 
+
   private bioFieldRadius: number = 180 
   private isActive: boolean = false
   private isLowEndDevice: boolean = false
@@ -74,17 +79,30 @@ export class BioFieldDisruption {
   }
 
   private handleMouseMove = (e: MouseEvent) => {
+    this.lastClientX = e.clientX
+    this.lastClientY = e.clientY
     this.cursorPosition.x = e.clientX + window.scrollX
     this.cursorPosition.y = e.clientY + window.scrollY
   }
 
-  private handleScroll = () => {}
+  // 🛡️ V5 架构：滚动绝对坐标推算
+  private handleScroll = () => {
+    if (this.lastClientX !== -9999) {
+      this.cursorPosition.x = this.lastClientX + window.scrollX
+      this.cursorPosition.y = this.lastClientY + window.scrollY
+    }
+  }
 
   private scanTextElements(): void {
     const selectors = ['p', 'h1', 'h2', 'h3', 'h4', 'span', 'a', 'li', 'em', 'strong']
     const query = selectors.map(s => `${s}:not([data-bio-tracked="true"])`).join(', ')
     
-    document.querySelectorAll(query).forEach((el) => {
+    // 🛡️ V5 架构：嵌套免疫过滤 (Prevent Double-Transform)
+    const nodes = Array.from(document.querySelectorAll(query)).filter(el => {
+        return !el.parentElement?.closest('[data-bio-tracked="true"]')
+    })
+
+    nodes.forEach((el) => {
       const element = el as HTMLElement
       if (!element.offsetHeight || !element.offsetWidth) return
       if (element.textContent && element.textContent.trim().length < 2) return
@@ -114,6 +132,9 @@ export class BioFieldDisruption {
 
   private recalculateAllPositions(): void {
     this.disruptedElements.forEach((data, element) => {
+      // 🛡️ V5 架构：Resize 防漂移保护 (剥去扭曲计算绝对物理原点)
+      element.style.transform = data.originalTransform
+
       const rect = element.getBoundingClientRect()
       data.baseX = rect.left + window.scrollX + rect.width / 2
       data.baseY = rect.top + window.scrollY + rect.height / 2
@@ -162,18 +183,17 @@ export class BioFieldDisruption {
       this.applyDisruptionEffect(data, nowSec)
     })
 
-    // 👑 终极联动：盖革计数器式动态脉冲算法 (Dynamic Pulse Rate)
-    // 稍微降低了触发门槛 (0.8 -> 0.5)，让感知更敏锐
+    // 🌟 注入 V4 灵魂：盖革脉冲算法 (Dynamic Pulse Rate)
     if (totalAgitation > 0.5) {
       const nowMs = Date.now()
       
-      // 核心公式：基础冷却 250ms，骚动越强冷却越短，极速锁定在 40ms (防止内存爆炸)
+      // 核心公式：基于总搅动能量动态缩短冷却时间，极限锁定在 40ms
       const dynamicCooldown = Math.max(40, 250 - totalAgitation * 20)
 
       if (nowMs - this.lastAudioTriggerTime > dynamicCooldown) {
         const audio = SymbioteSpatialAudio.getInstance()
         
-        // 强度不仅影响音量，还影响音效的尖锐度
+        // 强度非线性映射：让微弱搅动也能有质感，同时封顶保护耳朵
         const audioIntensity = Math.min(1.0, totalAgitation / 15)
         
         audio.playBioFieldDisruptionAtPosition(
@@ -238,18 +258,22 @@ export class BioFieldDisruption {
       data.intensity = 0
       this.relaxElement(data)
       data.element.removeAttribute('data-bio-tracked')
+      data.element.style.willChange = ''
     })
     this.disruptedElements.clear()
     this.isActive = false
   }
 }
 
+/**
+ * React Hook 初始化
+ */
 export const useBioFieldDisruption = (enabled: boolean = true) => {
-  if (typeof window === 'undefined') return null
-  const bioField = BioFieldDisruption.getInstance()
-  if (enabled && !(bioField as any)._initialized) {
+  useEffect(() => {
+    if (typeof window === 'undefined' || !enabled) return
+    const bioField = BioFieldDisruption.getInstance()
     bioField.init()
-    ;(bioField as any)._initialized = true
-  }
-  return bioField
+  }, [enabled])
+
+  return null
 }
