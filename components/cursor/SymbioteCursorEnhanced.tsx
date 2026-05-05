@@ -8,12 +8,12 @@ import { BioFieldDisruption } from '@/lib/BioFieldDisruption'
 import { useCursorState } from '@/hooks/useCursorState'
 
 /**
- * 👑 「共生体·天演」- SOTY 养成级进化版: 曜石活墨 (The Sentient Obsidian Ink)
- * * 核心升级：绝对的“成长可视化” (Visible Maturation)
- * - 刚进入页面时，它只是一颗极小的惰性孢子 (体积仅为完全体的 10%)。
- * - 必须通过用户的滑动 (移动距离) 和 进食 (悬停按钮) 积累 XP，才会慢慢膨胀。
- * - 幼年期没有拉丝能力；只有吸饱经验值长大后，才会解锁果冻变形和引力伪足。
- * - 长时间不交互，会重新萎缩回微小的墨点。
+ * 👑 「共生体·天演」- SOTY 终极完全体 (The Sentient Obsidian Ink - Apex)
+ * 完美融合四大界面数字物理学：
+ * 1. 嗅觉场与牵引丝 (The Olfactory Field): 150px 距离雷达，缓慢拉长试探。
+ * 2. 非平衡断裂 (Surface Tension Rupture): 高速甩动产生卫星子滴，回弹拉丝。
+ * 3. 物理重力 (Gravity): 滚动重力压扁。
+ * 4. 👑 生物荧光进食 (Bioluminescent Feeding): 溯源 DOM 真实色彩，吃下后在曜石内部产生高饱和度荧光内透！
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
@@ -56,13 +56,19 @@ export default function SymbioteCursorEnhanced() {
       uniform vec2 u_resolution; uniform vec2 u_cursorPos; uniform vec2 u_prevCursorPos; 
       uniform float u_time; 
       
-      uniform float u_growthFactor;   // 👑 核心：决定大小与物理能力的生命成熟度
+      uniform float u_growthFactor;   
       uniform float u_tailWeight;     
-      
       uniform float u_baseRadius; 
       uniform float u_wobbleFreq;     
       uniform float u_wobbleAmp;      
-      uniform float u_pseudopodLen;   
+      
+      uniform vec2 u_nearestPos;     
+      uniform float u_nearestDist;   
+      uniform float u_scrollDelta;   
+      
+      // 👑 进食系统参数
+      uniform vec3 u_feedColor;
+      uniform float u_feedWeight;
       
       uniform float u_targetRadius; 
       uniform float u_targetViscosity;  
@@ -102,50 +108,54 @@ export default function SymbioteCursorEnhanced() {
         vec2 currPos = (u_cursorPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); currPos.y = -currPos.y; 
         vec2 prevPos = (u_prevCursorPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); prevPos.y = -prevPos.y;
 
-        // 👑 挤压拉伸物理学：只有成熟体 (u_growthFactor 较高) 时，才具有拉丝形变能力
+        vec2 q = p - currPos;
+        q.y -= u_scrollDelta * 0.02 * u_growthFactor;
+
         vec2 dir = currPos - prevPos;
         float speed = length(dir) * u_resolution.y; 
         vec2 normDir = speed > 0.001 ? normalize(dir) : vec2(1.0, 0.0); 
         
-        // 幼年期抗拉伸能力极强，保持圆点；长大后变得柔软
         float activeStretch = mix(0.0, 0.015, u_growthFactor);
         float stretchThinning = clamp(1.0 - speed * activeStretch, 0.45, 1.0); 
-        
-        // 👑 真正的体积成长：幼年期只有 12% 的体积，完全体是 100%
         float currentRadius = (u_baseRadius / u_resolution.y) * mix(0.12, 1.0, u_growthFactor);
 
-        vec2 q = p - currPos;
         float dotDir = dot(q, normDir);
         vec2 proj = dotDir * normDir; 
         vec2 orth = q - proj;         
         q = proj / stretchThinning + orth * stretchThinning; 
 
         float dHead = length(q) - currentRadius;
-        
-        // 尾巴粗细也受成长进度控制
         float tailThickness = currentRadius * stretchThinning * 0.5 * u_tailWeight * u_growthFactor;
         float dTail = sdSegment(p, prevPos, currPos) - tailThickness; 
-        // 融合度随成长变顺滑
+        
+        float dSat = 999.0;
+        if (speed > 12.0 && u_growthFactor > 0.5) { 
+            vec2 satPos = prevPos - normDir * (speed * 0.0035);
+            dSat = length(p - satPos) - (currentRadius * 0.4); 
+        }
+        
         float dist = smin(dHead, dTail, mix(0.02, 0.15, u_growthFactor)); 
+        dist = smin(dist, dSat, 0.15); 
 
-        // 呼吸微弹：随着长大，呼吸幅度变大
         float jiggle = snoise(q * u_wobbleFreq - u_time * 2.0) * u_wobbleAmp * stretchThinning * u_growthFactor;
         jiggle += snoise(q * (u_wobbleFreq + u_audio_amplitude * 20.0)) * (u_audio_amplitude * 0.05);
         dist += jiggle;
 
-        // 引力伪足：幼年期无法伸出伪足
-        vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); targetPos.y = -targetPos.y;
-        float angle = atan(p.y - currPos.y, p.x - currPos.x);
-        float angleToTarget = atan(targetPos.y - currPos.y, targetPos.x - currPos.x);
-        float alignment = max(0.0, cos(angle - angleToTarget));
+        vec2 nearestPos = (u_nearestPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); nearestPos.y = -nearestPos.y;
+        float dTether = 999.0;
         
-        float pseudopod = pow(alignment, 3.0) * u_pseudopodLen * u_isHovering * stretchThinning * u_growthFactor;
-        dist -= pseudopod / u_resolution.y;
+        if (u_nearestDist < 1.0 && u_isHovering < 0.5 && u_growthFactor > 0.5) {
+            float stretchRatio = pow(1.0 - u_nearestDist, 1.2); 
+            vec2 tetherEnd = mix(currPos, nearestPos, stretchRatio * 0.8);
+            float tetherThick = currentRadius * 0.5 * stretchRatio; 
+            dTether = sdSegment(p, currPos, tetherEnd) - tetherThick;
+        }
+        dist = smin(dist, dTether, 0.25); 
 
+        vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); targetPos.y = -targetPos.y;
         float targetDist = length(p - targetPos) - (u_targetRadius / u_resolution.y);
         dist = mix(dist, smin(dist, targetDist, u_targetViscosity), u_isHovering);
 
-        // 高级曜石光学材质 
         float alpha = smoothstep(0.004, -0.001, dist); 
         
         vec2 pseudoNormal = normalize(p - (u_isHovering > 0.5 ? targetPos : currPos));
@@ -161,7 +171,6 @@ export default function SymbioteCursorEnhanced() {
         float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 4.0); 
 
         vec3 coreInk; vec3 edgeColor; vec3 specColor;
-
         if (u_theme > 0.5) { 
             coreInk = vec3(0.06, 0.055, 0.05);  
             edgeColor = vec3(0.18, 0.15, 0.12); 
@@ -172,12 +181,21 @@ export default function SymbioteCursorEnhanced() {
             specColor = vec3(0.95, 0.98, 1.0);
         }
 
+        // 👑 终极发光进食算法 (Bioluminescent Digestion)
+        // 我们不改变纯黑的核心色，而是将吸收的颜色作为高饱和荧光注入！
+        vec3 glowingFeed = u_feedColor * 2.5; // 将吃到的颜色亮度放大 2.5 倍
+        
+        // 1. 边缘染色：菲涅尔轮廓被染成食物的颜色
+        edgeColor = mix(edgeColor, glowingFeed, u_feedWeight * 0.8);
+        
         vec3 finalColor = coreInk;
         finalColor += diff * (u_theme > 0.5 ? 0.02 : 0.05); 
         finalColor += fresnel * edgeColor; 
-        
-        // 高光也会随着长大而变得更加明显湿润
         finalColor += spec * specColor * mix(0.5, 1.2, u_growthFactor); 
+        
+        // 2. 内部透光：在靠近墨水中心的地方，投射出极强的高饱和光晕
+        float innerGlowMask = smoothstep(-0.015, -0.005, dist); // 只在墨水内部发光
+        finalColor += glowingFeed * innerGlowMask * (u_feedWeight * 0.9); // 生物荧光透射！
         
         vec3 glitchColor = vec3(u_audio_amplitude * 0.8, 0.0, u_audio_amplitude * 0.3) * (1.0 - surfaceCurve);
         finalColor += glitchColor;
@@ -185,10 +203,8 @@ export default function SymbioteCursorEnhanced() {
         if (u_hasTexture > 0.01 && dist < 0.01) { 
             vec2 mousePixelPos = vec2(u_cursorPos.x, u_resolution.y - u_cursorPos.y); 
             vec2 offset = gl_FragCoord.xy - mousePixelPos;
-            
             float distortionMask = smoothstep(0.02, -0.05, dist) * u_refractionStrength;
             vec2 refractionOffset = pseudoNormal * distortionMask * 25.0; 
-            
             vec2 samplePos = mousePixelPos + offset / 1.1 + refractionOffset;
             vec2 uv = (samplePos - u_imgRect.xy) / u_imgRect.zw; uv.y = 1.0 - uv.y;
             
@@ -196,15 +212,16 @@ export default function SymbioteCursorEnhanced() {
                 vec3 texColor = texture2D(u_photoTexture, uv).rgb;
                 float gray = dot(texColor, vec3(0.299, 0.587, 0.114));
                 
-                vec3 inkRefraction = mix(coreInk, vec3(gray), 0.55); 
+                // 3. 照片颜色进食加强：大幅度增加吃照片颜色的饱和度
+                vec3 chromaticFeed = mix(vec3(gray), texColor * 1.5, 0.6); 
+                vec3 inkRefraction = mix(coreInk, chromaticFeed, 0.7); 
+                
                 inkRefraction += fresnel * edgeColor * 0.8;
                 inkRefraction += spec * specColor * mix(0.5, 1.2, u_growthFactor); 
-                
                 finalColor = mix(finalColor, inkRefraction, u_hasTexture);
             }
         }
 
-        // 幼年期的透明度稍微低一点点，长大后变得坚实
         gl_FragColor = vec4(finalColor, alpha * mix(0.7, 1.0, u_growthFactor));
       }
     `
@@ -230,7 +247,11 @@ export default function SymbioteCursorEnhanced() {
       u_resolution: getLoc('u_resolution'), u_cursorPos: getLoc('u_cursorPos'), u_prevCursorPos: getLoc('u_prevCursorPos'), 
       u_time: getLoc('u_time'), u_growthFactor: getLoc('u_growthFactor'), u_tailWeight: getLoc('u_tailWeight'),
       u_baseRadius: getLoc('u_baseRadius'), u_wobbleFreq: getLoc('u_wobbleFreq'), u_wobbleAmp: getLoc('u_wobbleAmp'), 
-      u_pseudopodLen: getLoc('u_pseudopodLen'), u_targetRadius: getLoc('u_targetRadius'), u_targetViscosity: getLoc('u_targetViscosity'),
+      
+      u_nearestPos: getLoc('u_nearestPos'), u_nearestDist: getLoc('u_nearestDist'), u_scrollDelta: getLoc('u_scrollDelta'), 
+      u_feedColor: getLoc('u_feedColor'), u_feedWeight: getLoc('u_feedWeight'),
+      
+      u_targetRadius: getLoc('u_targetRadius'), u_targetViscosity: getLoc('u_targetViscosity'),
       u_refractionStrength: getLoc('u_refractionStrength'), u_audio_amplitude: getLoc('u_audio_amplitude'), 
       u_targetPos: getLoc('u_targetPos'), u_isHovering: getLoc('u_isHovering'), u_theme: getLoc('u_theme'), 
       u_hasTexture: getLoc('u_hasTexture'), u_imgRect: getLoc('u_imgRect'), u_photoTexture: getLoc('u_photoTexture')
@@ -248,12 +269,13 @@ export default function SymbioteCursorEnhanced() {
     let raf: number
     const startTime = Date.now()
     
-    // 👑 养成机制的核心数据：起步经验值为 0！
     let cumulativeXP = 0
     let lastInteractTime = Date.now()
     let lastMouseX = state.position.x
     let lastMouseY = state.position.y
     let isHoveringText = false 
+    
+    let lastScrollY = window.scrollY
 
     const MAX_TEXTURE_CACHE = 8 
 
@@ -267,10 +289,17 @@ export default function SymbioteCursorEnhanced() {
 
     const initialDpr = Math.min(window.devicePixelRatio, 2)
     const renderState = {
-      baseRadius: 18.0, wobbleFreq: 2.5, wobbleAmp: 0.015, pseudopodLen: 0.0, 
+      baseRadius: 18.0, wobbleFreq: 2.5, wobbleAmp: 0.015, 
       cursorX: state.position.x * initialDpr, cursorY: state.position.y * initialDpr,
+      
+      nearestX: state.position.x * initialDpr, nearestY: state.position.y * initialDpr, nearestDist: 1.0,
+      scrollDelta: 0, 
+      
+      feedColor: [0.0, 0.0, 0.0], feedWeight: 0.0, 
+      
       targetRadius: 15.0, targetViscosity: 0.35, hasTextureFactor: 0.0, 
       growthFactor: 0.0, tailWeight: 1.0, refractionStrength: 1.0, 
+      genesisScale: 0.01, 
       lastValidTexture: null as WebGLTexture | null, lastValidRect: [0, 0, 0, 0] as [number, number, number, number]
     }
 
@@ -285,28 +314,21 @@ export default function SymbioteCursorEnhanced() {
       const time = (now - startTime) * 0.001
       const isLight = document.documentElement.getAttribute('data-theme') === 'light'
 
-      // 👑 经验代谢获取机制
+      renderState.genesisScale = lerp(renderState.genesisScale, 1.0, 0.035)
+      renderState.scrollDelta = lerp(renderState.scrollDelta, 0, 0.1)
+      
+      // 代谢减慢，让肚子里的发光颜色维持得更久一点，约 1.5 秒
+      renderState.feedWeight = lerp(renderState.feedWeight, 0.0, 0.015) 
+
       const dx = state.position.x - lastMouseX; const dy = state.position.y - lastMouseY
       const moveSpeed = Math.sqrt(dx * dx + dy * dy)
       
-      // 每次移动稍微缓慢积累XP，让长大有一个 2-3 秒的自然过程
-      if (moveSpeed > 0.5) { 
-          cumulativeXP = Math.min(1000, cumulativeXP + moveSpeed * 0.04); 
-          lastInteractTime = now 
-      }
-      // 吞噬按钮时，获得大额 XP，瞬间长大
-      if (state.targetElement) { 
-          cumulativeXP = Math.min(1000, cumulativeXP + 2.0); 
-          lastInteractTime = now 
-      }
+      if (moveSpeed > 0.5) { cumulativeXP = Math.min(1000, cumulativeXP + moveSpeed * 0.04); lastInteractTime = now }
+      if (state.targetElement) { cumulativeXP = Math.min(1000, cumulativeXP + 2.0); lastInteractTime = now }
 
-      // 静止 3.5 秒后，由于缺乏交互能量，开始极速萎缩
       const timeSinceInteract = now - lastInteractTime
-      if (timeSinceInteract > 3500) {
-          cumulativeXP = Math.max(0, cumulativeXP - (timeSinceInteract - 3500) * 0.0015)
-      }
+      if (timeSinceInteract > 3500) cumulativeXP = Math.max(0, cumulativeXP - (timeSinceInteract - 3500) * 0.0015)
 
-      // 经验值映射到 0.0 -> 1.0 的平滑成长系数
       const targetGrowth = 1.0 - Math.exp(-cumulativeXP * 0.003)
       renderState.growthFactor = lerp(renderState.growthFactor, targetGrowth, 0.03)
       
@@ -316,26 +338,15 @@ export default function SymbioteCursorEnhanced() {
       prevMood = state.mood
 
       let targetBaseRadius = 18.0
-      let targetWobbleFreq = 2.5, targetWobbleAmp = 0.015, targetPseudopodLen = 0.0
+      let targetWobbleFreq = 2.5, targetWobbleAmp = 0.015
       let targetTailWeight = 1.0, targetRefraction = 1.0
 
       if (state.mood === 'tired') { 
-        targetBaseRadius *= 0.7
-        targetTailWeight = 0.0
-        targetRefraction = 0.5 
-        targetWobbleFreq = 1.0; targetWobbleAmp = 0.005 
+        targetBaseRadius *= 0.7; targetTailWeight = 0.0; targetRefraction = 0.5; targetWobbleFreq = 1.0; targetWobbleAmp = 0.005 
       } else if (state.mood === 'happy') {
-        targetBaseRadius *= 1.15
-        targetTailWeight = 0.0 
-        targetRefraction = 2.2 
-        targetWobbleFreq = 4.0; targetWobbleAmp = 0.01 
-        targetPseudopodLen = 12.0 
+        targetBaseRadius *= 1.15; targetTailWeight = 0.0; targetRefraction = 2.2; targetWobbleFreq = 4.0; targetWobbleAmp = 0.01 
       } else if (state.mood === 'angry') {
-        targetBaseRadius *= 1.3
-        targetTailWeight = 1.0
-        targetRefraction = 3.0 
-        targetWobbleFreq = 12.0; targetWobbleAmp = 0.04 
-        targetPseudopodLen = 0.0
+        targetBaseRadius *= 1.3; targetTailWeight = 1.0; targetRefraction = 3.0; targetWobbleFreq = 12.0; targetWobbleAmp = 0.04 
       }
 
       let targetHasTexture = 0.0, tRadius = 15.0, tViscosity = 0.35, isTextureBound = false
@@ -349,9 +360,9 @@ export default function SymbioteCursorEnhanced() {
         const isImg = el.tagName.toLowerCase() === 'img'
 
         if (isDot) {
-          targetBaseRadius = 5.0; tRadius = 8.0; tViscosity = 0.2; targetPseudopodLen = 6.0    
+          targetBaseRadius = 5.0; tRadius = 8.0; tViscosity = 0.2
         } else if (isImg) {
-          targetBaseRadius = 22.0; tRadius = 32.0; tViscosity = 0.5; targetPseudopodLen = 18.0
+          targetBaseRadius = 22.0; tRadius = 32.0; tViscosity = 0.5
           const src = el.getAttribute('src')
           if (src) {
             if (!textureCache.current.has(src)) {
@@ -380,7 +391,7 @@ export default function SymbioteCursorEnhanced() {
             }
           }
         } else {
-          targetBaseRadius = 12.0; tRadius = 18.0; tViscosity = 0.35; targetPseudopodLen = 10.0
+          targetBaseRadius = 12.0; tRadius = 18.0; tViscosity = 0.35
         }
       } else {
         gl.uniform1f(uniforms.u_isHovering, 0.0)
@@ -390,7 +401,6 @@ export default function SymbioteCursorEnhanced() {
       renderState.baseRadius = lerp(renderState.baseRadius, targetBaseRadius, lf)
       renderState.wobbleFreq = lerp(renderState.wobbleFreq, targetWobbleFreq, lf)
       renderState.wobbleAmp = lerp(renderState.wobbleAmp, targetWobbleAmp, lf)
-      renderState.pseudopodLen = lerp(renderState.pseudopodLen, targetPseudopodLen, lf)
       renderState.targetRadius = lerp(renderState.targetRadius, tRadius, lf)
       renderState.targetViscosity = lerp(renderState.targetViscosity, tViscosity, lf)
       renderState.hasTextureFactor = lerp(renderState.hasTextureFactor, targetHasTexture, targetHasTexture > 0.5 ? 0.15 : 0.02)
@@ -407,11 +417,17 @@ export default function SymbioteCursorEnhanced() {
       gl.uniform2f(uniforms.u_resolution, canvasRef.current!.width, canvasRef.current!.height)
       gl.uniform1f(uniforms.u_time, time)
       
-      gl.uniform1f(uniforms.u_baseRadius, renderState.baseRadius)
-      
+      gl.uniform1f(uniforms.u_baseRadius, renderState.baseRadius * renderState.genesisScale)
       gl.uniform1f(uniforms.u_wobbleFreq, renderState.wobbleFreq)
       gl.uniform1f(uniforms.u_wobbleAmp, renderState.wobbleAmp)
-      gl.uniform1f(uniforms.u_pseudopodLen, renderState.pseudopodLen)
+      
+      gl.uniform2f(uniforms.u_nearestPos, renderState.nearestX, renderState.nearestY)
+      gl.uniform1f(uniforms.u_nearestDist, renderState.nearestDist)
+      gl.uniform1f(uniforms.u_scrollDelta, renderState.scrollDelta)
+      
+      gl.uniform3f(uniforms.u_feedColor, renderState.feedColor[0], renderState.feedColor[1], renderState.feedColor[2])
+      gl.uniform1f(uniforms.u_feedWeight, renderState.feedWeight)
+
       gl.uniform1f(uniforms.u_targetRadius, renderState.targetRadius)
       gl.uniform1f(uniforms.u_targetViscosity, renderState.targetViscosity)
       gl.uniform1f(uniforms.u_refractionStrength, renderState.refractionStrength)
@@ -435,6 +451,26 @@ export default function SymbioteCursorEnhanced() {
       updatePosition(e.clientX, e.clientY)
       spatialAudio.playBioFieldDisruptionAtPosition({ x: e.clientX, y: e.clientY }, state.energy / 100) 
       
+      const interactables = document.querySelectorAll('a, button, img, [data-cursor]')
+      let minDist = 150.0
+      let nearestPos = { x: e.clientX, y: e.clientY }
+      
+      interactables.forEach(el => {
+         const rect = el.getBoundingClientRect()
+         const cx = rect.left + rect.width / 2
+         const cy = rect.top + rect.height / 2
+         const dist = Math.hypot(e.clientX - cx, e.clientY - cy)
+         if (dist < minDist) {
+             minDist = dist
+             nearestPos = { x: cx, y: cy }
+         }
+      })
+      
+      const currentDpr = Math.min(window.devicePixelRatio, 2)
+      renderState.nearestX = lerp(renderState.nearestX, nearestPos.x * currentDpr, 0.2)
+      renderState.nearestY = lerp(renderState.nearestY, nearestPos.y * currentDpr, 0.2)
+      renderState.nearestDist = minDist / 150.0 
+
       const targetUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement
       if (targetUnder && targetUnder.closest('p, h1, h2, h3, h4, h5, h6, span, [data-cursor="text"]')) {
          isHoveringText = true
@@ -442,17 +478,52 @@ export default function SymbioteCursorEnhanced() {
          isHoveringText = false
       }
     }
+    
     const handleOver = (e: MouseEvent) => {
-      const target = e.target as HTMLElement; const interactable = target.closest('button, a, img, [data-cursor]') as HTMLElement
+      const target = e.target as HTMLElement; const interactable = target.closest('button, a, img, [data-cursor], div') as HTMLElement
       if (interactable) {
-        setTargetElement(interactable)
-        if (interactable.getAttribute('data-cursor') === 'dot') { setMood('curious'); addEnergy(2); triggerHaptic(5) } 
-        else { setMood('happy'); addEnergy(5); spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY }); triggerHaptic(10) }
+        
+        // 👑 DOM 颜色溯源引擎：如果当前是透明的，就往父级找！
+        let el: HTMLElement | null = interactable
+        let foundColor = false
+        
+        while (el && !foundColor) {
+            const style = window.getComputedStyle(el)
+            const bg = style.backgroundColor
+            // 过滤掉透明和纯黑白（不吸无聊的颜色）
+            if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+                const rgb = bg.match(/\d+/g)
+                if (rgb && rgb.length >= 3) {
+                    const r = parseInt(rgb[0])/255
+                    const g = parseInt(rgb[1])/255
+                    const b = parseInt(rgb[2])/255
+                    // 确保吃到的不是纯黑或纯白，才发光
+                    if (r + g + b > 0.1 && r + g + b < 2.9) {
+                        renderState.feedColor = [r, g, b]
+                        renderState.feedWeight = 1.0 
+                        foundColor = true
+                    }
+                }
+            }
+            el = el.parentElement
+            if (el && el.tagName === 'BODY') break // 找到 body 停止
+        }
+
+        const isRealInteractable = target.closest('button, a, img, [data-cursor]')
+        if (isRealInteractable) {
+            setTargetElement(isRealInteractable as HTMLElement)
+            if (isRealInteractable.getAttribute('data-cursor') === 'dot') { setMood('curious'); addEnergy(2); triggerHaptic(5) } 
+            else { setMood('happy'); addEnergy(5); spatialAudio.playEatSoundAtPosition({ x: e.clientX, y: e.clientY }); triggerHaptic(10) }
+        }
       }
     }
     const handleOut = () => setTargetElement(null)
     const handleScroll = () => {
       lastInteractTime = Date.now() 
+      const currentScroll = window.scrollY
+      renderState.scrollDelta += (currentScroll - lastScrollY)
+      lastScrollY = currentScroll
+
       const target = document.elementFromPoint(state.position.x, state.position.y) as HTMLElement
       if (!target) { setTargetElement(null); return }
       const interactable = target.closest('button, a, img, [data-cursor]') as HTMLElement
