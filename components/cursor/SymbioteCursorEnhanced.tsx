@@ -8,12 +8,12 @@ import { BioFieldDisruption } from '@/lib/BioFieldDisruption'
 import { useCursorState } from '@/hooks/useCursorState'
 
 /**
- * 👑 「共生体·天演」- SOTY 终极完全体 (The Sentient Obsidian Ink - Apex)
- * 完美融合四大界面数字物理学：
- * 1. 嗅觉场与牵引丝 (The Olfactory Field): 150px 距离雷达，缓慢拉长试探。
- * 2. 非平衡断裂 (Surface Tension Rupture): 高速甩动产生卫星子滴，回弹拉丝。
- * 3. 物理重力 (Gravity): 滚动重力压扁。
- * 4. 👑 生物荧光进食 (Bioluminescent Feeding): 溯源 DOM 真实色彩，吃下后在曜石内部产生高饱和度荧光内透！
+ * 👑 「共生体·天演」- SOTY 殿堂级终极进化版 (The Sentient Obsidian Ink - Apex God Mode)
+ * 极致打磨的四大物理微观细节：
+ * 1. 文本透镜 (The Reading Lens): 悬停文本时水滴化，保证绝对的阅读清晰度。
+ * 2. 几何完美包裹 (SDF Box Morphing): 悬停组件时，SDF 平滑形变成完美贴合的圆角矩形。
+ * 3. 边界溃散 (Viewport Evaporation): 鼠标离开屏幕瞬间化为流体粒子消亡。
+ * 4. 代谢残渣 (Metabolic Residue): 高速移动且发光进食时，抛甩出荧光卫星滴。
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
@@ -66,29 +66,46 @@ export default function SymbioteCursorEnhanced() {
       uniform float u_nearestDist;   
       uniform float u_scrollDelta;   
       
-      // 👑 进食系统参数
+      // 👑 进食与代谢系统
       uniform vec3 u_feedColor;
       uniform float u_feedWeight;
       
+      // 👑 几何包裹与变形系统
       uniform float u_targetRadius; 
+      uniform vec2 u_targetSize; // 用于完美包裹的矩形尺寸
       uniform float u_targetViscosity;  
-      uniform float u_refractionStrength; 
       
+      uniform float u_refractionStrength; 
       uniform float u_audio_amplitude; 
       uniform vec2 u_targetPos; 
+      
+      // 👑 状态控制器
       uniform float u_isHovering;
+      uniform float u_isHoveringText; // 文本透镜开关
+      uniform float u_evaporate;      // 边界溃散开关
+      
       uniform float u_theme; 
       uniform float u_hasTexture; uniform vec4 u_imgRect; uniform sampler2D u_photoTexture;
 
+      // SDF 混合函数
       float smin(float a, float b, float k) {
         float h = max(k - abs(a - b), 0.0) / k;
         return min(a, b) - h * h * k * (1.0 / 4.0);
       }
+      
+      // 胶囊体 SDF (拉丝使用)
       float sdSegment( in vec2 p, in vec2 a, in vec2 b ) {
         vec2 pa = p-a, ba = b-a;
         float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
         return length( pa - ba*h );
       }
+      
+      // 👑 完美的圆角矩形 SDF (包裹使用)
+      float sdBox(vec2 p, vec2 b) {
+        vec2 d = abs(p) - b;
+        return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+      }
+
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
       float snoise(vec2 v){
         const vec4 C = vec4(0.211324865, 0.366025404, -0.577350269, 0.0243902439);
@@ -124,26 +141,38 @@ export default function SymbioteCursorEnhanced() {
         vec2 orth = q - proj;         
         q = proj / stretchThinning + orth * stretchThinning; 
 
+        // 头部与基础拉丝
         float dHead = length(q) - currentRadius;
         float tailThickness = currentRadius * stretchThinning * 0.5 * u_tailWeight * u_growthFactor;
         float dTail = sdSegment(p, prevPos, currPos) - tailThickness; 
         
+        // 👑 优化4：代谢残渣逻辑。速度越快，吃的越多，甩出的荧光墨滴越多
         float dSat = 999.0;
-        if (speed > 12.0 && u_growthFactor > 0.5) { 
-            vec2 satPos = prevPos - normDir * (speed * 0.0035);
-            dSat = length(p - satPos) - (currentRadius * 0.4); 
+        if (speed > 8.0 && u_growthFactor > 0.3) { 
+            // 卫星滴 1：较大
+            vec2 satPos1 = prevPos - normDir * (speed * 0.0035);
+            dSat = min(dSat, length(p - satPos1) - (currentRadius * 0.35)); 
+            
+            // 卫星滴 2 & 3：高能代谢时才会产生微小的游离分子
+            if (u_feedWeight > 0.1) {
+                vec2 satPos2 = prevPos - normDir * (speed * 0.005) + vec2(normDir.y, -normDir.x) * (snoise(p * 15.0 + u_time) * 0.015);
+                dSat = min(dSat, length(p - satPos2) - (currentRadius * 0.2));
+                vec2 satPos3 = prevPos - normDir * (speed * 0.007) + vec2(-normDir.y, normDir.x) * (snoise(p * 20.0 - u_time) * 0.02);
+                dSat = min(dSat, length(p - satPos3) - (currentRadius * 0.12));
+            }
         }
         
         float dist = smin(dHead, dTail, mix(0.02, 0.15, u_growthFactor)); 
         dist = smin(dist, dSat, 0.15); 
 
+        // 表面张力噪波扰动
         float jiggle = snoise(q * u_wobbleFreq - u_time * 2.0) * u_wobbleAmp * stretchThinning * u_growthFactor;
         jiggle += snoise(q * (u_wobbleFreq + u_audio_amplitude * 20.0)) * (u_audio_amplitude * 0.05);
         dist += jiggle;
 
+        // 磁性探针拉丝
         vec2 nearestPos = (u_nearestPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); nearestPos.y = -nearestPos.y;
         float dTether = 999.0;
-        
         if (u_nearestDist < 1.0 && u_isHovering < 0.5 && u_growthFactor > 0.5) {
             float stretchRatio = pow(1.0 - u_nearestDist, 1.2); 
             vec2 tetherEnd = mix(currPos, nearestPos, stretchRatio * 0.8);
@@ -152,12 +181,21 @@ export default function SymbioteCursorEnhanced() {
         }
         dist = smin(dist, dTether, 0.25); 
 
+        // 👑 优化2：完美的几何吸附包裹
         vec2 targetPos = (u_targetPos / u_resolution - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0); targetPos.y = -targetPos.y;
-        float targetDist = length(p - targetPos) - (u_targetRadius / u_resolution.y);
+        vec2 tSize = (u_targetSize / u_resolution) * vec2(u_resolution.x / u_resolution.y, 1.0) * 0.5;
+        // 减去 targetRadius 是为了让包裹的边界严格对齐 DOM 的边框，而不仅是中心点扩张
+        vec2 adjustedBoxSize = max(vec2(0.0), tSize - vec2(u_targetRadius / u_resolution.y));
+        float targetDist = sdBox(p - targetPos, adjustedBoxSize) - (u_targetRadius / u_resolution.y);
+        
         dist = mix(dist, smin(dist, targetDist, u_targetViscosity), u_isHovering);
 
+        // 👑 优化3：视口边缘溃散 (Evaporation)
+        float noiseErase = snoise(p * 25.0 + u_time * 3.0) * 0.1;
+        dist += u_evaporate * (0.05 + noiseErase);
+
+        // Alpha 与法线计算
         float alpha = smoothstep(0.004, -0.001, dist); 
-        
         vec2 pseudoNormal = normalize(p - (u_isHovering > 0.5 ? targetPos : currPos));
         float surfaceCurve = smoothstep(0.0, 0.06, abs(dist));
         vec3 normal3D = normalize(vec3(pseudoNormal, 1.0 - surfaceCurve));
@@ -181,25 +219,29 @@ export default function SymbioteCursorEnhanced() {
             specColor = vec3(0.95, 0.98, 1.0);
         }
 
-        // 👑 终极发光进食算法 (Bioluminescent Digestion)
-        // 我们不改变纯黑的核心色，而是将吸收的颜色作为高饱和荧光注入！
-        vec3 glowingFeed = u_feedColor * 2.5; // 将吃到的颜色亮度放大 2.5 倍
-        
-        // 1. 边缘染色：菲涅尔轮廓被染成食物的颜色
+        // 👑 优化1：文本透镜效果。悬停文本时，核心墨水瞬间变透明清澈水滴
+        coreInk = mix(coreInk, vec3(0.95, 0.96, 0.98), u_isHoveringText * 0.7); 
+        alpha *= mix(1.0, 0.25, u_isHoveringText); // 核心极度透明，保证后方文本清晰
+
+        // 生物荧光发光染色算法
+        vec3 glowingFeed = u_feedColor * 2.5; 
         edgeColor = mix(edgeColor, glowingFeed, u_feedWeight * 0.8);
         
         vec3 finalColor = coreInk;
         finalColor += diff * (u_theme > 0.5 ? 0.02 : 0.05); 
-        finalColor += fresnel * edgeColor; 
-        finalColor += spec * specColor * mix(0.5, 1.2, u_growthFactor); 
+        // 文本透镜模式下，边缘高光变得更加锐利耀眼
+        finalColor += fresnel * mix(edgeColor, vec3(1.0), u_isHoveringText); 
+        finalColor += spec * specColor * mix(0.5, 1.5, u_growthFactor + u_isHoveringText); 
         
-        // 2. 内部透光：在靠近墨水中心的地方，投射出极强的高饱和光晕
-        float innerGlowMask = smoothstep(-0.015, -0.005, dist); // 只在墨水内部发光
-        finalColor += glowingFeed * innerGlowMask * (u_feedWeight * 0.9); // 生物荧光透射！
+        // 内部透光
+        float innerGlowMask = smoothstep(-0.015, -0.005, dist); 
+        finalColor += glowingFeed * innerGlowMask * (u_feedWeight * 0.9); 
         
+        // 音频干扰色差
         vec3 glitchColor = vec3(u_audio_amplitude * 0.8, 0.0, u_audio_amplitude * 0.3) * (1.0 - surfaceCurve);
         finalColor += glitchColor;
 
+        // 图片颜色的吸收折射
         if (u_hasTexture > 0.01 && dist < 0.01) { 
             vec2 mousePixelPos = vec2(u_cursorPos.x, u_resolution.y - u_cursorPos.y); 
             vec2 offset = gl_FragCoord.xy - mousePixelPos;
@@ -211,16 +253,16 @@ export default function SymbioteCursorEnhanced() {
             if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
                 vec3 texColor = texture2D(u_photoTexture, uv).rgb;
                 float gray = dot(texColor, vec3(0.299, 0.587, 0.114));
-                
-                // 3. 照片颜色进食加强：大幅度增加吃照片颜色的饱和度
                 vec3 chromaticFeed = mix(vec3(gray), texColor * 1.5, 0.6); 
                 vec3 inkRefraction = mix(coreInk, chromaticFeed, 0.7); 
-                
                 inkRefraction += fresnel * edgeColor * 0.8;
                 inkRefraction += spec * specColor * mix(0.5, 1.2, u_growthFactor); 
                 finalColor = mix(finalColor, inkRefraction, u_hasTexture);
             }
         }
+        
+        // 当溃散值极高时彻底丢弃像素，节省性能
+        if (u_evaporate > 0.95 && alpha <= 0.01) discard;
 
         gl_FragColor = vec4(finalColor, alpha * mix(0.7, 1.0, u_growthFactor));
       }
@@ -251,9 +293,13 @@ export default function SymbioteCursorEnhanced() {
       u_nearestPos: getLoc('u_nearestPos'), u_nearestDist: getLoc('u_nearestDist'), u_scrollDelta: getLoc('u_scrollDelta'), 
       u_feedColor: getLoc('u_feedColor'), u_feedWeight: getLoc('u_feedWeight'),
       
-      u_targetRadius: getLoc('u_targetRadius'), u_targetViscosity: getLoc('u_targetViscosity'),
+      u_targetRadius: getLoc('u_targetRadius'), u_targetSize: getLoc('u_targetSize'), u_targetViscosity: getLoc('u_targetViscosity'),
       u_refractionStrength: getLoc('u_refractionStrength'), u_audio_amplitude: getLoc('u_audio_amplitude'), 
-      u_targetPos: getLoc('u_targetPos'), u_isHovering: getLoc('u_isHovering'), u_theme: getLoc('u_theme'), 
+      u_targetPos: getLoc('u_targetPos'), 
+      
+      u_isHovering: getLoc('u_isHovering'), u_isHoveringText: getLoc('u_isHoveringText'), u_evaporate: getLoc('u_evaporate'),
+      
+      u_theme: getLoc('u_theme'), 
       u_hasTexture: getLoc('u_hasTexture'), u_imgRect: getLoc('u_imgRect'), u_photoTexture: getLoc('u_photoTexture')
     }
   }, [])
@@ -273,7 +319,7 @@ export default function SymbioteCursorEnhanced() {
     let lastInteractTime = Date.now()
     let lastMouseX = state.position.x
     let lastMouseY = state.position.y
-    let isHoveringText = false 
+    let isHoveringTextRaw = false 
     
     let lastScrollY = window.scrollY
 
@@ -287,6 +333,13 @@ export default function SymbioteCursorEnhanced() {
     }
     handleResize(); window.addEventListener('resize', handleResize)
 
+    // 边界溃散状态记录
+    let targetEvaporate = 0.0;
+    const handleMouseLeave = () => { targetEvaporate = 1.0; }
+    const handleMouseEnter = () => { targetEvaporate = 0.0; }
+    document.addEventListener('mouseleave', handleMouseLeave);
+    document.addEventListener('mouseenter', handleMouseEnter);
+
     const initialDpr = Math.min(window.devicePixelRatio, 2)
     const renderState = {
       baseRadius: 18.0, wobbleFreq: 2.5, wobbleAmp: 0.015, 
@@ -297,7 +350,10 @@ export default function SymbioteCursorEnhanced() {
       
       feedColor: [0.0, 0.0, 0.0], feedWeight: 0.0, 
       
-      targetRadius: 15.0, targetViscosity: 0.35, hasTextureFactor: 0.0, 
+      targetRadius: 15.0, targetWidth: 0.0, targetHeight: 0.0, targetViscosity: 0.35, hasTextureFactor: 0.0, 
+      
+      isHoveringText: 0.0, evaporate: 0.0,
+      
       growthFactor: 0.0, tailWeight: 1.0, refractionStrength: 1.0, 
       genesisScale: 0.01, 
       lastValidTexture: null as WebGLTexture | null, lastValidRect: [0, 0, 0, 0] as [number, number, number, number]
@@ -317,7 +373,6 @@ export default function SymbioteCursorEnhanced() {
       renderState.genesisScale = lerp(renderState.genesisScale, 1.0, 0.035)
       renderState.scrollDelta = lerp(renderState.scrollDelta, 0, 0.1)
       
-      // 代谢减慢，让肚子里的发光颜色维持得更久一点，约 1.5 秒
       renderState.feedWeight = lerp(renderState.feedWeight, 0.0, 0.015) 
 
       const dx = state.position.x - lastMouseX; const dy = state.position.y - lastMouseY
@@ -349,7 +404,7 @@ export default function SymbioteCursorEnhanced() {
         targetBaseRadius *= 1.3; targetTailWeight = 1.0; targetRefraction = 3.0; targetWobbleFreq = 12.0; targetWobbleAmp = 0.04 
       }
 
-      let targetHasTexture = 0.0, tRadius = 15.0, tViscosity = 0.35, isTextureBound = false
+      let targetHasTexture = 0.0, tRadius = 15.0, tWidth = 0.0, tHeight = 0.0, tViscosity = 0.35, isTextureBound = false
 
       if (state.targetElement) {
         const el = state.targetElement; const rect = el.getBoundingClientRect() 
@@ -361,8 +416,13 @@ export default function SymbioteCursorEnhanced() {
 
         if (isDot) {
           targetBaseRadius = 5.0; tRadius = 8.0; tViscosity = 0.2
+          // 圆点不需要边界形变包裹
+          tWidth = 0.0; tHeight = 0.0;
         } else if (isImg) {
-          targetBaseRadius = 22.0; tRadius = 32.0; tViscosity = 0.5
+          // 👑 修正：对于图片，取消矩形 SDF 包裹，化身为“游离水滴透镜”
+          targetBaseRadius = 24.0; tRadius = 32.0; tViscosity = 0.25
+          tWidth = 0.0; tHeight = 0.0;
+          
           const src = el.getAttribute('src')
           if (src) {
             if (!textureCache.current.has(src)) {
@@ -391,7 +451,9 @@ export default function SymbioteCursorEnhanced() {
             }
           }
         } else {
-          targetBaseRadius = 12.0; tRadius = 18.0; tViscosity = 0.35
+          // 常规按钮、导航或卡片：保持完美的矩形几何包裹
+          targetBaseRadius = 12.0; tRadius = 14.0; tViscosity = 0.35
+          tWidth = rect.width * currentDpr; tHeight = rect.height * currentDpr;
         }
       } else {
         gl.uniform1f(uniforms.u_isHovering, 0.0)
@@ -401,13 +463,21 @@ export default function SymbioteCursorEnhanced() {
       renderState.baseRadius = lerp(renderState.baseRadius, targetBaseRadius, lf)
       renderState.wobbleFreq = lerp(renderState.wobbleFreq, targetWobbleFreq, lf)
       renderState.wobbleAmp = lerp(renderState.wobbleAmp, targetWobbleAmp, lf)
+      
       renderState.targetRadius = lerp(renderState.targetRadius, tRadius, lf)
+      renderState.targetWidth = lerp(renderState.targetWidth, tWidth, lf)
+      renderState.targetHeight = lerp(renderState.targetHeight, tHeight, lf)
       renderState.targetViscosity = lerp(renderState.targetViscosity, tViscosity, lf)
+      
       renderState.hasTextureFactor = lerp(renderState.hasTextureFactor, targetHasTexture, targetHasTexture > 0.5 ? 0.15 : 0.02)
       renderState.refractionStrength = lerp(renderState.refractionStrength, targetRefraction, lf)
       renderState.tailWeight = lerp(renderState.tailWeight, targetTailWeight, 0.15) 
 
-      const trackingSpeed = isHoveringText ? 0.08 : 0.28
+      // 状态与透镜缓动
+      renderState.isHoveringText = lerp(renderState.isHoveringText, isHoveringTextRaw ? 1.0 : 0.0, 0.15)
+      renderState.evaporate = lerp(renderState.evaporate, targetEvaporate, 0.1)
+
+      const trackingSpeed = isHoveringTextRaw ? 0.08 : 0.28
       
       gl.uniform2f(uniforms.u_prevCursorPos, renderState.cursorX, renderState.cursorY)
       renderState.cursorX = lerp(renderState.cursorX, state.position.x * currentDpr, trackingSpeed) 
@@ -429,9 +499,13 @@ export default function SymbioteCursorEnhanced() {
       gl.uniform1f(uniforms.u_feedWeight, renderState.feedWeight)
 
       gl.uniform1f(uniforms.u_targetRadius, renderState.targetRadius)
+      gl.uniform2f(uniforms.u_targetSize, renderState.targetWidth, renderState.targetHeight)
       gl.uniform1f(uniforms.u_targetViscosity, renderState.targetViscosity)
       gl.uniform1f(uniforms.u_refractionStrength, renderState.refractionStrength)
       
+      gl.uniform1f(uniforms.u_isHoveringText, renderState.isHoveringText)
+      gl.uniform1f(uniforms.u_evaporate, renderState.evaporate)
+
       gl.uniform1f(uniforms.u_audio_amplitude, spatialAudio.getAmplitude())
       gl.uniform1f(uniforms.u_growthFactor, renderState.growthFactor)
       gl.uniform1f(uniforms.u_tailWeight, renderState.tailWeight)
@@ -473,9 +547,9 @@ export default function SymbioteCursorEnhanced() {
 
       const targetUnder = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement
       if (targetUnder && targetUnder.closest('p, h1, h2, h3, h4, h5, h6, span, [data-cursor="text"]')) {
-         isHoveringText = true
+         isHoveringTextRaw = true
       } else {
-         isHoveringText = false
+         isHoveringTextRaw = false
       }
     }
     
@@ -483,21 +557,18 @@ export default function SymbioteCursorEnhanced() {
       const target = e.target as HTMLElement; const interactable = target.closest('button, a, img, [data-cursor], div') as HTMLElement
       if (interactable) {
         
-        // 👑 DOM 颜色溯源引擎：如果当前是透明的，就往父级找！
         let el: HTMLElement | null = interactable
         let foundColor = false
         
         while (el && !foundColor) {
             const style = window.getComputedStyle(el)
             const bg = style.backgroundColor
-            // 过滤掉透明和纯黑白（不吸无聊的颜色）
             if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
                 const rgb = bg.match(/\d+/g)
                 if (rgb && rgb.length >= 3) {
                     const r = parseInt(rgb[0])/255
                     const g = parseInt(rgb[1])/255
                     const b = parseInt(rgb[2])/255
-                    // 确保吃到的不是纯黑或纯白，才发光
                     if (r + g + b > 0.1 && r + g + b < 2.9) {
                         renderState.feedColor = [r, g, b]
                         renderState.feedWeight = 1.0 
@@ -506,7 +577,7 @@ export default function SymbioteCursorEnhanced() {
                 }
             }
             el = el.parentElement
-            if (el && el.tagName === 'BODY') break // 找到 body 停止
+            if (el && el.tagName === 'BODY') break 
         }
 
         const isRealInteractable = target.closest('button, a, img, [data-cursor]')
@@ -537,6 +608,7 @@ export default function SymbioteCursorEnhanced() {
       cancelAnimationFrame(raf); window.removeEventListener('resize', handleResize)
       window.removeEventListener('mousemove', handleMove); window.removeEventListener('mouseover', handleOver)
       window.removeEventListener('mouseout', handleOut); window.removeEventListener('scroll', handleScroll)
+      document.removeEventListener('mouseleave', handleMouseLeave); document.removeEventListener('mouseenter', handleMouseEnter)
       
       if (glRef.current) {
         const gl = glRef.current
