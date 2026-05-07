@@ -25,16 +25,18 @@ export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isCollapsing, setIsCollapsing] = useState(false) 
+  
+  // 保持你原本的高级 UI 状态名，避免打乱你的 SVG 动画
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   // 👑 获取底层引擎和全站主题状态
   const { engine, triggerTransition, currentTheme } = useSensory()
 
   useEffect(() => {
+    // 主题初始化
     const savedTheme = window.localStorage.getItem(STORAGE_KEY)
     const initialTheme = savedTheme === 'light' ? 'light' : 'dark'
     
-    // 初始化 Tailwind 昼夜神经
     if (initialTheme === 'dark') {
       document.documentElement.classList.add('dark'); document.documentElement.classList.remove('light');
     } else {
@@ -42,18 +44,19 @@ export default function Header() {
     }
     document.documentElement.dataset.theme = initialTheme
 
+    // 👑 声音初始化：同步 UI 状态与底层引擎状态
     const savedSound = window.localStorage.getItem(SOUND_KEY)
-    setSoundEnabled(savedSound ? savedSound === 'on' : true)
-    setMounted(true)
-  }, [])
+    const initialSoundEnabled = savedSound ? savedSound === 'on' : true
+    setSoundEnabled(initialSoundEnabled)
 
-  // 👑 全局静音控制：直接干预引擎总音量
-  useEffect(() => {
-    if (!engine) return;
-    const now = engine.context.currentTime;
-    // 0.5秒平滑静音/恢复，杜绝爆音
-    engine.masterGain.gain.setTargetAtTime(soundEnabled ? 1 : 0, now, 0.5);
-  }, [soundEnabled, engine]);
+    // 将初始状态注入底层硬件
+    if (engine) {
+      engine.isMuted = !initialSoundEnabled
+      engine.masterGain.gain.setValueAtTime(initialSoundEnabled ? 1.0 : 0.001, engine.context.currentTime)
+    }
+
+    setMounted(true)
+  }, [engine]) // 确保引擎挂载后同步
 
   // 👑 情绪联动：当菜单打开或页面跳转时，声音瞬间潜入水底 (Lowpass 滤波)
   useEffect(() => {
@@ -65,9 +68,15 @@ export default function Header() {
     if (!mounted) return
     window.localStorage.setItem(SOUND_KEY, soundEnabled ? 'on' : 'off')
     setMenuOpen(false); setIsCollapsing(false); document.body.style.overflow = 'auto' 
-  }, [pathname, soundEnabled, mounted])
+  }, [pathname, mounted, soundEnabled])
 
-  const toggleSound = () => setSoundEnabled(!soundEnabled)
+  // 👑 完美的静音总闸对接
+  const toggleSound = () => {
+    if (engine) {
+      const nextMuteState = engine.toggleMute() // 调用防爆音底层方法
+      setSoundEnabled(!nextMuteState)
+    }
+  }
 
   const toggleTheme = async () => {
     if (!engine) return;
@@ -95,7 +104,7 @@ export default function Header() {
     
     // 👑 路由跳转时触发一次撕裂音效，空间定位在屏幕正中心
     if (engine && soundEnabled) {
-      engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, 0.8)
+      engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, -1.0, 0.8)
     }
     
     setTimeout(() => { router.push(path) }, 1200)
@@ -110,10 +119,14 @@ export default function Header() {
 
   return (
     <>
+      {/* 👑 完璧归赵的 GhostAnchor 四角幽灵导航 */}
       <div className="fixed inset-0 pointer-events-none z-[100]">
         <GhostAnchor id="origin" alignX="left" alignY="top" label="归" sub="ORIGIN" isLight={isLight} onClick={() => router.push('/')} icon={<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1"><path d="M12 2L22 12L12 22L2 12Z" /></svg>} />
         <GhostAnchor id="theme" alignX="right" alignY="top" label="境" sub="THEME" isLight={isLight} onClick={toggleTheme} isActive={currentTheme === 'light'} icon={<svg viewBox="0 0 24 24" className="w-5 h-5 transition-transform duration-700" style={{ transform: isLight ? 'rotate(180deg)' : 'rotate(0deg)' }}><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="1" /><circle cx="12" cy="4" r="1" fill="currentColor" /></svg>} />
+        
+        {/* 👑 对接完毕的“音”字控制，保留你绝赞的跳动波纹 SVG */}
         <GhostAnchor id="sound" alignX="left" alignY="bottom" label="音" sub="SOUND" isLight={isLight} onClick={toggleSound} isActive={soundEnabled} icon={<svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1"><motion.line x1="6" y1="12" x2="6" y2="12" animate={{ y1: soundEnabled ? [12, 6, 12] : 12, y2: soundEnabled ? [12, 18, 12] : 12 }} transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }} /><motion.line x1="12" y1="12" x2="12" y2="12" animate={{ y1: soundEnabled ? [12, 4, 12] : 12, y2: soundEnabled ? [12, 20, 12] : 12 }} transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut", delay: 0.2 }} /><motion.line x1="18" y1="12" x2="18" y2="12" animate={{ y1: soundEnabled ? [12, 8, 12] : 12, y2: soundEnabled ? [12, 16, 12] : 12 }} transition={{ duration: 0.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }} /></svg>} />
+        
         <GhostAnchor id="portal" alignX="right" alignY="bottom" label={menuOpen ? '灭' : '界'} sub={menuOpen ? 'CLOSE' : 'PORTAL'} isLight={isLight} onClick={() => { if(isCollapsing) return; setMenuOpen(!menuOpen); document.body.style.overflow = menuOpen ? 'auto' : 'hidden' }} isActive={menuOpen} icon={<svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1"><motion.path d="M12 4V20M4 12H20" animate={{ rotate: menuOpen ? 45 : 0, scale: menuOpen ? 1.2 : [1, 1.1, 1] }} transition={menuOpen ? { duration: 0.5, ease: "circOut" } : { duration: 4, repeat: Infinity, ease: "easeInOut" }} /></svg>} />
       </div>
 

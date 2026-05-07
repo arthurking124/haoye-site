@@ -1,13 +1,14 @@
 'use client'
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { SensoryEngine } from '@/lib/SensoryEngine';
-import { AnimatePresence, motion } from 'framer-motion';
 
 interface SensoryContextType {
   engine: SensoryEngine | null;
   triggerTransition: (theme: 'dark' | 'light') => Promise<void>;
   currentTheme: 'dark' | 'light';
   isTransitioning: boolean;
+  unlockEngine: () => void; // 暴露给 GenesisLoading 触发
 }
 
 const SensoryContext = createContext<SensoryContextType | undefined>(undefined);
@@ -17,83 +18,92 @@ export const GlobalSensoryProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isReady, setIsReady] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<'dark' | 'light'>('dark');
   const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  const isReadyRef = useRef(false);
 
   useEffect(() => {
+    // 1. 初始化引擎单例
     const eng = SensoryEngine.getInstance();
     setEngine(eng);
     
+    // 2. 预加载核心感官素材 (确保路径与你 public 文件夹一致)
     Promise.all([
       eng.loadSound('/audio/ryuichi.mp3', 'darkTheme'),
       eng.loadSound('/audio/ambre1.mp3', 'lightTheme'),
       eng.loadSound('/audio/portal.mp3', 'collapse'), 
     ]).then(() => {
-      console.log("Quantum Sensory Engine: Assets Loaded");
+      console.log("Quantum Sensory Engine: Assets Ready");
     });
 
-    // 🏆 顶级优化 3：注册页面可见性生命周期监听，做个“懂事”的顶级网站
+    // 3. 处理生命周期：当页面切出时静音，切回时恢复
     const handleVisibilityChange = () => {
       if (document.hidden) {
         eng.suspendAndMute();
       } else {
-        // 只有在用户已经解锁系统的情况下，切回 Tab 才恢复音频
-        if (isReady) eng.resumeAndUnmute(); 
+        // 只有当用户已经解锁过（isReadyRef.current 为真）时才恢复声音
+        if (isReadyRef.current) {
+          eng.resumeAndUnmute(); 
+        }
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []); 
+
+  /**
+   * 👑 核心方法：解锁全站感官权限
+   * 由 GenesisLoading 组件在用户第一次点击屏幕时调用。
+   * 它会激活 AudioContext 并启动背景音乐。
+   */
+  const unlockEngine = useCallback(() => {
+    if (!engine || isReadyRef.current) return;
     
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [isReady]); // 将 isReady 作为依赖，确保恢复逻辑正确执行
-
-  const handleEnter = useCallback(() => {
-    if (!engine) return;
     engine.unlock();
-    engine.switchThemeMusic('darkTheme');
+    // 根据当前主题启动背景乐
+    engine.switchThemeMusic(currentTheme === 'dark' ? 'darkTheme' : 'lightTheme');
+    
     setIsReady(true);
-  }, [engine]);
+    isReadyRef.current = true;
+  }, [engine, currentTheme]);
 
+  /**
+   * 👑 核心方法：执行宇宙级转场（主题切换）
+   * 包含声音包络线的变化、空间粒子音效的触发、以及主题状态的延迟切换。
+   */
   const triggerTransition = useCallback(async (newTheme: 'dark' | 'light') => {
-    // 🏆 顶级优化 4：极其严格的状态锁。防止用户疯狂点击导致 AudioParam 包络线计算错乱产生爆音
     if (isTransitioning || !engine || currentTheme === newTheme) return;
     
     setIsTransitioning(true);
-
+    
+    // 1. 声音进入“潜水”模式 (开启低通滤波)
     engine.setCollapseEmotion(true);
-    // 🏆 顶级优化 2：触发坍缩时，注入 -3.0 的 Z 轴深度。声音会从空旷的深渊处传来。
+    
+    // 2. 在屏幕中心触发一次空间音效
     engine.fireSpatialParticle('collapse', window.innerWidth / 2, window.innerHeight / 2, -3.0, 1.2);
 
+    // 3. 等待视觉动画的前半段完成 (1.2s)
     await new Promise(r => setTimeout(r, 1200));
     
+    // 4. 切换底层背景乐，并平滑淡入
     setCurrentTheme(newTheme);
     engine.switchThemeMusic(newTheme === 'dark' ? 'darkTheme' : 'lightTheme');
 
+    // 5. 等待视觉动画完成 (0.8s)
     await new Promise(r => setTimeout(r, 800));
     
+    // 6. 声音浮出水面 (恢复全频率)
     engine.setCollapseEmotion(false);
     setIsTransitioning(false);
   }, [engine, isTransitioning, currentTheme]);
 
   return (
-    <SensoryContext.Provider value={{ engine, triggerTransition, currentTheme, isTransitioning }}>
+    <SensoryContext.Provider value={{ engine, triggerTransition, currentTheme, isTransitioning, unlockEngine }}>
+      {/* 👑 Awwwards 级设计准则：
+        Provider 内部不应该包含任何硬编码的遮罩 UI 或按钮 UI。
+        所有的感官反馈都应该无缝地注入到现有的组件（如 Header, GenesisLoading）中。
+      */}
       {children}
-      
-      <AnimatePresence>
-        {!isReady && (
-          <motion.div 
-            exit={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }}
-            transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[99999] flex items-center justify-center bg-[#0a0a0c] text-white cursor-pointer"
-            onClick={handleEnter}
-          >
-            <div className="flex flex-col items-center tracking-[0.5em]">
-              <span className="text-sm font-mono opacity-50 mb-4 animate-pulse">SYSTEM AWAITING</span>
-              <span className="text-2xl font-light">TOUCH TO ENTER THE ABYSS</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </SensoryContext.Provider>
   );
 };
