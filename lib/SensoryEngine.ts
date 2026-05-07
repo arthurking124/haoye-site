@@ -69,12 +69,47 @@ export class SensoryEngine {
     if (this.context.state === 'suspended') {
       this.context.resume();
     }
-    // 播放一段听不见的极短空白音，强制骗过浏览器安全策略
-    const osc = this.context.createOscillator();
-    osc.connect(this.context.destination);
-    osc.start(0);
-    osc.stop(0.001);
+    
+    // 1. 原本用来骗过浏览器的极短静默音
+    const silentOsc = this.context.createOscillator();
+    silentOsc.connect(this.context.destination);
+    silentOsc.start(0);
+    silentOsc.stop(0.001);
+
+    // 👑 2. 注入瞬间的“量子清脆反馈” (Quantum Tick)
+    this.playInstantFeedback();
+
     this.isUnlocked = true;
+  }
+
+  // 👑 纯 DSP 合成的高级 UI 微反馈音 (0网络延迟，极其清脆)
+  private playInstantFeedback() {
+    const now = this.context.currentTime;
+    const osc = this.context.createOscillator();
+    const gain = this.context.createGain();
+
+    // 设定为正弦波，模拟极其纯净、干脆的水滴或琉璃敲击感
+    osc.type = 'sine';
+
+    // 频率从 800Hz 瞬间极速跌落到 100Hz (在 0.08 秒内完成)
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+
+    // 音量从 0.3 瞬间收成 0，形成极其干净的打击感 (Percussive decay)
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    // 接入主控
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(now);
+    osc.stop(now + 0.1);
+
+    // 👑 触觉同步补齐：给予手指一个极短锐利的物理刺击感 (10毫秒)
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(10); } catch(e) {}
+    }
   }
 
   // 👑 极其平滑的全局静音切换 (带防爆音处理)

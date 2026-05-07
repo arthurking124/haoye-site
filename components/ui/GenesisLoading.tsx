@@ -11,17 +11,16 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
   const [isShockwave, setIsShockwave] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   
-  // 👑 修复核心1：不再从 hook 中解构 engine，避免触发 React 重渲染陷阱
-  const { unlockEngine } = useSensory()
+  const { unlockEngine, isAssetsLoaded } = useSensory()
   const sensoryTriggers = useRef({ explode: false, pulse: 0, shockwave: false })
   const startTimeRef = useRef(0)
   const hasStartedRef = useRef(false)
 
-  // 👑 将用户的首次点击作为宇宙诞生的起点
+  // 👑 双重锁机制的 UI 层：拒绝未就绪的点击
   const handleStart = () => {
-    if (hasStartedRef.current) return;
-    unlockEngine(); // 解锁底层引擎
-    startTimeRef.current = Date.now(); // 记录爆发起点
+    if (!isAssetsLoaded || hasStartedRef.current) return;
+    unlockEngine(); 
+    startTimeRef.current = Date.now(); 
     hasStartedRef.current = true;
     setHasStarted(true);
   };
@@ -128,7 +127,7 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
     const bgFS = `
       precision highp float; varying vec2 v_uv; uniform float u_shockwave; uniform vec2 u_resolution;
       void main() {
-        vec3 bgColor = vec3(0.02, 0.02, 0.02); // 绝对缝合的深渊底色 #050505
+        vec3 bgColor = vec3(0.02, 0.02, 0.02); 
         float alpha = 1.0;
         if (u_shockwave > 0.0) {
             float aspect = u_resolution.x / u_resolution.y; vec2 p = v_uv - vec2(0.5); p.x *= aspect;
@@ -189,7 +188,6 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
         setIsShockwave(true);
         shockwave = (activeSec - 6.5) * 1.8; 
         
-        // 👑 修复核心2：不依赖 React 状态，直接从类实例中获取单例
         if (!sensoryTriggers.current.shockwave) {
            sensoryTriggers.current.shockwave = true;
            if (typeof navigator !== 'undefined' && navigator.vibrate) try { navigator.vibrate([40, 30, 80]) } catch(e){} 
@@ -233,15 +231,14 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
     render()
 
     return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', resize); gl.deleteProgram(pProg); gl.deleteProgram(bgProg) }
-  
-  // 👑 修复核心3：移除对 context 状态的依赖，彻底锁死 useEffect 的生命周期，拒绝多重渲染！
+  // 👑 彻底锁定依赖，无视 React 状态刷新
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onComplete]) 
 
   return (
     <div 
       onClick={handleStart}
-      className={`fixed inset-0 z-[999] overflow-hidden ${hasStarted ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'}`}
+      className={`fixed inset-0 z-[999] overflow-hidden ${hasStarted ? 'pointer-events-none' : (isAssetsLoaded ? 'pointer-events-auto cursor-pointer' : 'pointer-events-none cursor-wait')}`}
       style={{ backgroundColor: isShockwave ? 'transparent' : '#050505' }}
     >
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
@@ -252,8 +249,9 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none"
           >
+            {/* 👑 极其讲究的等待文案与状态同步 */}
             <span className="text-white text-[12px] md:text-[14px] font-mono tracking-[0.5em] opacity-50 animate-pulse">
-              TOUCH TO AWAKEN THE ABYSS
+              {isAssetsLoaded ? 'TOUCH TO AWAKEN THE ABYSS' : 'SYNCHRONIZING SENSES...'}
             </span>
           </motion.div>
         )}
