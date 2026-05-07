@@ -16,7 +16,7 @@ import { useCursorState } from '@/hooks/useCursorState'
  * 4. 代谢残渣 (Metabolic Residue): 甩出荧光卫星滴。
  * 5. 滚动惯性形变 (Scroll Skew): 纵向拉长、横向变细。
  * 6. 按压物理反馈 (Mousedown Squish): 果冻挤压感。
- * 7. 👑 [NEW] 油膜虹彩与水银色散 (Iridescence): 边缘呈现乌鸦羽毛或高能肥皂泡的结构色光泽。
+ * 7. 油膜虹彩 (Iridescence): 已修复高频同心圆，呈现极其平滑的结构色。
  */
 
 const lerp = (start: number, end: number, factor: number) => start + (end - start) * factor
@@ -88,7 +88,6 @@ export default function SymbioteCursorEnhanced() {
       uniform float u_theme; 
       uniform float u_hasTexture; uniform vec4 u_imgRect; uniform sampler2D u_photoTexture;
 
-      // 宇宙级的光学结构色生成器 (Cosine Color Palette)
       vec3 cosPalette(float t, vec3 a, vec3 b, vec3 c, vec3 d) {
           return a + b * cos(6.28318 * (c * t + d));
       }
@@ -208,30 +207,42 @@ export default function SymbioteCursorEnhanced() {
         vec3 halfDir = normalize(lightDir + viewDir);
 
         float diff = max(dot(normal3D, lightDir), 0.0); 
-        float spec = pow(max(dot(normal3D, halfDir), 0.0), 128.0); 
-        float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 4.0); 
+        float spec = pow(max(dot(normal3D, halfDir), 0.0), 256.0); 
+        // 👑 遵守绝对真实的 PBR 物理法则，让边缘光极其锋利，核心深不可测
+        float fresnel = pow(1.0 - max(dot(normal3D, viewDir), 0.0), 5.0);
 
-        // 注入生命力的虹彩算法
-        float noiseIri = snoise(p * 8.0 - vec2(u_time * 0.3));
-        float iriFactor = fresnel * 1.5 + noiseIri * 0.2 + u_time * 0.1;
+        // 👑 修正：降低噪波频率，消除致密的同心圆
+        float noiseIri = snoise(p * 3.0 - vec2(u_time * 0.2));
+        float iriFactor = fresnel * 1.2 + noiseIri * 0.3 + u_time * 0.05;
 
         vec3 coreInk; vec3 edgeColor; vec3 specColor;
         if (u_theme > 0.5) { 
-            // 【白天：黑曜石模式】深渊内核，边缘流转暗紫、幽绿与墨蓝的机油虹彩
-            coreInk = vec3(0.06, 0.055, 0.05);  
-            edgeColor = cosPalette(iriFactor, vec3(0.15, 0.12, 0.18), vec3(0.2, 0.25, 0.2), vec3(1.0, 1.0, 1.0), vec3(0.0, 0.33, 0.67));
-            specColor = vec3(0.9, 0.88, 0.85);
+            // 1. 极致深渊黑：剥离所有浑浊的棕色，压暗到 0.015，并带入极其微弱的冷蓝色调，产生“湿润的墨水感”
+            coreInk = vec3(0.015, 0.015, 0.02);  
+            
+            // 2. 乌鸦羽毛/甲虫壳 虹彩常数：
+            // - a (基础色): 极暗的幽蓝底色
+            // - b (振幅): 极低振幅，确保虹彩深沉昂贵
+            // - d (相位): [0.3, 0.2, 0.5] 完美模拟机油表面的孔雀绿、暗紫与幽蓝
+            edgeColor = cosPalette(iriFactor * 0.6, vec3(0.08, 0.09, 0.12), vec3(0.15, 0.18, 0.22), vec3(1.0, 1.0, 1.0), vec3(0.3, 0.2, 0.5));
+            
+            // 3. 极其锋利的玻璃高光：让这滴墨水看起来像表面张力极高的玻璃体
+            specColor = vec3(0.95, 0.96, 0.98);
         } else {
-            // 👑 【黑夜：液态水银模式】强化高对比度的欧泊石虹彩与高能自发光
-            coreInk = vec3(0.45, 0.50, 0.55); // 1. 内核压暗为深邃水银，让光晕有爆发的空间
+            // ... 下面是你已经改好的黑夜水银模式 ...
+            // 1. 纯净的水银内核：稍微压暗，带有一丝极其幽冷的蓝灰，增加液态金属的密度感
+            coreInk = vec3(0.38, 0.42, 0.48); 
             
-            // 2. 振幅拉大（b向量=0.45），形成极其强烈的肥皂泡光泽（青/粉/金交织）
-            edgeColor = cosPalette(iriFactor * 1.8, vec3(0.6, 0.6, 0.65), vec3(0.45, 0.45, 0.45), vec3(1.0, 1.0, 1.0), vec3(0.3, 0.2, 0.5));
+            // 2. 完美的薄膜干涉常数：
+            // - a (基础色): 高级银灰色
+            // - b (振幅): 极低振幅(0.2)，确保虹彩若隐若现，绝不喧宾夺主
+            // - d (相位): [0.4, 0.5, 0.6] 产生极其昂贵的青/洋红/金 的镜头色散级渐变
+            edgeColor = cosPalette(iriFactor * 0.5, vec3(0.70, 0.72, 0.75), vec3(0.20, 0.15, 0.25), vec3(1.0, 1.0, 1.0), vec3(0.4, 0.5, 0.6));
             
-            // 3. 针对黑色背景，赋予边缘结构色 2.0 倍的高能光晕 (Bloom)
-            edgeColor *= 2.0; 
+            // 删除了暴力的 *= 2.0，让颜色在绝对安全的色彩空间内流转
             
-            specColor = vec3(0.95, 0.98, 1.0);
+            // 3. 极致锐利的高光：让水银的表面张力看起来达到极致
+            specColor = vec3(1.0, 1.0, 1.0);
         }
 
         coreInk = mix(coreInk, vec3(0.95, 0.96, 0.98), u_isHoveringText * 0.7); 
@@ -486,9 +497,11 @@ export default function SymbioteCursorEnhanced() {
 
       renderState.isHoveringText = lerp(renderState.isHoveringText, isHoveringTextRaw ? 1.0 : 0.0, 0.15)
       renderState.evaporate = lerp(renderState.evaporate, targetEvaporate, 0.1)
-      renderState.isPressed = lerp(renderState.isPressed, isPressedRaw ? 1.0 : 0.0, 0.25)
+      // 👑 提高受力挤压时的肌肉张力（0.35），更有弹性
+      renderState.isPressed = lerp(renderState.isPressed, isPressedRaw ? 1.0 : 0.0, 0.35)
+      // 👑 降低日常游走的跟随速度（0.21），增加高密度液体的重量感与粘滞感
 
-      const trackingSpeed = isHoveringTextRaw ? 0.08 : 0.28
+      const trackingSpeed = isHoveringTextRaw ? 0.08 : 0.21
       
       gl.uniform2f(uniforms.u_prevCursorPos, renderState.cursorX, renderState.cursorY)
       renderState.cursorX = lerp(renderState.cursorX, state.position.x * currentDpr, trackingSpeed) 
