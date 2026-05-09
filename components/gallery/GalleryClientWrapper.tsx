@@ -2,15 +2,25 @@
 
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion, useMotionValue, useSpring } from 'framer-motion';
+import { urlFor } from '@/lib/sanity.image';
+
+// 👑 1. 导入你的主题引擎
+import { useSensory } from '@/components/providers/GlobalSensoryProvider';
+
+// 👑 2. 导入四大神级画廊模块
 import ZAxisGallery from './ZAxisGallery';
 import LiquidGallery from './LiquidGallery';
+import PrismaticGallery from './PrismaticGallery'; // 极昼模式一：琉璃色散
+import SilkGallery from './SilkGallery';           // 极昼模式二：浮空织物
 import ModeToggleButton from './ModeToggleButton';
-import { urlFor } from '@/lib/sanity.image';
 
 export default function GalleryClientWrapper({ items }: { items: any[] }) {
   const [viewMode, setViewMode] = useState<'z-axis' | 'liquid'>('z-axis');
   const [mounted, setMounted] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0); 
+  
+  // 获取当前主题 (深渊 / 极昼)
+  const { currentTheme } = useSensory();
   
   // 索引结界状态
   const [showIndex, setShowIndex] = useState(false);
@@ -88,39 +98,54 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
     : null;
 
   return (
-    // 🚨 修复 1：使用 h-[100dvh] 完美适配手机浏览器动态高度
     <main className="relative w-full h-[100dvh] overflow-hidden bg-transparent">
       
-      {/* 1. 底层画廊渲染区 */}
+      {/* 👑 底层画廊渲染区：四维宇宙的终极分发 */}
       <AnimatePresence mode="wait">
         {viewMode === 'z-axis' ? (
           <motion.div
-            key="z-axis"
+            // 根据主题改变 key，确保切换主题时强制卸载旧的 WebGL 组件
+            key={`z-axis-${currentTheme}`} 
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, filter: 'blur(12px)', scale: 0.95 }}
             transition={{ duration: 1.4, ease: [0.19, 1, 0.22, 1] }}
             className="absolute inset-0 w-full h-full"
           >
-            <ZAxisGallery items={items} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            {currentTheme === 'dark' ? (
+              <ZAxisGallery items={items} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            ) : (
+              // 极昼模式的对标项：浮空织物 (传递的 props 做了向下兼容映射)
+              <SilkGallery images={items} currentIndex={currentIndex} onIndexChange={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            )}
           </motion.div>
         ) : (
           <motion.div
-            key="liquid"
+            key={`liquid-${currentTheme}`}
             initial={{ opacity: 0, filter: 'blur(12px)' }}
             animate={{ opacity: 1, filter: 'blur(0px)' }}
             exit={{ opacity: 0, filter: 'blur(12px)' }}
             transition={{ duration: 1.4, ease: [0.19, 1, 0.22, 1] }}
             className="absolute inset-0 w-full h-full"
           >
-            <LiquidGallery items={items} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            {currentTheme === 'dark' ? (
+              <LiquidGallery items={items} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            ) : (
+              // 极昼模式的对标项：琉璃色散
+              <PrismaticGallery images={items} currentIndex={currentIndex} onIndexChange={setCurrentIndex} onOpenIndex={() => setShowIndex(true)} />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <ModeToggleButton currentMode={viewMode} onToggle={() => setViewMode(prev => prev === 'z-axis' ? 'liquid' : 'z-axis')} />
+      {/* 👑 把当前主题传递给按钮，让它能变色并显示灵魂文案 */}
+      <ModeToggleButton 
+        currentMode={viewMode} 
+        theme={currentTheme} 
+        onToggle={() => setViewMode(prev => prev === 'z-axis' ? 'liquid' : 'z-axis')} 
+      />
 
-      {/* 2. 顶级设计：霜化结界微缩索引 (Frosted HUD Index) */}
+      {/* 霜化结界微缩索引 (Frosted HUD Index) - 以下代码完全保留你的原样 */}
       <AnimatePresence>
         {showIndex && (
           <motion.div
@@ -132,9 +157,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
           >
             <div className="absolute inset-0 z-0" onClick={() => setShowIndex(false)} />
             
-            {/* ================================================= */}
-            {/* 📱 手机端专属：顶部雷达监视器 (Monitor) */}
-            {/* ================================================= */}
             {isPhone && (
               <div className="w-full h-[35vh] px-6 pt-10 flex-shrink-0 relative z-10">
                  <div className="w-full h-full relative rounded-[2px] overflow-hidden bg-white/5 border border-white/10 shadow-2xl">
@@ -159,9 +181,6 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
               </div>
             )}
 
-            {/* ================================================= */}
-            {/* 📜 文本列表容器 */}
-            {/* ================================================= */}
             <div 
               className={`relative z-10 w-full max-w-[1000px] px-6 md:px-12 overflow-y-auto overscroll-contain no-scrollbar 
                 ${isPhone ? 'h-[65vh] pt-8' : 'h-[75vh] py-0'}`}
@@ -216,14 +235,10 @@ export default function GalleryClientWrapper({ items }: { items: any[] }) {
                 })}
               </ul>
               
-              {/* 🚨 修复 2：【幽灵跑道】为最后几项提供滑入雷达区所需的底部空间 */}
               {isPhone && <div className="w-full h-[45vh] flex-shrink-0 pointer-events-none" aria-hidden="true" />}
               
             </div>
 
-            {/* ================================================= */}
-            {/* 💻 电脑端与平板端专属：鼠标悬浮微缩图 */}
-            {/* ================================================= */}
             {!isPhone && hoveredImgUrl && (
               <motion.img
                 src={hoveredImgUrl}
