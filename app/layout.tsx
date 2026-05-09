@@ -35,7 +35,25 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
+    // suppressHydrationWarning 必须保留，它允许我们在 React 挂载前修改 class 和 dataset
     <html lang="zh-CN" suppressHydrationWarning data-scroll-behavior="smooth">
+      <head>
+        {/* 👑 Awwwards 级防闪屏阻断脚本：在 React 渲染前瞬间锁定本地主题 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var savedTheme = window.localStorage.getItem('haoye-theme');
+                  var theme = savedTheme === 'light' ? 'light' : 'dark';
+                  document.documentElement.dataset.theme = theme;
+                  document.documentElement.classList.add(theme);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.variable} ${notoSerifSC.variable} antialiased`}>
         {/* 👑 将感官中枢包裹在最外层，接管全站音画 */}
         <GlobalSensoryProvider>

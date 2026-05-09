@@ -1,61 +1,53 @@
 // lib/SensoryEngine.ts
+
 export class SensoryEngine {
-  private static instance: SensoryEngine | null = null;
+  private static instance: SensoryEngine;
   public context: AudioContext;
-  
   public masterGain: GainNode;
+  
+  // 核心效果器：低通滤波器（用于模拟被拉入深水的空间坍缩感）
+  private lpf: BiquadFilterNode;
+  
+  // 👑 音频可视化分析器（供 FluidBackground 读取音乐振幅）
   public analyser: AnalyserNode;
-  private panner: PannerNode;
-  private filter: BiquadFilterNode;
-
+  private frequencyDataArray: Uint8Array;
+  
   private buffers: Map<string, AudioBuffer> = new Map();
-  private themeSource: AudioBufferSourceNode | null = null;
-  private themeGain: GainNode;
+  
+  // 记录当前播放的背景音乐，用于实现丝滑的交叉淡入淡出
+  private currentThemeSource: AudioBufferSourceNode | null = null;
+  private currentThemeGain: GainNode | null = null;
 
+  public isMuted: boolean = false;
   private isUnlocked: boolean = false;
-  public isMuted: boolean = false; // 👑 全局静音状态，供 UI 实时同步
-
-  private frequencyDataArray: Uint8Array<ArrayBuffer>;
+  
+  // 记录休眠倒计时，防止页面切回时引擎被误杀的竞态条件
+  private suspendTimer: ReturnType<typeof setTimeout> | null = null;
 
   private constructor() {
     // 兼容 Safari 的 webkitAudioContext
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    this.context = new AudioContextClass();
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    this.context = new AudioCtx();
 
-    // 核心节点初始化
+    // 初始化全局增益（音量）、低通滤波器与分析器
     this.masterGain = this.context.createGain();
+    this.lpf = this.context.createBiquadFilter();
+    
+    // 默认全频段通过 (20000Hz)
+    this.lpf.type = 'lowpass';
+    this.lpf.frequency.value = 20000; 
+
+    // 👑 初始化并配置音频分析器
     this.analyser = this.context.createAnalyser();
-    this.panner = this.context.createPanner();
-    this.filter = this.context.createBiquadFilter();
-    this.themeGain = this.context.createGain();
+    this.analyser.fftSize = 256; // 采样精度
+    this.frequencyDataArray = new Uint8Array(this.analyser.frequencyBinCount);
 
-    // 低通滤波器设置 (常态全开，坍缩时下潜)
-    this.filter.type = 'lowpass';
-    this.filter.frequency.value = 24000; 
-    this.filter.Q.value = 0.5;
-
-    // 空间音频设置 (HRTF 模拟人头录音级真实空间感)
-    this.panner.panningModel = 'HRTF';
-    this.panner.distanceModel = 'inverse';
-    this.panner.refDistance = 1;
-    this.panner.maxDistance = 1000;
-
-    // 频谱分析器设置 (用于驱动视觉动画)
-    this.analyser.fftSize = 256;
-    this.analyser.smoothingTimeConstant = 0.8;
-
-    this.frequencyDataArray = new Uint8Array(this.analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
-
-    // 👑 顶级音频管线串联：
-    // 背景乐 -> 低通滤波 -> 空间声场 -> 主音量 -> 频谱分析 -> 扬声器
-    this.themeGain.connect(this.filter);
-    this.filter.connect(this.panner);
-    this.panner.connect(this.masterGain);
-    this.masterGain.connect(this.analyser);
-    this.analyser.connect(this.context.destination);
+    // 👑 严谨的硬件路由管线：LPF -> Analyser -> MasterGain -> 扬声器
+    this.lpf.connect(this.analyser);
+    this.analyser.connect(this.masterGain);
+    this.masterGain.connect(this.context.destination);
   }
 
-  // 保证全站唯一实例
   public static getInstance(): SensoryEngine {
     if (!SensoryEngine.instance) {
       SensoryEngine.instance = new SensoryEngine();
@@ -63,192 +55,255 @@ export class SensoryEngine {
     return SensoryEngine.instance;
   }
 
-  // 👑 解锁硬件权限 (由 GenesisLoading 首屏点击触发)
+  // iOS / Safari 强制硬件解锁 (必须在用户第一次交互时调用)
   public unlock() {
     if (this.isUnlocked) return;
-    if (this.context.state === 'suspended') {
-      this.context.resume();
-    }
     
-    // 1. 原本用来骗过浏览器的极短静默音
-    const silentOsc = this.context.createOscillator();
-    silentOsc.connect(this.context.destination);
-    silentOsc.start(0);
-    silentOsc.stop(0.001);
-
-    // 👑 2. 注入瞬间的“量子清脆反馈” (Quantum Tick)
-    this.playInstantFeedback();
-
+    // 创建一个极短的空白音频片段强行冲破浏览器的静音限制
+    const buffer = this.context.createBuffer(1, 1, 22050);
+    const node = this.context.createBufferSource();
+    node.buffer = buffer;
+    node.connect(this.context.destination);
+    node.start(0);
+    
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(()=>{});
+    }
     this.isUnlocked = true;
   }
 
-  // 👑 纯 DSP 合成的高级 UI 微反馈音 (0网络延迟，极其清脆)
-  private playInstantFeedback() {
+  // 👑 获取当前音乐的归一化振幅 (0.0 - 1.0)，供流体背景等视觉组件调用
+  public getAmplitude(): number {
+    // 极客级防御：如果引擎处于休眠状态或尚未初始化，直接返回 0，防止 UI 渲染报错
+    if (!this.analyser || !this.frequencyDataArray || this.context.state === 'suspended') {
+      return 0;
+    }
+    
+   this.analyser.getByteFrequencyData(this.frequencyDataArray as any);
+    
+    let sum = 0;
+    for (let i = 0; i < this.frequencyDataArray.length; i++) {
+      sum += this.frequencyDataArray[i];
+    }
+    
+    return (sum / this.frequencyDataArray.length) / 255.0;
+  }
+
+  // 异步加载音频资源到内存 Map 中
+  public async loadSound(url: string, name: string): Promise<void> {
+    if (this.buffers.has(name)) return;
+    try {
+      const response = await fetch(url);
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
+      this.buffers.set(name, audioBuffer);
+    } catch (e) {
+      console.error(`[SensoryEngine] Failed to load sound: ${url}`, e);
+    }
+  }
+
+  // 量子滴答：纯 DSP 合成，零延迟的 UI 物理打击感
+  public playInstantFeedback() {
+    // 每次交互强制兜底唤醒，防止浏览器节电策略导致哑巴
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(()=>{});
+    }
+
     const now = this.context.currentTime;
     const osc = this.context.createOscillator();
     const gain = this.context.createGain();
 
-    // 设定为正弦波，模拟极其纯净、干脆的水滴或琉璃敲击感
+    // 极速下坠的频率（模拟物理打击的清脆感）
     osc.type = 'sine';
-
-    // 频率从 800Hz 瞬间极速跌落到 100Hz (在 0.08 秒内完成)
     osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.05);
 
-    // 音量从 0.3 瞬间收成 0，形成极其干净的打击感 (Percussive decay)
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    // 短促的音量包络线 (Envelope)
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.5, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
-    // 接入主控
+    // 微音效直接连入主增益，不经过水下滤波器，保证任何时候点击都清晰
     osc.connect(gain);
     gain.connect(this.masterGain);
 
     osc.start(now);
     osc.stop(now + 0.1);
 
-    // 👑 触觉同步补齐：给予手指一个极短锐利的物理刺击感 (10毫秒)
+    // 播放完毕瞬间销毁节点，防止内存泄漏爆音
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
+
+    // 如果手机支持，触发同步的物理震动
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      try { navigator.vibrate(10); } catch(e) {}
+      navigator.vibrate(10);
     }
   }
 
-  // 👑 极其平滑的全局静音切换 (带防爆音处理)
+  // 空间音频引擎：发射带精确 X/Y 坐标的三维音效
+  public fireSpatialParticle(name: string, screenX: number, screenY: number, depthZ: number = -1.0, volume: number = 1.0) {
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(()=>{});
+    }
+
+    const buffer = this.buffers.get(name);
+    if (!buffer) return;
+
+    const now = this.context.currentTime;
+    const source = this.context.createBufferSource();
+    const panner = this.context.createPanner();
+    const gain = this.context.createGain();
+
+    source.buffer = buffer;
+
+    // 将屏幕 DOM 坐标系 (0 to Width/Height) 映射为声场坐标系 (-1 to 1)
+    const panX = (screenX / window.innerWidth) * 2 - 1;
+    const panY = -((screenY / window.innerHeight) * 2 - 1);
+
+    // HRTF 头部相关传输函数，带来电影级的声相定位
+    panner.panningModel = 'HRTF';
+    panner.distanceModel = 'inverse';
+    panner.refDistance = 1;
+    panner.maxDistance = 10000;
+    panner.rolloffFactor = 1;
+    
+    // 兼容老版本 Safari 和现代浏览器的设置坐标方法
+    if (panner.positionX) {
+        panner.positionX.value = panX * 3; // 乘以 3 拉大声场宽度
+        panner.positionY.value = panY * 3;
+        panner.positionZ.value = depthZ;
+    } else {
+        panner.setPosition(panX * 3, panY * 3, depthZ);
+    }
+
+    gain.gain.setValueAtTime(volume, now);
+
+    source.connect(panner);
+    panner.connect(gain);
+    // 撕裂声效连入 LPF，保证主题切换时的水下一致性感官
+    gain.connect(this.lpf); 
+
+    source.start(now);
+    
+    source.onended = () => {
+        source.disconnect();
+        panner.disconnect();
+        gain.disconnect();
+    };
+  }
+
+  // 丝滑的主题音乐交叉淡入淡出 (Cross-fade)
+  public switchThemeMusic(themeName: string) {
+    const buffer = this.buffers.get(themeName);
+    if (!buffer) return;
+
+    const now = this.context.currentTime;
+    const fadeTime = 2.0; // 2秒的史诗级过渡
+
+    // 1. 旧音乐：呈指数级坠入深海 (Epic Fade Out)
+    if (this.currentThemeGain && this.currentThemeSource) {
+        const oldGain = this.currentThemeGain;
+        const oldSource = this.currentThemeSource;
+        
+        oldGain.gain.cancelScheduledValues(now);
+        oldGain.gain.setValueAtTime(Math.max(oldGain.gain.value, 0.001), now);
+        oldGain.gain.exponentialRampToValueAtTime(0.001, now + fadeTime);
+        
+        setTimeout(() => {
+            try {
+                oldSource.stop();
+                oldSource.disconnect();
+                oldGain.disconnect();
+            } catch (e) {}
+        }, fadeTime * 1000 + 100);
+    }
+
+    // 2. 新音乐：呈指数级浮出水面 (Epic Fade In)
+    const newSource = this.context.createBufferSource();
+    const newGain = this.context.createGain();
+    
+    newSource.buffer = buffer;
+    newSource.loop = true; // 背景音乐无限循环
+    
+    newGain.gain.setValueAtTime(0.001, now);
+    newGain.gain.exponentialRampToValueAtTime(0.3, now + fadeTime); 
+
+    newSource.connect(newGain);
+    newGain.connect(this.lpf); // 音乐连入水下滤波器
+
+    newSource.start(now);
+
+    this.currentThemeSource = newSource;
+    this.currentThemeGain = newGain;
+  }
+
+  // 情绪引擎：触发物理级空间坍缩 (水下滤波效果)
+  public setCollapseEmotion(active: boolean) {
+    const now = this.context.currentTime;
+    this.lpf.frequency.cancelScheduledValues(now);
+    this.lpf.frequency.setValueAtTime(this.lpf.frequency.value, now);
+    
+    if (active) {
+        // 潜入深水：将声音高频砍掉，只剩 300Hz 以下的闷响
+        this.lpf.frequency.exponentialRampToValueAtTime(300, now + 0.6);
+    } else {
+        // 重见天日：瞬间或者平滑恢复全频段 20000Hz
+        this.lpf.frequency.exponentialRampToValueAtTime(20000, now + 0.6);
+    }
+  }
+
+  // ---------------- 生死攸关的生命周期与防断联控制 ---------------- //
+
   public toggleMute(): boolean {
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(()=>{});
+    }
+
     this.isMuted = !this.isMuted;
     const now = this.context.currentTime;
     
-    // 取消未来可能存在的包络线任务，冻结当前音量值
     this.masterGain.gain.cancelScheduledValues(now);
     this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-    
-    // 在 0.3 秒内如丝般顺滑地滑向静音或原声
     this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.3);
     
     return this.isMuted;
   }
 
-  // 异步加载音频资产到内存
-  public async loadSound(url: string, name: string): Promise<void> {
-    if (this.buffers.has(name)) return;
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`文件未找到 (HTTP ${res.status}): ${url}`);
-      const arrayBuffer = await res.arrayBuffer();
-      const audioBuffer = await this.context.decodeAudioData(arrayBuffer);
-      this.buffers.set(name, audioBuffer);
-    } catch (e) {
-      console.warn(`[SensoryEngine] 音频加载跳过或失败: ${name}`, e);
-    }
-  }
-
-  // 平滑切换主题背景乐 (交叉淡化 Crossfade)
-  public switchThemeMusic(themeName: string, fadeDuration: number = 2.0) {
-    const buffer = this.buffers.get(themeName);
-    if (!buffer) return;
-
-    const now = this.context.currentTime;
-
-    // 1. 如果旧音乐在播，让它慢慢淡出并停止
-    if (this.themeSource) {
-      this.themeGain.gain.cancelScheduledValues(now);
-      this.themeGain.gain.setValueAtTime(this.themeGain.gain.value, now);
-      this.themeGain.gain.exponentialRampToValueAtTime(0.001, now + fadeDuration);
-      this.themeSource.stop(now + fadeDuration);
-    }
-
-    // 2. 创建新音乐节点
-    const newSource = this.context.createBufferSource();
-    newSource.buffer = buffer;
-    newSource.loop = true;
-    newSource.connect(this.themeGain);
-    newSource.start(now);
-
-    // 3. 新音乐淡入 (从 0.001 滑向设定音量 0.4)
-    this.themeGain.gain.cancelScheduledValues(now);
-    this.themeGain.gain.setValueAtTime(0.001, now);
-    this.themeGain.gain.exponentialRampToValueAtTime(0.4, now + fadeDuration);
-
-    this.themeSource = newSource;
-  }
-
-  // 👑 在 3D 空间中触发瞬发粒子音效 (受 masterGain 静音控制)
-  public fireSpatialParticle(name: string, screenX: number, screenY: number, depthZ: number = -1.0, volume: number = 1.0) {
-    const buffer = this.buffers.get(name);
-    if (!buffer) return;
-
-    const source = this.context.createBufferSource();
-    source.buffer = buffer;
-
-    const localGain = this.context.createGain();
-    localGain.gain.value = volume;
-
-    // 将屏幕 2D 坐标映射到 WebAudio 3D 坐标系 (-1 到 1)
-    const x = (screenX / window.innerWidth) * 2 - 1;
-    const y = -((screenY / window.innerHeight) * 2 - 1);
-    
-    const localPanner = this.context.createPanner();
-    localPanner.panningModel = 'HRTF';
-    localPanner.positionX.value = x * 2.0; 
-    localPanner.positionY.value = y * 2.0;
-    localPanner.positionZ.value = depthZ;
-
-    // 独立管线：音频 -> 独立 3D 定位器 -> 独立音量 -> 全局主音量 (接受全局静音控制)
-    source.connect(localPanner);
-    localPanner.connect(localGain);
-    localGain.connect(this.masterGain); 
-
-    source.start(0);
-
-    // 播放完毕后及时销毁节点，释放内存
-    source.onended = () => {
-      source.disconnect();
-      localPanner.disconnect();
-      localGain.disconnect();
-    };
-
-    // 触觉闭环
-    if (navigator.vibrate) navigator.vibrate(15); 
-  }
-
-  // 情绪控制器：坍缩时进行低通滤波，模拟“沉入深水”的压抑感
-  public setCollapseEmotion(isCollapsing: boolean) {
-    const now = this.context.currentTime;
-    this.filter.frequency.cancelScheduledValues(now);
-    this.filter.frequency.setValueAtTime(this.filter.frequency.value, now);
-    this.filter.frequency.exponentialRampToValueAtTime(isCollapsing ? 400 : 24000, now + 0.8);
-  }
-
-  // 获取实时频谱振幅 (用于驱动 WebGL 视觉)
-  public getAmplitude(): number {
-    this.analyser.getByteFrequencyData(this.frequencyDataArray);
-    let sum = 0;
-    const length = this.frequencyDataArray.length;
-    for (let i = 0; i < length; i++) {
-      sum += this.frequencyDataArray[i];
-    }
-    return (sum / length) / 255.0; 
-  }
-
-  // 生命周期：页面切出时（挂起并静音）
+  // 页面失去焦点 / 最小化时
   public suspendAndMute() {
     const now = this.context.currentTime;
     this.masterGain.gain.cancelScheduledValues(now);
     this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
     this.masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-    setTimeout(() => {
-      if (this.context.state === 'running') this.context.suspend();
+    
+    if (this.suspendTimer) clearTimeout(this.suspendTimer);
+    this.suspendTimer = setTimeout(() => {
+      if (this.context.state === 'running') {
+        this.context.suspend().catch(()=>{});
+      }
     }, 500);
   }
 
-  // 生命周期：页面切回时（恢复硬件并检查静音状态）
+  // 页面恢复焦点时
   public resumeAndUnmute() {
-    if (this.context.state === 'suspended') {
-      this.context.resume();
+    if (this.suspendTimer) {
+      clearTimeout(this.suspendTimer);
+      this.suspendTimer = null;
     }
-    const now = this.context.currentTime;
-    this.masterGain.gain.cancelScheduledValues(now);
-    this.masterGain.gain.setValueAtTime(0.001, now);
-    // 👑 恢复时严格检查全局静音状态：如果原本就是静音的，就不恢复声音
-    this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.5);
+
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch((e) => {
+        console.warn("[SensoryEngine] Waiting for user interaction to resume audio.", e);
+      });
+    }
+
+    setTimeout(() => {
+      const now = this.context.currentTime;
+      this.masterGain.gain.cancelScheduledValues(now);
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value || 0.001, now);
+      this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.5);
+    }, 50);
   }
 }

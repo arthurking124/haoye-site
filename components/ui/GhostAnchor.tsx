@@ -12,7 +12,8 @@ export interface GhostAnchorProps {
   sub: string
   isActive?: boolean
   isLight: boolean 
-  onClick: () => void
+  // 👑 核心修复：让组件知道 onClick 会传出一个含有坐标信息的鼠标事件
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void
 }
 
 export default function GhostAnchor({ alignX, alignY, icon, label, sub, isActive, isLight, onClick }: GhostAnchorProps) {
