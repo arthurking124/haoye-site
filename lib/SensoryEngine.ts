@@ -55,6 +55,21 @@ export class SensoryEngine {
     return SensoryEngine.instance;
   }
 
+  // 👑 终极电击唤醒机制：专治浏览器后台休眠导致的音量卡死 (你之前弄丢的核武器)
+  private ensureAwake() {
+    if (this.context.state === 'suspended') {
+      this.context.resume().catch(()=>{});
+      
+      // 如果引擎是从装死状态被踢醒的，且不应该静音，必须强制拉满主音量！
+      if (!this.isMuted) {
+        const now = this.context.currentTime;
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(0.001, now); // 从谷底强拉
+        this.masterGain.gain.exponentialRampToValueAtTime(1.0, now + 0.05); // 0.05秒极速恢复
+      }
+    }
+  }
+
   // iOS / Safari 强制硬件解锁 (必须在用户第一次交互时调用)
   public unlock() {
     if (this.isUnlocked) return;
@@ -66,9 +81,7 @@ export class SensoryEngine {
     node.connect(this.context.destination);
     node.start(0);
     
-    if (this.context.state === 'suspended') {
-      this.context.resume().catch(()=>{});
-    }
+    this.ensureAwake(); // 👑 使用高级唤醒
     this.isUnlocked = true;
   }
 
@@ -79,7 +92,8 @@ export class SensoryEngine {
       return 0;
     }
     
-   this.analyser.getByteFrequencyData(this.frequencyDataArray as any);
+    // 👑 绕过 TS 严格检查的完美写法
+    this.analyser.getByteFrequencyData(this.frequencyDataArray as any);
     
     let sum = 0;
     for (let i = 0; i < this.frequencyDataArray.length; i++) {
@@ -104,10 +118,7 @@ export class SensoryEngine {
 
   // 量子滴答：纯 DSP 合成，零延迟的 UI 物理打击感
   public playInstantFeedback() {
-    // 每次交互强制兜底唤醒，防止浏览器节电策略导致哑巴
-    if (this.context.state === 'suspended') {
-      this.context.resume().catch(()=>{});
-    }
+    this.ensureAwake(); // 👑 每次交互强制查岗
 
     const now = this.context.currentTime;
     const osc = this.context.createOscillator();
@@ -144,9 +155,7 @@ export class SensoryEngine {
 
   // 空间音频引擎：发射带精确 X/Y 坐标的三维音效
   public fireSpatialParticle(name: string, screenX: number, screenY: number, depthZ: number = -1.0, volume: number = 1.0) {
-    if (this.context.state === 'suspended') {
-      this.context.resume().catch(()=>{});
-    }
+    this.ensureAwake(); // 👑 每次交互强制查岗
 
     const buffer = this.buffers.get(name);
     if (!buffer) return;
@@ -194,7 +203,7 @@ export class SensoryEngine {
     };
   }
 
-  // 丝滑的主题音乐交叉淡入淡出 (Cross-fade)
+  // 👑 丝滑的主题音乐交叉淡入淡出 (Cross-fade) - 包含你修改的史诗级 Fade Out
   public switchThemeMusic(themeName: string) {
     const buffer = this.buffers.get(themeName);
     if (!buffer) return;
@@ -208,6 +217,7 @@ export class SensoryEngine {
         const oldSource = this.currentThemeSource;
         
         oldGain.gain.cancelScheduledValues(now);
+        // 注意：exponentialRamp 绝对不能从 0 开始，也不能降到 0，0.001 是完美的极值
         oldGain.gain.setValueAtTime(Math.max(oldGain.gain.value, 0.001), now);
         oldGain.gain.exponentialRampToValueAtTime(0.001, now + fadeTime);
         
@@ -228,7 +238,7 @@ export class SensoryEngine {
     newSource.loop = true; // 背景音乐无限循环
     
     newGain.gain.setValueAtTime(0.001, now);
-    newGain.gain.exponentialRampToValueAtTime(0.3, now + fadeTime); 
+    newGain.gain.exponentialRampToValueAtTime(0.3, now + fadeTime); // 音乐最高音量压在 0.3，绝不喧宾夺主
 
     newSource.connect(newGain);
     newGain.connect(this.lpf); // 音乐连入水下滤波器
@@ -257,15 +267,14 @@ export class SensoryEngine {
   // ---------------- 生死攸关的生命周期与防断联控制 ---------------- //
 
   public toggleMute(): boolean {
-    if (this.context.state === 'suspended') {
-      this.context.resume().catch(()=>{});
-    }
+    this.ensureAwake(); // 👑 强制查岗
 
     this.isMuted = !this.isMuted;
     const now = this.context.currentTime;
     
     this.masterGain.gain.cancelScheduledValues(now);
-    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    const currentVol = Math.max(this.masterGain.gain.value, 0.001);
+    this.masterGain.gain.setValueAtTime(currentVol, now);
     this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.3);
     
     return this.isMuted;
@@ -275,7 +284,10 @@ export class SensoryEngine {
   public suspendAndMute() {
     const now = this.context.currentTime;
     this.masterGain.gain.cancelScheduledValues(now);
-    this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+    
+    // 降下帷幕
+    const currentVol = Math.max(this.masterGain.gain.value, 0.001);
+    this.masterGain.gain.setValueAtTime(currentVol, now);
     this.masterGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
     
     if (this.suspendTimer) clearTimeout(this.suspendTimer);
@@ -294,16 +306,14 @@ export class SensoryEngine {
     }
 
     if (this.context.state === 'suspended') {
-      this.context.resume().catch((e) => {
-        console.warn("[SensoryEngine] Waiting for user interaction to resume audio.", e);
-      });
+      this.context.resume().catch(()=>{});
     }
 
-    setTimeout(() => {
-      const now = this.context.currentTime;
-      this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value || 0.001, now);
-      this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.5);
-    }, 50);
+    const now = this.context.currentTime;
+    this.masterGain.gain.cancelScheduledValues(now);
+    
+    // 👑 抛弃所有幻想，切回页面时直接从谷底 0.001 重新拉起！
+    this.masterGain.gain.setValueAtTime(0.001, now);
+    this.masterGain.gain.exponentialRampToValueAtTime(this.isMuted ? 0.001 : 1.0, now + 0.5);
   }
 }
