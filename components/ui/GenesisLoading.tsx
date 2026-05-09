@@ -11,7 +11,7 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
   const [isShockwave, setIsShockwave] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   
-  const { unlockEngine, isAssetsLoaded } = useSensory()
+  const { engine, unlockEngine, isAssetsLoaded } = useSensory()
   const sensoryTriggers = useRef({ explode: false, pulse: 0, shockwave: false })
   const startTimeRef = useRef(0)
   const hasStartedRef = useRef(false)
@@ -19,7 +19,9 @@ export default function GenesisLoading({ onComplete }: { onComplete: () => void 
   // 👑 双重锁机制的 UI 层：拒绝未就绪的点击
   const handleStart = () => {
     if (!isAssetsLoaded || hasStartedRef.current) return;
-    unlockEngine(); 
+    unlockEngine(); // 解锁声卡，背景音乐开始淡入
+    // 👑 加上这一句！给用户极其清脆、零延迟的物理点击反馈
+    engine?.playInstantFeedback();
     startTimeRef.current = Date.now(); 
     hasStartedRef.current = true;
     setHasStarted(true);
