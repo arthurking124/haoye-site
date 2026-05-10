@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
@@ -6,6 +6,8 @@ import { useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'framer-motion';
 import { urlFor } from '@/lib/sanity.image';
+// 👑 引入感官引擎
+import { useSensory } from '@/components/providers/GlobalSensoryProvider';
 
 const liquidShader = {
   uniforms: {
@@ -15,7 +17,6 @@ const liquidShader = {
     uTime: { value: 0 },
     uMouse: { value: new THREE.Vector2(0.5, 0.5) },
     uVelo: { value: 0 },
-    // 屏幕分辨率，用于计算真实的屏幕宽高比，防止波纹变椭圆
     uResolution: { value: new THREE.Vector2(1, 1) }, 
   },
   vertexShader: `
@@ -38,17 +39,12 @@ const liquidShader = {
     void main() {
       vec2 uv = vUv;
       
-      // 核心修复：将坐标系转换到物理等距空间，消灭“椭圆病”
       float aspect = uResolution.x / uResolution.y;
       vec2 correctUv = vec2(uv.x * aspect, uv.y);
       vec2 correctMouse = vec2(uMouse.x * aspect, uMouse.y);
       
-      // 在正圆空间里计算距离
       float d = distance(correctUv, correctMouse);
-      
       float ripple = sin(d * 15.0 - uTime * 3.0) * (0.05 * uVelo);
-      
-      // 折射依然应用在原始 UV 上，保证贴图不拉伸
       vec2 refractedUv = uv + ripple;
       
       float r = texture2D(uTexture, refractedUv + ripple * 0.8).r;
@@ -86,23 +82,14 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
     transparent: true,
   }), []);
 
-  // 融合了版本1手感与版本2底层架构的 useFrame
   useFrame((state, delta) => {
     if (!meshRef.current) return;
-    
-    // 进度条平滑：调整阻尼系数，还原原版的切图速度
     progress.current = THREE.MathUtils.damp(progress.current, 1.0, 3.7, delta);
-    
     const targetMouse = new THREE.Vector2((state.mouse.x + 1) / 2, (state.mouse.y + 1) / 2);
     
-    // 鼠标跟随：稍微降低跟随速度，恢复原版带有一点粘滞感的手感
     mouse.current.x = THREE.MathUtils.damp(mouse.current.x, targetMouse.x, 5.0, delta);
     mouse.current.y = THREE.MathUtils.damp(mouse.current.y, targetMouse.y, 5.0, delta);
-    
-    // 波纹能量衰减：加大衰减力度，让波纹像原版一样干脆利落地消失
     velocity.current *= Math.exp(-5.0 * delta);
-    
-    // 划动强度削弱：抵消掉正圆修复带来的放大感，不那么晃眼
     velocity.current += targetMouse.distanceTo(mouse.current) * 28.0 * delta;
     const activeVelo = Math.max(velocity.current, 0.05);
 
@@ -113,8 +100,6 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
     shader.uniforms.uTime.value = state.clock.getElapsedTime();
     shader.uniforms.uMouse.value = mouse.current;
     shader.uniforms.uVelo.value = activeVelo;
-    
-    // 动态传入当前屏幕的像素尺寸
     shader.uniforms.uResolution.value.set(state.size.width, state.size.height);
   });
 
@@ -134,7 +119,6 @@ function LiquidPlane({ imageUrls, activeIndex }: { imageUrls: string[], activeIn
   );
 }
 
-// 接收父组件(GalleryClientWrapper)下发的状态和触发事件
 interface Props {
   items: any[];
   currentIndex: number;
@@ -143,6 +127,8 @@ interface Props {
 }
 
 export default function LiquidGallery({ items, currentIndex, setCurrentIndex, onOpenIndex }: Props) {
+  // 👑 挂载引擎
+  const { engine } = useSensory();
   const isThrottled = useRef(false);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -161,6 +147,7 @@ export default function LiquidGallery({ items, currentIndex, setCurrentIndex, on
   const triggerNext = () => {
     if (currentIndex < imageUrls.length - 1) {
       isThrottled.current = true;
+      engine?.playInstantFeedback(); // 👑 触发音效
       setCurrentIndex(prev => prev + 1);
       setTimeout(() => isThrottled.current = false, 1200);
     }
@@ -169,6 +156,7 @@ export default function LiquidGallery({ items, currentIndex, setCurrentIndex, on
   const triggerPrev = () => {
     if (currentIndex > 0) {
       isThrottled.current = true;
+      engine?.playInstantFeedback(); // 👑 触发音效
       setCurrentIndex(prev => prev - 1);
       setTimeout(() => isThrottled.current = false, 1200);
     }

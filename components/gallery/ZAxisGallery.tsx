@@ -4,6 +4,8 @@ import { useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { urlFor } from '@/lib/sanity.image'
+// 👑 引入感官引擎
+import { useSensory } from '@/components/providers/GlobalSensoryProvider'
 
 type ImageSeriesItem = {
   _id?: string
@@ -13,7 +15,6 @@ type ImageSeriesItem = {
   images?: any[]
 }
 
-// 接收父组件(GalleryClientWrapper)下发的状态和触发事件
 interface Props {
   items: ImageSeriesItem[];
   currentIndex: number;
@@ -22,6 +23,8 @@ interface Props {
 }
 
 export default function ZAxisGallery({ items, currentIndex, setCurrentIndex, onOpenIndex }: Props) {
+  // 👑 挂载引擎
+  const { engine } = useSensory()
   const isThrottled = useRef(false)
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
@@ -34,6 +37,7 @@ export default function ZAxisGallery({ items, currentIndex, setCurrentIndex, onO
   const triggerNext = () => {
     if (currentIndex < items.length - 1) {
       isThrottled.current = true
+      engine?.playInstantFeedback() // 👑 触发音效
       setCurrentIndex((prev) => prev + 1)
       setTimeout(() => { isThrottled.current = false }, 1200)
     }
@@ -42,6 +46,7 @@ export default function ZAxisGallery({ items, currentIndex, setCurrentIndex, onO
   const triggerPrev = () => {
     if (currentIndex > 0) {
       isThrottled.current = true
+      engine?.playInstantFeedback() // 👑 触发音效
       setCurrentIndex((prev) => prev - 1)
       setTimeout(() => { isThrottled.current = false }, 1200)
     }
@@ -146,7 +151,6 @@ export default function ZAxisGallery({ items, currentIndex, setCurrentIndex, onO
               animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : 20 }}
               transition={{ duration: 0.8, delay: isActive ? 0.15 : 0 }}
             >
-              {/* 优雅的 INDEX 触发器 */}
               <button 
                 onClick={onOpenIndex}
                 className="text-[10px] tracking-[0.3em] text-[var(--site-faint)] hover:text-white transition-colors outline-none cursor-pointer group/idx flex items-center gap-3"
